@@ -1,0 +1,19 @@
+# Python (backend)
+backend/.venv/
+backend/__pycache__/
+*.pyc
+backend/.env
+
+#Node.js (Frontend)
+frontend/node_modules/
+frontend/dist/
+
+# Docker & Database
+postgres_data/
+
+#Environment Variables (Security)
+.env   
+
+# OS
+.DS_Store
+Thumbs.db

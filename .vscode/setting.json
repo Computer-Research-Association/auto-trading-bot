@@ -1,0 +1,37 @@
+{
+  // 1. 가독성 설정 (하준님 픽: 괄호 강조)
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+
+  // 2. 자동 코드 정렬 (저장 시 자동 실행)
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
+  },
+
+  // 3. 파이썬 가상환경 및 .env 연결
+  "python.envFile": "${workspaceFolder}/backend/.env",
+
+  // [윈도우 사용자용]
+  "python.defaultInterpreterPath": "backend/.venv/Scripts/python.exe",
+  // [맥/리눅스 사용자용] - 필요 시 위 줄을 주석처리하고 아래 줄 주석을 푸세요.
+  // "python.defaultInterpreterPath": "backend/.venv/bin/python",
+
+  // 4. 언어별 포맷터 지정
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "redhat.vscode-yaml" },
+
+  // 5. 탐색기 청소 및 주석 에러(빨간 줄) 방지 설정
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "files.associations": {
+    "*.json": "jsonc",      // 모든 JSON 파일을 주석 허용 모드로 인식
+    "settings.json": "jsonc"
+  }
+}
