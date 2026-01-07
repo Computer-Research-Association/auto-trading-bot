@@ -1,42 +1,240 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app-root {
+  background: #e5ebf5;
+  min-height: 100vh;
+}
+
+/* 상단 파란 바 */
+.top-nav {
+  height: 56px;
+  background: #e1cc2a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  font-weight: 700;
+  font-size: 20px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.top-menu {
+  display: flex;
+  gap: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.nav-link {
+  background: transparent;
+  border: none;
+  color: #dbeafe;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-.card {
-  padding: 2em;
+.nav-link.active {
+  color: #ffffff;
+  font-weight: 600;
 }
 
-.read-the-docs {
-  color: #888;
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-small {
+  background: #0f172a;
+  border: none;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* 파란바 밑 전체 영역 */
+.page-wrap {
+  padding-top: 8px;
+}
+
+/* 두 번째(흰색) 탭바 */
+.sub-tab-bar {
+  width: 100%;
+  background: #f3f4f6;
+  padding: 10px 80px;
+  display: flex;
+  gap: 40px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sub-tab {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: #6b7280;
+  padding-bottom: 6px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.sub-tab.active {
+  color: #d29810;
+  border-bottom-color: #d29810;
+  font-weight: 600;
+}
+
+/* 메인 큰 칸 + 오른쪽 리스트 배치 */
+.page-content {
+  display: grid;
+  grid-template-columns: 1.6fr 0.8fr; /* 왼쪽 넓게, 오른쪽 좁게 */
+  gap: 12px;
+  padding: 12px 80px 32px;
+}
+
+/* 왼쪽 큰 패널 */
+.main-panel {
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  padding: 16px 20px 24px;
+  min-height: 420px;
+}
+
+/* 미체결 상단 툴바 */
+.panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbar-select {
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.toolbar-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: #e5e7eb;
+  color: #9ca3af;
+}
+
+/* 미체결 테이블 */
+.panel-table-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #9ca3af;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.panel-empty {
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.empty-icon {
+  width: 32px;
+  height: 32px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.panel-placeholder {
+  padding: 40px 0;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* 오른쪽 코인 리스트 패널 */
+.market-panel {
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  padding: 12px 12px 16px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.market-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.market-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.market-tab {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.market-tab.active {
+  border-bottom: 2px solid #c47b0d;
+  color: #c47b0d;
+  font-weight: 600;
+}
+
+.market-search {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+.market-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  padding: 6px 4px;
+  font-size: 11px;
+  color: #9ca3af;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.market-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
