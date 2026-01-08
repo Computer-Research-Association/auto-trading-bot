@@ -45,3 +45,23 @@ class StrategyPerformance(SQLModel, table=True):
         #성과 통계가 언제 기준인지 표시
         last_updated_at: datetime = Field(default_factory=utcnow, index= True)
 
+#하루가 끝났을 때의 계좌 상태와 성과
+class DailySnapshot(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    #어느 날짜의 기록인지 확인
+    snapshot_date: date = Field(index=True, unique=True)
+
+    balance: float #하루 종료시 자산
+    daily_pnl: float #일별 손익
+    daily_pnl_rate: float
+
+    # 누적 손익 (전략 시작 이후)
+    cumulative_pnl: float
+    cumulative_pnl_rate: float
+
+    #스냅샷 생성 시각
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+
+    __table_args__ = ( #인덱스 (날짜 기준 조회 성능 향상)
+        Index("ix_snapshot_date", "snapshot_date"),
+    )
