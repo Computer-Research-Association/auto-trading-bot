@@ -15,6 +15,7 @@ upbit = pyupbit.Upbit(access_key, secret_key)
 
 app = FastAPI()
 
+
 @app.on_event("startup")
 def on_startup():
     # 서버 시작 시 DB 테이블 생성 (도커 DB가 켜져 있어야 함)
@@ -24,9 +25,11 @@ def on_startup():
     except Exception as e:
         print(f"DB Connection Failed: {e}")
 
+
 @app.get("/")
 def root():
     return{"message": "Sever is up and running"}
+
 
 @app.get("/test-upbit")
 async def test_upbit():
