@@ -28,3 +28,20 @@ traded_at: datetime = Field(default_factory=utcnow, index=True)
 __table_args__ = (
     Index("ix_trade_market_time", "market", "traded_at"),
 )
+
+class StrategyPerformance(SQLModel, table=True):
+        id: int = Field(default=1, primary_key=True)
+
+        total_trades: int = Field(default=0)  #거래 수 집계
+        win_trades: int = Field(default=0)
+        lose_trades: int = Field(default=0)
+
+        total_pnl: float = Field(default=0.0) #누적 손익
+        total_pnl_rate: float = Field(default=0.0) #누적 수익률
+
+        max_drawdown: Optional[float] = Field(default=None) #최대 나폭
+        win_rate: Optional[float] = Field(default=None) #승률
+
+        #성과 통계가 언제 기준인지 표시
+        last_updated_at: datetime = Field(default_factory=utcnow, index= True)
+
