@@ -88,3 +88,16 @@ def update_strategy_performance(
                 .order_by(TradeModel.traded_at.desc())
                 .limit(limit)
             ).all()
+
+        #기간별 거래 조회
+        def get_trades_between(
+                session: Session,
+                start: datetime,
+                end: datetime,
+        ):
+            return session.exec(
+                select(TradeModel)
+                .where(TradeModel.traded_at >= start)
+                .where(TradeModel.traded_at <= end)
+                .order_by(TradeModel.traded_at.asc())
+            ).all()
