@@ -16,7 +16,7 @@ class TradeModel(SQLModel, table=True):
     side: str = Field(index = True) # buy or sell
     price: float
     volume: float # 수량
-    fee: Optional[float] = Field(default=None # 거래시 발생한 수수료
+    fee: Optional[float] = Field(default=None) # 거래시 발생한 수수료
 
 #해당 거래로 벌거나 잃은 금액
 pnl: Optional[float] = Field(default=None)
