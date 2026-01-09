@@ -18,16 +18,16 @@ class TradeModel(SQLModel, table=True):
     volume: float # 수량
     fee: Optional[float] = Field(default=None) # 거래시 발생한 수수료
 
-#해당 거래로 벌거나 잃은 금액
-pnl: Optional[float] = Field(default=None)
-#수익률
-pnl_rate: Optional[float] = Field(default=None)
-#체결 시각
-traded_at: datetime = Field(default_factory=utcnow, index=True)
-#복합 인덱스 셍성 (market + traded at)
-__table_args__ = (
-    Index("ix_trade_market_time", "market", "traded_at"),
-)
+    #해당 거래로 벌거나 잃은 금액
+    pnl: Optional[float] = Field(default=None)
+    #수익률
+    pnl_rate: Optional[float] = Field(default=None)
+    #체결 시각
+    traded_at: datetime = Field(default_factory=utcnow, index=True)
+    #복합 인덱스 셍성 (market + traded at)
+    __table_args__ = (
+        Index("ix_trade_market_time", "market", "traded_at"),
+    )
 
 class StrategyPerformance(SQLModel, table=True):
         id: int = Field(default=1, primary_key=True)
