@@ -41,3 +41,39 @@ def update_strategy_performance(
     perf.last_updated_at = utcnow()
 
     session.commit()
+
+#일별 스냅샷 저장( 하루 1개)
+    def upsert_daily_snapshot(
+            session: Session,
+            *,
+            snapshot_date: date,
+            balance: float,
+            daily_pnl: float,
+            daily_pnl_rate: float,
+            cumulative_pnl: float,
+            cumulative_pnl_rate: float,
+    ) -> None:
+
+        snapshot = session.exec(
+            select(DailySnapshot)
+            .where(DailySnapshot.snapshot_date == snapshot_date)
+        ).first()
+
+        if snapshot is None:
+            snapshot = DailySnapshot(
+                snapshot_date=snapshot_date,
+                balance=balance,
+                daily_pnl=daily_pnl,
+                daily_pnl_rate=daily_pnl_rate,
+                cumulative_pnl=cumulative_pnl,
+                cumulative_pnl_rate=cumulative_pnl_rate,
+            )
+            session.add(snapshot)
+        else:
+            snapshot.balance = balance
+            snapshot.daily_pnl = daily_pnl
+            snapshot.daily_pnl_rate = daily_pnl_rate
+            snapshot.cumulative_pnl = cumulative_pnl
+            snapshot.cumulative_pnl_rate = cumulative_pnl_rate
+
+        session.commit()
