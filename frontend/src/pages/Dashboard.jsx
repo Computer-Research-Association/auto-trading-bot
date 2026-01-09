@@ -7,6 +7,7 @@ import OpenOrders from "../components/OpenOrders/OpenOrders";
 import Assets from "../components/Assets/Assets";
 import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
 import History from "../components/History/History";
+import Auto_strategy from "../components/Auto_strategy/Auto_strategy";
 
 export default function Dashboard() {
   // 탭 상태 관리 (기본값: 'open')
@@ -41,6 +42,14 @@ export default function Dashboard() {
         >
           미체결
         </button>
+
+        <button
+          className={`sub-tab ${tab === "auto" ? "active" : ""}`} 
+          onClick={() => setTab("auto")}
+        >
+
+          자동매매
+        </button>
       </div>
 
       {/* 2. 실제 컨텐츠 표시 영역 */}
@@ -51,6 +60,7 @@ export default function Dashboard() {
            {tab === "profit" && <ProfitLoss />}
            {tab === "history" && <History />}
            {tab === "open" && <OpenOrders />}
+           {tab === "auto" && <Auto_strategy />}
         </div>
 
         {/* 오른쪽 전략 패널은 항상 고정 */}

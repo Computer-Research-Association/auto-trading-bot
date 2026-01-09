@@ -97,3 +97,49 @@
   text-align: center;
   color: #9ca3af;
 }
+
+/* 패널 안에 있는 컨텐츠 전용 CSS */
+
+.main-panel p {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.main-panel span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.main-panel div {
+  margin-bottom: 8px;
+}
+
+.main-panel h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.main-panel h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.main-panel h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+/* ... 메인 패널 안에 들어갈 카드 ... */
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #f9fafb;
+}
