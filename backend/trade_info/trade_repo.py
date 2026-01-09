@@ -13,6 +13,7 @@ def save_trade(session: Session, trade: TradeModel) -> TradeModel:
     session.add(trade)
     session.commit()
     session.refresh(trade)
+    return trade
 
 #전략 성과 업데이트
 def update_strategy_performance(
