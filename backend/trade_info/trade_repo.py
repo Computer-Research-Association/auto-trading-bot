@@ -77,3 +77,14 @@ def update_strategy_performance(
             snapshot.cumulative_pnl_rate = cumulative_pnl_rate
 
         session.commit()
+
+        #최근 거래 조회
+        def get_recent_trades(
+                session: Session,
+                limit: int = 20,
+        ):
+            return session.exec(
+                select(TradeModel)
+                .order_by(TradeModel.traded_at.desc())
+                .limit(limit)
+            ).all()
