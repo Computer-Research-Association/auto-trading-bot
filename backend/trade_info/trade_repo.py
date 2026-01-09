@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime, date, timedelta
 from sqlmodel import Session, select
 
 from .trade_models import (
@@ -7,7 +7,6 @@ from .trade_models import (
     DailySnapshot,
     utcnow,
 )
-
 #거래 1건 저장
 def save_trade(session: Session, trade: TradeModel) -> TradeModel:
     session.add(trade)
@@ -43,7 +42,7 @@ def update_strategy_performance(
     session.commit()
 
 #일별 스냅샷 저장( 하루 1개)
-    def upsert_daily_snapshot(
+def upsert_daily_snapshot(
             session: Session,
             *,
             snapshot_date: date,
@@ -52,7 +51,7 @@ def update_strategy_performance(
             daily_pnl_rate: float,
             cumulative_pnl: float,
             cumulative_pnl_rate: float,
-    ) -> None:
+) -> None:
 
         snapshot = session.exec(
             select(DailySnapshot)
@@ -78,26 +77,26 @@ def update_strategy_performance(
 
         session.commit()
 
-        #최근 거래 조회
-        def get_recent_trades(
-                session: Session,
-                limit: int = 20,
-        ):
-            return session.exec(
-                select(TradeModel)
-                .order_by(TradeModel.traded_at.desc())
-                .limit(limit)
-            ).all()
+#최근 거래 조회
+def get_recent_trades(
+        session: Session,
+        limit: int = 20,
+    ):
+    return session.exec(
+        select(TradeModel)
+        .order_by(TradeModel.traded_at.desc())
+        .limit(limit)
+    ).all()
 
-        #기간별 거래 조회
-        def get_trades_between(
-                session: Session,
-                start: datetime,
-                end: datetime,
-        ):
-            return session.exec(
-                select(TradeModel)
-                .where(TradeModel.traded_at >= start)
-                .where(TradeModel.traded_at <= end)
-                .order_by(TradeModel.traded_at.asc())
-            ).all()
+#기간별 거래 조회
+def get_trades_between(
+        session: Session,
+        start: datetime,
+        end: datetime,
+):
+    return session.exec(
+        select(TradeModel)
+        .where(TradeModel.traded_at >= start)
+        .where(TradeModel.traded_at <= end)
+        .order_by(TradeModel.traded_at.asc())
+    ).all()
