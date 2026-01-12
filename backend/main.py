@@ -4,10 +4,13 @@ import pyupbit
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 from database import engine
+from pathlib import Path
+
 # from models import User 테스트를 위한 임시 주석처리
 
 # 1. 환경 변수 로드 및 업비트 초기화
-load_dotenv()
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 access_key = os.getenv("UPBIT_ACCESS_KEY")
 secret_key = os.getenv("UPBIT_SECRET_KEY")
