@@ -1,12 +1,12 @@
 services:
   db:
-    image: postgres:17          # 하준님이 정한 PostgreSQL 버전 -> 17로 수정요망
+    image: postgres:17          # 사용할 도커 이미지
     container_name: gold_db          # 도커에서 보여질 이름
     restart: always                  # 컴퓨터를 켜면 자동으로 DB 실행
     environment:
-      POSTGRES_USER: hajunkim        # DB 접속 아이디
-      POSTGRES_PASSWORD: 1q2w3e4r # DB 접속 비밀번호 (연습용) 수정해야함.
-      POSTGRES_DB: gold_db           # 생성할 데이터베이스 이름
+      POSTGRES_USER: ${DB_USER}      # DB 접속 아이디
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # DB 접속 비밀번호 (연습용) 수정해야함.
+      POSTGRES_DB: ${DB_NAME}           # 생성할 데이터베이스 이름
     ports:
       - "5432:5432"                  # 노트북의 5432 포트와 DB의 5432 포트 연결
     volumes:
