@@ -57,3 +57,18 @@ class BaseStrategy(ABC):
         if not self.indicator_list:
             return df
         return add_indicators(df, self.indicator_list)
+
+    @abstractmethod
+    def decide(
+        self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict
+    ) -> dict:
+        """
+        최종 매매 결정을 내리고 다양한 결과값을 반환한다.
+
+        [출력 규격 필수 포함] :
+        - decision: "BUY", "SELL", "HOLD"
+        - percentage: 0.0 ~ 1.0 (자산 대비 비중)
+        - reason: 판단 근거 (텍스트)
+        - metadata: {"stop_loss": 0} 등 (없으면 {} 반환)
+        """
+        pass
