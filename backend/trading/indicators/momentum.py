@@ -32,6 +32,11 @@ def calculate_rsi(df: pd.DataFrame, length: int = 14) -> pd.Series:
         """
         low_min = df['low'].rolling(window=k_period).min()
         high_max = df['high'].rolling(window=k_period).max()
-        
+
         # 분모(Range) 계산: $High_{max} - Low_{min}$
         diff = high_max - low_min
+
+        # %K line: $\%K = 100 \times \frac{Close - Low_{min}}{High_{max} - Low_{min}}$
+        # diff가 0인 경우(가장 높은 가와 낮은 가가 같을 때) NaN 처리 후 0으로 채움
+        k_line = 100 * ((df['close'] - low_min) / diff.replace(0, np.nan))
+        k_line = k_line.fillna(0)
