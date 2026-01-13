@@ -18,7 +18,7 @@ def run_test():
     print(f"원본 컬럼: {df.columns.tolist()}")
 
     # 2. 지표 추가 요청 (우리가 만든 문자열 방식)
-    requested = ['sma_20', 'ema_10', 'macd', 'rsi']
+    requested = ['sma_20', 'ema_10', 'macd', 'rsi', 'bb']
     
     try:
         result_df = add_indicators(df, requested)
@@ -28,7 +28,8 @@ def run_test():
         
         # 마지막 5줄 출력해서 값이 비어있지 않은지 확인
         print("\n최근 5개 데이터 샘플:")
-        print(result_df[['close', 'SMA_20', 'EMA_10', 'MACD_12_26_9', 'RSI']].tail())
+        print(result_df[['close', 'SMA_20', 'EMA_10', 'MACD_12_26_9', 'RSI', 
+        'bb_middle', 'bb_upper', 'bb_lower']].tail())
         
         if 'SMA_20' in result_df.columns and 'MACD_12_26_9' in result_df.columns:
             print("\n✅ 테스트 성공: 지표가 정상적으로 계산되고 병합되었습니다!")
