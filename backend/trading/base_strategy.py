@@ -18,7 +18,7 @@ class BaseStrategy(ABC):
         self.data_interval = kwargs.get("data_interval", "minute15")  # 분석 분봉 단위
         # 2. 하이퍼파라미터 저장소 (외부 주입값)
         self.parms = kwargs.get("parms", {})
-        
+
         # 3. 지표 리스트 (자식 클래스에서 채움)
         self.indicator_list = []
 
@@ -26,13 +26,15 @@ class BaseStrategy(ABC):
         """
         전략의 정보를 반환하여 웹 UI 및 엔진 관리에 사용한다.
         """
-        return {
-            "strategy_id": self.strategy_id,
-            "display_name": self.display_name,
-            "version": self.version,
-            "required_candles": self.required_candles,
-            "data_interval": self.data_interval
-        }
+        info = {
+        "strategy_id": self.strategy_id,
+        "display_name": self.display_name,
+        "version": self.version,
+        "required_candles": self.required_candles,
+        "data_interval": self.data_interval,
+        "params": self.params  # 추가됨
+    }
+    return info
 
     def validate_data(self, df: pd.DataFrame) -> tuple[bool, str]:
         """
