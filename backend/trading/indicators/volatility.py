@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def get_bolinger_bands(
+def get_bbands(
     df: pd.DataFrame, length: int = 20, num_std: float = 2.0
 ) -> pd.DataFrame:
     """
