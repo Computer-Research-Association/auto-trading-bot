@@ -19,8 +19,13 @@ def get_ema(df: pd.DataFrame, length: int = 20):
 
 def get_macd(df: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9):
     """
-    MACD 계산
-    결과: DataFrame (MACD선, 시그널선, 히스토그램 3개 컬럼)
+    MACD 지표 계산
+    args:
+        fast: 단기 EMA 기간
+        slow: 장기 EMA 기간
+        signal: 신호선 기간
+    returns:
+        DataFrame with MACD, MACD_signal, MACD_hist columns
     """
     return ta.macd(df['close'], fast=fast, slow=slow, signal=signal)
     
