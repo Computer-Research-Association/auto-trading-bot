@@ -24,3 +24,10 @@ def calculate_rsi(df: pd.DataFrame, length: int = 14) -> pd.Series:
     rsi = 100 - (100 / (1 + rs))
 
     return rsi.fillna(50) # 초기값이나 에러 발생 시 중립값(50) 반환
+
+    def calculate_stochastic(df: pd.DataFrame, k_period: int = 14, d_period: int=3) -> pd.DataFrame:
+        """
+        Stochastic Oscillator (%K, %D) 계산
+        횡보장 (High == Low)에서의 Zero Division 에러 방지 로직 포함
+        """
+        
