@@ -3,7 +3,7 @@ import numpy as np
 
 
 def get_bbands(
-    df: pd.DataFrame, length: int = 20, num_std: float = 2.0
+    df: pd.DataFrame, length: int = 20, std: float = 2.0
 ) -> pd.DataFrame:
     """
     볼린저 밴드 계산 (BB).
@@ -19,8 +19,8 @@ def get_bbands(
     middle_band = df['close'].rolling(window=length).mean()
     std_dev = df['close'].rolling(window=length).std()
 
-    upper_band = middle_band + (std_dev * num_std)
-    lower_band = middle_band - (std_dev * num_std)
+    upper_band = middle_band + (std_dev * std)
+    lower_band = middle_band - (std_dev * std)
 
     # 0으로 나누기 방지 및 밴드폭 계산
     denom = middle_band.replace(0, np.nan)
