@@ -13,7 +13,7 @@ def get_bbands(
     - bb_width: 밴드 폭 (변동성 수축/ 확장 측정)
     """
     if 'close' not in df.columns:
-        raise ValueError("BB 계산을 위해 'close 컬럼이 필요합니다.")
+        raise ValueError("BB 계산을 위해 'close' 컬럼이 필요합니다.")
 
     # 중심선 및 표준편차 계산
     middle_band = df['close'].rolling(window=length).mean()
