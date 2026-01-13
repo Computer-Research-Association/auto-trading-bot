@@ -40,3 +40,12 @@ def calculate_rsi(df: pd.DataFrame, length: int = 14) -> pd.Series:
         # diff가 0인 경우(가장 높은 가와 낮은 가가 같을 때) NaN 처리 후 0으로 채움
         k_line = 100 * ((df['close'] - low_min) / diff.replace(0, np.nan))
         k_line = k_line.fillna(0)
+
+        # %D line: K라인의 단순 이동 평균
+        d_line = k_line.rolling(window=d_period).mean()
+
+        return pd.DataFrame({
+            'stoch_k': k_line,
+            'stoch_d': d_line
+
+        })
