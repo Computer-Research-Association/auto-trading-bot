@@ -20,7 +20,7 @@ class BaseStrategy(ABC):
         self.params = kwargs.get("params", {})
 
         # 3. 지표 리스트 (자식 클래스에서 채움)
-        self.indicator_list = []
+        self.indicator_list = kwargs.get("indicators", [])
 
     def get_info(self) -> dict:
         """
