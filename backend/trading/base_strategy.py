@@ -39,6 +39,11 @@ class BaseStrategy(ABC):
         if df is None or df.empty:
             return False, "데이터가 존재하지 않습니다."
         
+        # 필수 컬럼 존재 여부 확인
+        required_cols = ['datetime', 'open', 'high', 'low', 'close', 'volume']
+        if not all(col in df.columns for col in required_cols):
+            return False, f"필수 컬럼이 누락되었습니다. (필요: {required_cols})"
+        
         # 캔들 개수 검증
         if len(df) < self.required_candles:
             return False, f"데이터 부족 (필요: {self.required_candles}, 현재: {len(df)})"
