@@ -2,12 +2,12 @@
 import React, { useState } from "react";
 
 // 컴포넌트 불러오기
-import StrategyPanel from "../components/Strategy/StrategyPanel";
-import OpenOrders from "../components/OpenOrders/OpenOrders";
-import Assets from "../components/Assets/Assets";
-import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
-import History from "../components/History/History";
-import Auto_strategy from "../components/Auto_strategy/Auto_strategy";
+import Assets from './features/components/Assets/Assets';
+import ProfitLoss from './features/components/ProfitLoss/ProfitLoss';
+import History from './features/components/History/History';
+import OpenOrders from './features/components/OpenOrders/OpenOrders';
+import StrategyPanel from './features/components/Strategy/StrategyPanel'; // 폴더명이 Strategy네요
+import Auto_Strategy from './features/components/Auto_Strategy/Auto_Strategy';
 
 export default function Dashboard() {
   // 탭 상태 관리 (기본값: 'open')
@@ -60,7 +60,7 @@ export default function Dashboard() {
            {tab === "profit" && <ProfitLoss />}
            {tab === "history" && <History />}
            {tab === "open" && <OpenOrders />}
-           {tab === "auto" && <Auto_strategy />}
+           {tab === "auto" && <Auto_Strategy />}
         </div>
 
         {/* 오른쪽 전략 패널은 항상 고정 */}

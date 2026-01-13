@@ -1,7 +1,7 @@
 // src/App.jsx
 import React from "react";
 import Header from "./components/Header";       // 고정된 헤더
-import Dashboard from "./pages/Dashboard";      // 메인 페이지
+import Dashboard from "./features/pages/Dashboard";      // 메인 페이지
 import "./App.css"; // 전체 스타일
 
 function App() {

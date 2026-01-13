@@ -1,4 +1,4 @@
-import React from 'react';
+//import React from 'react';
 import './StrategyPanel.css'; // 스타일 파일 import
 
 export default function StrategyPanel() {
