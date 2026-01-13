@@ -49,7 +49,7 @@ class BaseStrategy(ABC):
         
         return True, "Success"
     
-    def apply_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+    def setup_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         부모 클래스에서 정의된 indicator_list를 기반으로 지표를 일괄 추가한다.
         자식 클래스는 리스트만 채우면 되도록 로직 공통화
