@@ -14,3 +14,10 @@ def get_bolinger_bands(
     """
     if 'close' not in df.columns:
         raise ValueError("BB 계산을 위해 'close 컬럼이 필요합니다.")
+
+    # 중심선 및 표준편차 계산
+    middle_band = df['close'].rolling(window=length).mean()
+    std_dev = df['close'].rolling(window=length).std()
+
+    upper_band = middle_band + (std_dev * num_std)
+    lower_band = middle_band - (std_dev * num_std)
