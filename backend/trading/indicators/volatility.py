@@ -21,3 +21,14 @@ def get_bolinger_bands(
 
     upper_band = middle_band + (std_dev * num_std)
     lower_band = middle_band - (std_dev * num_std)
+
+    # 0으로 나누기 방지 및 밴드폭 계산
+    denom = middle_band.replace(0, np.nan)
+    bandwidth = (upper_band - lower_band) / denom
+
+    return pd.DataFrame({
+        'bb_middle': middle_band,
+        'bb_upper': upper_band,
+        'bb_lower': lower_band,
+        'bb_width': bandwidth.fillna(0)
+    })
