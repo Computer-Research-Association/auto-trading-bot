@@ -20,4 +20,14 @@ class BaseStrategy(ABC):
         # 2. 이 전략에서 사용할 지표 목록 (자식 클래스에서 오버라이드)
         self.indicator_list = []
 
-    
+    def get_info(self) -> dict:
+        """
+        전략의 정보를 반환하여 웹 UI 및 엔진 관리에 사용한다.
+        """
+        return {
+            "strategy_id": self.strategy_id,
+            "display_name": self.display_name,
+            "version": self.version,
+            "required_candles": self.required_candles,
+            "data_interval": self.data_interval
+        }
