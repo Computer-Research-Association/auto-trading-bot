@@ -9,15 +9,17 @@ class BaseStrategy(ABC):
     설계 문서에 정의된 표준 입력 및 출력 규격을 준수한다.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs): -> None:
         # 1. 필수 식별 정보 (Strategy Indentity)
-        self.strategy_id = "BASE_STRATEGY"
-        self.display_name = "Base Strategy"
-        self.version = "1.0.0"
-        self.required_candles = 120  # 판단에 필요한 최소 캔들 수
-        self.data_interval = "minute15"  # 분석 분봉 단위
-
-        # 2. 이 전략에서 사용할 지표 목록 (자식 클래스에서 오버라이드)
+        self.strategy_id = kwargs.get("strategy_id", "BASE_STRATEGY")
+        self.display_name = kwargs.get("display_name", "Base Strategy")
+        self.version = kwargs.get("version", "1.0.0")
+        self.required_candles = kwargs.get("required_candles", 120)  # 판단에 필요한 최소 캔들 수
+        self.data_interval = kwargs.get("data_interval", "minute15")  # 분석 분봉 단위
+        # 2. 하이퍼파라미터 저장소 (외부 주입값)
+        self.parms = kwargs.get("parms", {})
+        
+        # 3. 지표 리스트 (자식 클래스에서 채움)
         self.indicator_list = []
 
     def get_info(self) -> dict:
@@ -51,6 +53,10 @@ class BaseStrategy(ABC):
         # 시간 순서 정렬 확인 (과거 -> 현재)
         if not df['datetime'].is_monotonic_increasing:
             return False, "데이터가 시간 순서로 정렬되지 않았습니다."
+
+        # 결측치 확인 (최근 데이터 기준 중요)
+        if df[required_cols].iloc[-1].isnull().any():
+            return False, "최근 데이터에 결측치가 포함되어 있습니다."
         
         return True, "Success"
     
