@@ -16,3 +16,8 @@ class BaseStrategy(ABC):
         self.version = "1.0.0"
         self.required_candles = 120  # 판단에 필요한 최소 캔들 수
         self.data_interval = "minute15"  # 분석 분봉 단위
+
+        # 2. 이 전략에서 사용할 지표 목록 (자식 클래스에서 오버라이드)
+        self.indicator_list = []
+
+    
