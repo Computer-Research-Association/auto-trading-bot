@@ -31,3 +31,20 @@ class BaseStrategy(ABC):
             "required_candles": self.required_candles,
             "data_interval": self.data_interval
         }
+
+    def validate_data(self, df: pd.DataFrame) -> tuple[bool, str]:
+        """
+        데이터의 충분성 및 신뢰성을 최종 검사한다.
+        """
+        if df is None or df.empty:
+            return False, "데이터가 존재하지 않습니다."
+        
+        # 캔들 개수 검증
+        if len(df) < self.required_candles:
+            return False, f"데이터 부족 (필요: {self.required_candles}, 현재: {len(df)})"
+        
+        # 시간 순서 정렬 확인 (과거 -> 현재)
+        if not df['datetime'].is_monotonic_increasing:
+            return False, "데이터가 시간 순서로 정렬되지 않았습니다."
+        
+        return True, "Success"
