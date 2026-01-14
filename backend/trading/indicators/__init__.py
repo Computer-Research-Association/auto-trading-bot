@@ -24,8 +24,8 @@ INDICATOR_HANDLERS = {
 def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
     df = df.copy()
     for item in requested_list:
-        name = parts[0].lower()
-        params = parts[1:]
+        name = item.get('name', '').lower()
+        params = item.get('params', {})
 
         if name in INDICATOR_HANDLERS:
             try:
