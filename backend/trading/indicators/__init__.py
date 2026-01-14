@@ -36,10 +36,13 @@ def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
                 if isinstance(result, pd.DataFrame):
                     df = pd.concat([df, result], axis=1)
                 else:
-                    col_name = f"{name.upper()}_{params[0]}" if params else name.upper()
+                    # 결과가 시리즈(sma, rsi 등)면 이름 생성 후 추가
+                    # params의 첫 번째 값을 접미어로 사용 (SMA_20)
+                    suffix = f"_{next(iter(params.values()))}" if params else ""
+                    col_name = f"{name.upper()}_{suffix}"
                     df[col_name] = result
             except Exception as e:
-                print(f"Error calculating {item}: {e}")
+                print(f"Error calculating {name}: {e}")
         else:
             print(f"Warning: {name} is not supported.")
     return df
