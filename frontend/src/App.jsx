@@ -12,7 +12,7 @@ function App() {
 
       {/* 2. 그 아래에 현재 페이지를 보여줌 */}
       <Dashboard />
-      
+
       {/* 나중에 라우터를 쓰면 여기에 <Routes>...<Routes/>가 들어갑니다 */}
     </div>
   );
