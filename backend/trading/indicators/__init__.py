@@ -24,6 +24,9 @@ INDICATOR_HANDLERS = {
 def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
     df = df.copy()
     for item in requested_list:
+        if not isinstance(item, dict)
+        print(f"지표 형식이 잘못됨 기대: dict, 입력: {type(item)}")
+        
         name = item.get('name', '').lower()
         params = item.get('params', {})
 
