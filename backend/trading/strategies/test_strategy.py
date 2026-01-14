@@ -24,13 +24,14 @@ class MacdBbRsiStrategy(BaseStrategy):
                 {"name": "macd", "params": {"fast": 12, "slow": 26, "signal": 9}}
             ]
 
-        def decide(self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict) -> dict:
+    def decide(self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict) -> dict:
             last = ohlcv_df.iloc[-1]
 
             is_holding = account_info.get('is_holding', False)
 
             rsi = last[self.rsi_col]
             bb_upper = last[self.bb_up_col]
+            bb_lower = last[self.bb_low_col]
             macd_hist = last[self.macd_hist_col]
 
             decision = "HOLD"
@@ -43,13 +44,13 @@ class MacdBbRsiStrategy(BaseStrategy):
                     if macd_hist > 0:
                         decision = "BUY"
                         percentage = 1.0
-                        reason = f"과매도 구간 탈출 신호 (RSI: {rsi: .2f})"
+                        reason = f"과매도 구간 탈출 신호 (RSI: {rsi:.2f})"
 
             # 매도 로직 (보유 시에만)
             elif is_holding:
                 if rsi >= self.params.get("rsi_sell_level", 70) or last['close'] > bb_upper:
                     decision = "SELL"
                     percentage = 1.0
-                    reason = f"과매수 구간 /BB 상단 도달 (RSI: {rsi: .2f})"
+                    reason = f"과매수 구간 /BB 상단 도달 (RSI: {rsi:.2f})"
 
-            return {"decision": decision, "percentage": percentage, "reason": reason, "metadata": {}}
+            return {"decision": decision, "percentage": percentage, "reason": reason, "metadata": {}}    
