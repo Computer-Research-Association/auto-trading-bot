@@ -1,0 +1,104 @@
+.main-panel {
+  padding: 24px;
+  background: #f6f7fb; /* ✅ 전체 배경을 살짝 톤다운 */
+  min-height: 100vh;
+}
+
+/* 섹션 카드(자산 요약 전체 박스) */
+.asset-summary-card {
+  width: 380px;
+  max-width: 380px;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+/* 제목 */
+.asset-title {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #0f172a;
+}
+
+/* 총 보유자산(히어로 카드) */
+.asset-total {
+  background: #f7f8fb;
+  border: 1px solid #eef0f6;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom:  12px;
+}
+
+.asset-total-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.asset-total-value {
+  font-size:30px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+/* KPI 그리드 */
+.asset-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* KPI 카드 */
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #eef0f6;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: #e2e8f0;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: #0f172a;
+}
+
+/* 손익 색상*/
+.kpi-value.positive { color: #16a34a; }
+.kpi-value.negative { color: #ef4444; }
+.kpi-value.neutral  { color: #0f172a; }
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .asset-summary-card { padding: 18px; border-radius: 18px; }
+  .asset-total { border-radius: 16px; }
+  .asset-total-value { font-size: 28px; }
+  .asset-kpi-grid { grid-template-columns: 1fr; }
+}
+
+.main-panel {
+  padding: 24px;
+  background: #f6f7fb;
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: flex-start; /* 왼쪽 */
+  align-items: flex-start;     /* 위쪽 */
+}
