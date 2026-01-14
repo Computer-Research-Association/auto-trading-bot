@@ -4,7 +4,7 @@ import React, { useState } from "react";
 // 컴포넌트 불러오기
 import StrategyPanel from "../components/Strategy/StrategyPanel";
 import OpenOrders from "../components/OpenOrders/OpenOrders";
-import Assets from "../components/Assets/Assets";
+import Assets from "../components/Assets/Assets.tsx";
 import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
 import History from "../components/History/History";
 import Auto_strategy from "../components/Auto_strategy/Auto_strategy";
