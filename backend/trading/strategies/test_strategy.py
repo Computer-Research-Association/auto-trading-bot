@@ -11,28 +11,35 @@ class MacdBbRsiStrategy(BaseStrategy):
         super().__init__(**kwargs)
 
         # self.params.get()을 사용하여 외부 주입 값이 없을 때의 안전성 확보
-        self.rsi_col = f"RSI_{self.params.get('rsi_len', 14)}"
-        self.bb_up_col = "bb_upper"
-        self.bb_low_col = "bb_lower"
-        self.macd_hist_col = "MACDh_12_26_9"
+        # 전략파일에서 반환 받을 접두어 이름을 정의한다
+        self.rsi_key = "rsi"
+        self.bb_prefix = "bb"
+        self.macd_prefix = "macd"
+
+        # 세부 컬럼명 변수화. 
+        # macd, bb와 같이 한 지표에 여러 종류 반환이 있을 때를 대비
+        # indicatrors의 내부 함수에서 반환 명칭이 바뀔 경우 여기서 수정
+        self.col_bb_upper = f"{self.bb_prefix}_bb_upper"
+        self.col_bb_lower = f"{self.bb_prefix}_bb_lower"
+        self.col_macd_hist = f"{self.macd_prefix}_MACDh_12_26_9"
 
         # 외부 설정이 없을 때 기본 지표 리스트 생성
         if not self.indicator_list:
             self.indicator_list = [
-                {"name": "rsi", "params": {"length": self.params.get("rsi_len", 14)}},
-                {"name": "bb", "params": {"length": self.params.get("bb_len", 20), "std": self.params.get("bb_std", 2.0)}},
-                {"name": "macd", "params": {"fast": 12, "slow": 26, "signal": 9}}
+                {"name": "rsi", "output_name": self.rsi_key, "params": {"length": self.params.get("rsi_len", 14)}},
+                {"name": "bb", "output_name": self.bb_prefix, "params": {"length": self.params.get("bb_len", 20), "std": self.params.get("bb_std", 2.0)}},
+                {"name": "macd", "output_name": self.macd_prefix, "params": {"fast": 12, "slow": 26, "signal": 9}}
             ]
 
     def decide(self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict) -> dict:
         last = ohlcv_df.iloc[-1]
-
         is_holding = account_info.get('is_holding', False)
-
-        rsi = last[self.rsi_col]
-        bb_upper = last[self.bb_up_col]
-        bb_lower = last[self.bb_low_col]
-        macd_hist = last[self.macd_hist_col]
+        
+        # 미리 정의한 변수를 사용해 데이터 추출
+        rsi = last[self.rsi_key]
+        bb_upper = last[self.col_bb_upper]
+        bb_lower = last[self.col_bb_lower]
+        macd_hist = last[self.col_macd_hist]
 
         decision = "HOLD"
         percentage = 0.0
@@ -53,4 +60,13 @@ class MacdBbRsiStrategy(BaseStrategy):
                 percentage = 1.0
                 reason = f"과매수 구간 /BB 상단 도달 (RSI: {rsi:.2f})"
 
-        return {"decision": decision, "percentage": percentage, "reason": reason, "metadata": {}}    
+        return {
+            "decision": decision, 
+            "percentage": percentage, 
+            "reason": reason,        
+            "metadata": {
+                "rsi": float(rsi),
+                "macd_hist": float(macd_hist),
+                "params": self.params
+            }
+        }    

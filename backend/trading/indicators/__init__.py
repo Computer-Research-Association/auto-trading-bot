@@ -29,6 +29,7 @@ def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
 
         name = item.get('name', '').lower()
         params = item.get('params', {})
+        output_name = item.get('output_name')
 
         if name in INDICATOR_HANDLERS:
             try:
@@ -36,13 +37,15 @@ def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
                 result = INDICATOR_HANDLERS[name](df, params)
 
                 # 결과가 데이터 프레임이면 합치고, 시리즈면 컬럼 추가
-                if isinstance(result, pd.DataFrame):
+                if isinstance(result, pd.DataFrame) and 
+                    if output_name:
+                        result = result.add_prefix(f"{output_name}_")
                     df = pd.concat([df, result], axis=1)
                 else:
                     # 결과가 시리즈(sma, rsi 등)면 이름 생성 후 추가
                     # params의 첫 번째 값을 접미어로 사용 (SMA_20)
-                    suffix = f"_{next(iter(params.values()))}" if params else ""
-                    col_name = f"{name.upper()}{suffix}"
+                    
+                    col_name = output_name if output_name else f"{name.upper()}"
                     df[col_name] = result
             except Exception as e:
                 print(f"Error calculating {name}: {e}")
