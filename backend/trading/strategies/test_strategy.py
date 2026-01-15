@@ -33,13 +33,13 @@ class MacdBbRsiStrategy(BaseStrategy):
 
     def decide(self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict) -> dict:
         last = ohlcv_df.iloc[-1]
-
         is_holding = account_info.get('is_holding', False)
-
-        rsi = last[self.rsi_col]
-        bb_upper = last[self.bb_up_col]
-        bb_lower = last[self.bb_low_col]
-        macd_hist = last[self.macd_hist_col]
+        
+        # 미리 정의한 변수를 사용해 데이터 추출
+        rsi = last[self.rsi_key]
+        bb_upper = last[self.col_bb_upper]
+        bb_lower = last[self.col_bb_lower]
+        macd_hist = last[self.col_macd_hist]
 
         decision = "HOLD"
         percentage = 0.0
@@ -60,4 +60,13 @@ class MacdBbRsiStrategy(BaseStrategy):
                 percentage = 1.0
                 reason = f"과매수 구간 /BB 상단 도달 (RSI: {rsi:.2f})"
 
-        return {"decision": decision, "percentage": percentage, "reason": reason, "metadata": {}}    
+        return {
+            "decision": decision, 
+            "percentage": percentage, 
+            "reason": reason,        
+            "metadata": {
+                "rsi": float(rsi),
+                "macd_hist": float(macd_hist),
+                "params": self.params
+            }
+        }    
