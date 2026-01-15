@@ -37,8 +37,9 @@ def add_indicators(df: pd.DataFrame, requested_list: list) -> pd.DataFrame:
                 result = INDICATOR_HANDLERS[name](df, params)
 
                 # 결과가 데이터 프레임이면 합치고, 시리즈면 컬럼 추가
-                if isinstance(result, pd.DataFrame) and output_name:
-                    result = result.add_prefix(f"{output_name}_")
+                if isinstance(result, pd.DataFrame) and 
+                    if output_name:
+                        result = result.add_prefix(f"{output_name}_")
                     df = pd.concat([df, result], axis=1)
                 else:
                     # 결과가 시리즈(sma, rsi 등)면 이름 생성 후 추가
