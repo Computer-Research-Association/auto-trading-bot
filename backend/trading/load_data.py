@@ -52,3 +52,7 @@ class DataLoader:
             except Exception as e:
                 logger.error(f"[{self.ticker}] API 호출 중 에러: {e}")
                 time.sleep(2)
+            
+        return None
+            
+        
