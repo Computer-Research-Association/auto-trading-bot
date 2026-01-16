@@ -1,6 +1,7 @@
 import React from "react";
 import "./Asset.css";
 
+
 export default function Assets() {
   return (
     <div className="main-panel">
@@ -42,4 +43,6 @@ function KPI({ label, value, tone = "neutral" }: KPIProps) {
       <div className={`kpi-value ${tone}`}>{value}</div>
     </div>
   );
+
+axios.get("/api/upbit/assets")
 }
