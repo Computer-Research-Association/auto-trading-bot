@@ -55,4 +55,15 @@ class DataLoader:
             
         return None
             
-        
+    def get_current_price(self) -> float:
+        """
+        현재가 조회 (매우 빈번하게 후출될 것을 대비해 0.05초 대기)
+        api 허용 횟수 초과 시 id 밴 당할 위험 있음
+        """
+        time.sleep(0.05)
+        try:
+            price = pyupbit.get_current_price(self.ticker)
+            return float(price) if price else 0.0
+        except Exception as e:
+            logger.error(f"[{self.ticker}] 현재가 조회 실패 {e}")
+            return 0.0
