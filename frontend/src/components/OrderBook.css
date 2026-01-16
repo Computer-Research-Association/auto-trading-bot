@@ -1,0 +1,57 @@
+/* 업비트 색상 변수 */
+:root {
+  --upbit-red: #D24F45;
+  --upbit-blue: #1261C4;
+  --upbit-red-bg: rgba(210, 79, 69, 0.1);
+  --upbit-blue-bg: rgba(18, 97, 196, 0.1);
+}
+
+.orderbook-container {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+
+.title {
+  padding: 10px;
+  margin: 0;
+  font-size: 14px;
+  background: #f9fafc;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.orderbook-table {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 매도(팔려는 사람) 스타일 - 파랑 */
+.ask-row {
+  background-color: var(--upbit-blue-bg);
+}
+.price-down {
+  color: var(--upbit-blue);
+  font-weight: bold;
+}
+
+/* 매수(살려는 사람) 스타일 - 빨강 */
+.bid-row {
+  background-color: var(--upbit-red-bg);
+}
+.price-up {
+  color: var(--upbit-red);
+  font-weight: bold;
+}
+
+.col-size {
+  color: #666;
+}
