@@ -29,7 +29,7 @@ class DataLoader:
                 )
                 # 데이터 존재 여부 체크
                 if df is None or df.empty:
-                    logger.warning(f"[{self.ticker}] 데이터가 비어 있습니다. 재시도 중")
+                    logger.warning(f"[{self.ticker}] 데이터가 비어 있습니다. 재시도 중 ({attempt + 1}/{max_retries})...")
                     time.sleep(1)
                     continue
 
@@ -40,7 +40,7 @@ class DataLoader:
                 # 최소 개수 검증
                 # 요청 데이터 개수 보다 적은 데이터로 지표 계산 시 에러 날 수 있음
                 if len(df) < count * 0.9:
-                    logger.warning(f"[{self.ticker}] 데이터 개수 부족: {fill_rate:.1f}% 이번 주기 패스.")
+                    logger.warning(f"[{self.ticker}] 데이터 개수 부족: {fill_rate:.1f}% ({attempt + 1}/{max_retries}) 이번 주기 패스.")
                     return None  # None 반환 시 bot.py가 판단을 생략함
 
                 # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
