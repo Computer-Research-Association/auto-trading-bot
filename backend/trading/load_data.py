@@ -33,34 +33,38 @@ class DataLoader:
                     time.sleep(1)
                     continue
 
+                # 데이터 개수 검증 로직
+                current_len = len(df)
+                fill_rate = (current_len / count) * 100
+
                 # 최소 개수 검증
                 # 요청 데이터 개수 보다 적은 데이터로 지표 계산 시 에러 날 수 있음
                 if len(df) < count * 0.9:
-                    logger.warning(f"[{self.ticker}] 데이터 개수 부족: {len(df)/count} 이번 주기 패스." )
+                    logger.warning(f"[{self.ticker}] 데이터 개수 부족: {fill_rate:.1f}% 이번 주기 패스.")
                     return None  # None 반환 시 bot.py가 판단을 생략함
 
                 # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
                 elif len(df) < count:
-                    logger.warning(f"[{self.ticker}] 데이터 일부 누락: {len(df)/count}. 계산 강행.")
+                    logger.warning(f"[{self.ticker}] 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
 
-                    # 표준 및 반환
-                    df = df[['open', 'high', 'low', 'close', 'volume']]
-                    df.index.name = 'datetime'
+                # 표준 및 반환
+                df = df[['open', 'high', 'low', 'close', 'volume']]
+                df.index.name = 'datetime'
 
-                    return df
+                return df
 
             except Exception as e:
                 logger.error(f"[{self.ticker}] API 호출 중 에러: {e}")
                 time.sleep(2)
-            
+
         return None
-            
+
     def get_current_price(self) -> float:
         """
         현재가 조회 (매우 빈번하게 후출될 것을 대비해 0.05초 대기)
         api 허용 횟수 초과 시 id 밴 당할 위험 있음
         """
-        time.sleep(0.05)
+        time.sleep(0.1)
         try:
             price = pyupbit.get_current_price(self.ticker)
             return float(price) if price else 0.0
