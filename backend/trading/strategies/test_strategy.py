@@ -29,7 +29,8 @@ class MacdBbRsiStrategy(BaseStrategy):
                 {"name": "rsi", "output_name": self.rsi_key, "params": {
                     "length": self.params.get("rsi_len", 14)}},
                 {"name": "bb", "output_name": self.bb_prefix, "params": {
-                    "length": self.params.get("bb_len", 20), "std": self.params.get("bb_std", 2.0)}},
+                    "length": self.params.get("bb_len", 20), 
+                    "std": self.params.get("bb_std", 2.0)}},
                 {"name": "macd", "output_name": self.macd_prefix,
                     "params": {"fast": 12, "slow": 26, "signal": 9}}
             ]
