@@ -48,7 +48,7 @@ class DataLoader:
                     logger.warning(f"[{self.ticker}] 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
 
                 # 표준 및 반환
-                df = df[['open', 'high', 'low', 'close', 'volume']]
+                df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)  # float 강제 변환
                 df.index.name = 'datetime'
 
                 return df
