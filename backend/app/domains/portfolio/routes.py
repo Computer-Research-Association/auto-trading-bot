@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException
 
 from app.domains.portfolio.schemas import PortfolioAssetsResponse
 from app.domains.portfolio.service import PortfolioService
-
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 
