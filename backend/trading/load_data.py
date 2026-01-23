@@ -71,3 +71,4 @@ class DataLoader:
         except Exception as e:
             logger.error(f"[{self.ticker}] 현재가 조회 실패 {e}")
             return 0.0
+
