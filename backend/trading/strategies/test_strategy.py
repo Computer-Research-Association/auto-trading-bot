@@ -50,8 +50,8 @@ class MacdBbRsiStrategy(BaseStrategy):
         reason = "조건 미충족"
 
         # 매수 로직 (미보유 시에만)
-        if not is_holding: # rsi 레벨 60으로 수정
-            if rsi <= self.params.get("rsi_buy_level", 60) and last['close'] <= bb_lower:
+        if not is_holding: 
+            if rsi <= self.params.get("rsi_buy_level", 30) and last['close'] <= bb_lower:
                 if macd_hist > -1.0:  # 임의 수정
                     decision = "BUY"
                     percentage = 1.0
