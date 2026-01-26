@@ -85,7 +85,7 @@ class TradeDTO(BaseModel):
     side: str  # 매매 신호
     price: Decimal = Field(..., gt=0)  # 체결 가격
     quantity: Decimal = Field(..., gt=0)  # 체결 수량
-    fee: Decimal = False(default=Decimal('0'), ge=0)  # 거래 수수료
+    fee: Decimal = Field(default=Decimal('0'), ge=0)  # 거래 수수료
     profit_pct: Decimal = Decimal('0')  # 매도 시 확정 수익률
     reason: Optional[str] = None  # 매매 판단 근거
     created_at: datetime = Field(default_factory=datetime.now)  # 거래 발생 시간
