@@ -1,6 +1,7 @@
 from decimal import Decimal
-from typing import Dict, Optional
-from pydantic import BaseModel, ConfigDict
+from typing import Dict
+from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
 # 모든 DTO는 데이터를 보호하기 위해 frozen(불변) 상태로 설정합니다.
 # 또한 Decimal 타입을 지원하여 금융 데이터의 정밀도를 유지합니다.
@@ -18,12 +19,15 @@ class SlotDTO(BaseModel):
     """
     model_config = ConfigDict(frozen=True)
 
-    slot_no = int  # 슬롯 번호 (1 ~ 4)
+    slot_no: int  # 슬롯 번호 (1 ~ 4)
     is_active: bool  # 슬롯 가동 여부
     ticker: str  # 현재 추적 중인 종목묭
     strategy_id: str  # 적용 전략 클래스 명칭
-    paprams: Dict  # 전략용 변수
-    budget: Decimal  # 슬롯에 할당한 예산
+    params: Dict  # 전략용 변수
+    budget: Decimal = Field(..., ge=0)  # 슬롯에 할당한 예산, 0이상 검증
+    updated_at: datetime = Field(default_factory=datetime.now)  # 타임 스탬프 추가
+
+# 2. Bot States 도메인 DTO: 런타임 실시간 상황판
 
 
 class BotStateDTO(BaseModel):
@@ -37,9 +41,24 @@ class BotStateDTO(BaseModel):
     buy_cost: Decimal         # 수수료 포함 실제 투입 총액
     """
     model_config = ConfigDict(frozen=True)
-    slot_no = int  # 해당 슬롯 번호
+    slot_no: int  # 해당 슬롯 번호
     is_holding: bool  # 현재 코인 보유 여부
-    avg_buy_price: Decimal  # 매수 평균 단가
-    total_quantity: Decimal  # 보유 중인 코인 수량
-    stop_loss_price: Decimal  # 실시간 갱신되는 손절가
-    buy_cost: Decimal  # 수수료 포함 실제 투입 총액
+    avg_buy_price: Decimal = Field(default=Decimal('0'), ge=0)  # 매수 평균 단가
+    total_quantity: Decimal = Field(default=Decimal('0'), ge=0)  # 보유 중인 코인 수량
+    stop_loss_price: Decimal = Field(default=Decimal('0'), ge=0)  # 실시간 갱신 손절가
+    buy_cost: Decimal = Field(default=Decimal('0'), ge=0)  # 수수료 포함 실제 투입 총액
+    updated_at: datetime = Field(default_factory=datetime.now)
+
+# 3. Candidate Pool 도메인 DTO: 유망 종목 대기실
+
+
+class CandidateDTO(BaseModel):
+    """스캐너가 발굴한 유망 종목 정보
+    ticker: str               # 추천 종목명
+    score: Decimal            # 스캐너가 부여한 우선순위 점수
+    """
+    model_config = ConfigDict(frozen=True)
+
+    ticker: str  # 추천 종목명
+    score: Decimal  # 추천 점수
+    recommended_at: datetime = Field(default_factory=datetime.now)  # 추천 발생 시간
