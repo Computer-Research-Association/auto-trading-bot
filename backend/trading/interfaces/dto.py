@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 
@@ -62,3 +62,30 @@ class CandidateDTO(BaseModel):
     ticker: str  # 추천 종목명
     score: Decimal  # 추천 점수
     recommended_at: datetime = Field(default_factory=datetime.now)  # 추천 발생 시간
+
+# 4. Trade History 도메인 DTO: 거래 장부
+
+
+class TradeDTO(BaseModel):
+    """
+    slot_no: int  # 슬롯 번호
+    ticker: str  # 매매 종목
+    side: str  # 매매 신호
+    price: Decimal  # 체결 가격
+    quantity: Decimal  # 체결 수량
+    fee: Decimal # 거래 수수료
+    profit_pct: Decimal # 매도 시 확정 수익률
+    reason: Optional[str] # 매매 판단 근거
+    created_at: datetime = Field(default_factory=datetime.now)  # 거래 발생 시간
+    """
+    model_config = ConfigDict(frozen=True)
+
+    slot_no: int  # 슬롯 번호
+    ticker: str  # 매매 종목
+    side: str  # 매매 신호
+    price: Decimal = Field(..., gt=0)  # 체결 가격
+    quantity: Decimal = Field(..., gt=0)  # 체결 수량
+    fee: Decimal = Field(default=Decimal('0'), ge=0)  # 거래 수수료
+    profit_pct: Decimal = Decimal('0')  # 매도 시 확정 수익률
+    reason: Optional[str] = None  # 매매 판단 근거
+    created_at: datetime = Field(default_factory=datetime.now)  # 거래 발생 시간
