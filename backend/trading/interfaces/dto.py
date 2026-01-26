@@ -24,3 +24,22 @@ class SlotDTO(BaseModel):
     strategy_id: str  # 적용 전략 클래스 명칭
     paprams: Dict  # 전략용 변수
     budget: Decimal  # 슬롯에 할당한 예산
+
+
+class BotStateDTO(BaseModel):
+    """
+    워커의 실시간 매매 상태 및 복구용 데이터
+    lot_no: int              # 해당 슬롯 번호
+    is_holding: bool          # 현재 코인 보유 여부
+    avg_buy_price: Decimal    # 매수 평균 단가
+    total_quantity: Decimal   # 보유 중인 코인 수량
+    stop_loss_price: Decimal  # 실시간 갱신되는 손절가
+    buy_cost: Decimal         # 수수료 포함 실제 투입 총액
+    """
+    model_config = ConfigDict(frozen=True)
+    slot_no = int  # 해당 슬롯 번호
+    is_holding: bool  # 현재 코인 보유 여부
+    avg_buy_price: Decimal  # 매수 평균 단가
+    total_quantity: Decimal  # 보유 중인 코인 수량
+    stop_loss_price: Decimal  # 실시간 갱신되는 손절가
+    buy_cost: Decimal  # 수수료 포함 실제 투입 총액
