@@ -14,10 +14,8 @@ class BaseStrategy(ABC):
         self.strategy_id = kwargs.get("strategy_id", "BASE_STRATEGY")
         self.required_candles = kwargs.get("required_candles", 120)  # 판단에 필요한 최소 캔들 수
         self.data_interval = kwargs.get("data_interval", "minute15")  # 분석 분봉 단위
-        # 2. 하이퍼파라미터 저장소 (외부 주입값)
-        self.params = kwargs.get("params", {})
 
-        # 3. 지표 리스트 (자식 클래스에서 채움)
+        # 2. 지표 리스트 (자식 클래스에서 채움)
         self.indicator_list = kwargs.get("indicators", [])
 
 
