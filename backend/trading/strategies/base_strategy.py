@@ -20,19 +20,6 @@ class BaseStrategy(ABC):
         # 3. 지표 리스트 (자식 클래스에서 채움)
         self.indicator_list = kwargs.get("indicators", [])
 
-    def get_info(self) -> dict:
-        """
-        전략의 정보를 반환하여 웹 UI 및 엔진 관리에 사용한다.
-        """
-        info = {
-        "strategy_id": self.strategy_id,
-        "display_name": self.display_name,
-        "version": self.version,
-        "required_candles": self.required_candles,
-        "data_interval": self.data_interval,
-        "params": self.params  # 추가됨
-    }
-        return info
 
     def validate_data(self, df: pd.DataFrame) -> tuple[bool, str]:
         """
