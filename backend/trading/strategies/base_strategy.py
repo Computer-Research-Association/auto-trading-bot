@@ -12,12 +12,11 @@ class BaseStrategy(ABC):
     def __init__(self, **kwargs) -> None:
         # 1. 필수 식별 정보 (Strategy Indentity)
         self.strategy_id = kwargs.get("strategy_id", "BASE_STRATEGY")
-        self.required_candles = kwargs.get("required_candles", 120)  # 판단에 필요한 최소 캔들 수
-        self.data_interval = kwargs.get("data_interval", "minute15")  # 분석 분봉 단위
+        self.required_candles = kwargs.get("required_candles", 120)  # 최소 캔들 수
+        self.data_interval = kwargs.get("data_interval", "minute15")  # 분봉시간 단위
 
         # 2. 지표 리스트 (자식 클래스에서 채움)
         self.indicator_list = kwargs.get("indicators", [])
-
 
     def validate_data(self, df: pd.DataFrame) -> tuple[bool, str]:
         """
@@ -33,7 +32,7 @@ class BaseStrategy(ABC):
         # 캔들 개수 검증
         if len(df) < self.required_candles:
             return False, f"데이터 부족 (필요: {self.required_candles}, 현재: {len(df)})"
-        
+
         # 시간 순서 정렬 확인 (과거 -> 현재)
         if not df['datetime'].is_monotonic_increasing:
             return False, "데이터가 시간 순서로 정렬되지 않았습니다."
@@ -41,9 +40,9 @@ class BaseStrategy(ABC):
         # 결측치 확인 (최근 데이터 기준 중요)
         if df[required_cols].iloc[-1].isnull().any():
             return False, "최근 데이터에 결측치가 포함되어 있습니다."
-        
+
         return True, "Success"
-    
+
     def setup_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         부모 클래스에서 정의된 indicator_list를 기반으로 지표를 일괄 추가한다.
