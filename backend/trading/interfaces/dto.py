@@ -89,3 +89,19 @@ class TradeDTO(BaseModel):
     profit_pct: Decimal = Decimal('0')  # 매도 시 확정 수익률
     reason: Optional[str] = None  # 매매 판단 근거
     created_at: datetime = Field(default_factory=datetime.now)  # 거래 발생 시간
+
+
+class LogDTO(BaseModel):
+    """
+    봇의 상세 동작 및 시스템 상태 기록 데이터
+    slot_no: Optional[int]    # 관련 슬롯 번호 (시스템 로그 시 None)
+    level: str                # 로그 심각도 (INFO, WARNING, ERROR, CRITICAL)
+    message: str              # 실제 로그 내용
+    created_at: datetime      # 로그 생성 시각
+    """
+    model_config = ConfigDict(frozen=True)
+
+    slot_no: Optional[int] = None  # 관련 슬롯 번호, 시스템 로그일 경우 Null(None)
+    level: str  # 로그 심각도 등급
+    message: str  # 실제 발생한 동작 내용이나 상세 메세지
+    created_at: datetime = Field(default_factory=datetime.now)  # 로그가 기록된 시점
