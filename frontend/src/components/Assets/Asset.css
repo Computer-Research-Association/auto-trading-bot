@@ -102,3 +102,94 @@
   justify-content: flex-start; /* 왼쪽 */
   align-items: flex-start;     /* 위쪽 */
 }
+
+.assets-top-row{
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+}
+
+.assets-table-wrap{
+  padding: 0 24px 24px 24px;
+}
+
+.asset-empty{
+  background: #ffffff;
+  border: 1px solid #eef0f6;
+  border-radius: 12px;
+  padding: 44px 18px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.donut-card{
+  flex: 1;
+  min-width: 360px;
+  background: #ffffff;
+  border: 1px solid #eef0f6;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.donut-wrap{
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.donut{
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.donut::after{
+  content:"";
+  position:absolute;
+  inset: 36px;
+  background:#fff;
+  border-radius: 50%;
+  border: 1px solid #eef0f6;
+}
+
+.donut-legend{
+  flex: 1;
+  min-width: 200px;
+}
+
+.legend-row{
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed #eef0f6;
+}
+
+.legend-dot{
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-name{
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.legend-pct{
+  font-size: 13px;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-val{
+  font-size: 13px;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

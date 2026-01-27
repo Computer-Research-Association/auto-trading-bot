@@ -7,26 +7,33 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 
-# 1) .env 로드
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# 2) app 생성
 app = FastAPI(title="Auto Trading Bot API")
 
-# 3) CORS
+@app.middleware("http")
+async def log_requests(request, call_next):
+    print(f"DEBUG_REQ: {request.method} {request.url}")
+    response = await call_next(request)
+    print(f"DEBUG_RES: {response.status_code}")
+    return response
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 4) 라우터 등록 (반드시 app 만든 다음!)
-app.include_router(api_router)
+app.include_router(api_router) 
 
-# 5) 루트 확인용
 @app.get("/")
 def root():
-    return {"message": "Server is up and running"}
+    return {"message": "THIS IS REAL MAIN.PY 12345"}

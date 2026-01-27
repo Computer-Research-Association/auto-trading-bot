@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import StrategyPanel from "../components/Strategy/StrategyPanel";
 import OpenOrders from "../components/OpenOrders/OpenOrders";
 import Assets from "../components/Assets/Assets.tsx";
-import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
+import ProfitLoss from "../components/ProfitLoss/ProfitLoss.tsx";
 import History from "../components/History/History";
 import Auto_strategy from "../components/Auto_strategy/Auto_strategy";
 
