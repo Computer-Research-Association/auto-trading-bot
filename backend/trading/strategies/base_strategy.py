@@ -12,7 +12,6 @@ class BaseStrategy(ABC):
     def __init__(self, **kwargs) -> None:
         # 1. 필수 식별 정보 (Strategy Indentity)
         self.strategy_id = kwargs.get("strategy_id", "BASE_STRATEGY")
-        self.display_name = kwargs.get("display_name", "Base Strategy")
         self.version = kwargs.get("version", "1.0.0")
         self.required_candles = kwargs.get("required_candles", 120)  # 판단에 필요한 최소 캔들 수
         self.data_interval = kwargs.get("data_interval", "minute15")  # 분석 분봉 단위
