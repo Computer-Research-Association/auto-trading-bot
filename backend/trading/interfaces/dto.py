@@ -2,6 +2,14 @@ from decimal import Decimal
 from typing import Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+from enum import Enum
+
+
+class LogLevel(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 # 모든 DTO는 데이터를 보호하기 위해 frozen(불변) 상태로 설정합니다.
 # 또한 Decimal 타입을 지원하여 금융 데이터의 정밀도를 유지합니다.
@@ -102,6 +110,6 @@ class LogDTO(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     slot_no: Optional[int] = None  # 관련 슬롯 번호, 시스템 로그일 경우 Null(None)
-    level: str  # 로그 심각도 등급
+    level: LogLevel  # 로그 심각도 등급
     message: str  # 실제 발생한 동작 내용이나 상세 메세지
     created_at: datetime = Field(default_factory=datetime.now)  # 로그가 기록된 시점
