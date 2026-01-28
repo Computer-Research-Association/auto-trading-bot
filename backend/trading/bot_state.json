@@ -1,5 +1,5 @@
 {
-    "is_active": true,
+    "is_active": false,
     "is_holding": true,
     "avg_buy_price": 128900000.0,
     "stop_loss": 128835550.0,
