@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime
 from trading.load_data import DataLoader
-from trading.strategies.test_strategy import MacdBbRsiStrategy
+from trading.strategies.rsi_bb_strategy import RSIBBStrategy
 
 # 로깅 설정
 logging.basicConfig(
@@ -13,95 +13,129 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class TradingBot:
     def __init__(self, ticker="KRW-BTC"):
         self.loader = DataLoader(ticker=ticker)
-        self.strategy = MacdBbRsiStrategy(required_candles=150)
+        self.strategy = RSIBBStrategy()
         self.state_file = "bot_state.json"
 
-        # 봇 상태 (시작 시 파일에서 로드)
+        # 봇 상태 로드
         self.state = self.load_state()
-        self.dry_run = True  # 실제 주문 방지 플래그
+        self.dry_run = True  # 실거래 방지
 
     def load_state(self):
         try:
             with open(self.state_file, 'r') as f:
-                return json.load(f)
+                state = json.load(f)
+                # [Guard] 필수 필드 누락 방지
+                if "is_active" not in state: state["is_active"] = True
+                return state
         except:
-            return {"is_holding": False, "avg_buy_price": 0, "stop_loss": 0, "balance": 1000000}
+            # 초기 상태값
+            return {
+                "is_active": True, 
+                "is_holding": False, 
+                "avg_buy_price": 0, 
+                "stop_loss": 0, 
+                "balance": 1000000
+            }
 
     def save_state(self):
         with open(self.state_file, 'w') as f:
             json.dump(self.state, f, indent=4)
 
     def run(self):
-        logger.info(f"🚀 {self.loader.ticker} 매매 엔진 가동 시작 (Dry-run: {self.dry_run})")
+        logger.info(f"🚀 {self.loader.ticker} 엔진 가동 (Dry-run: {self.dry_run})")
 
         while True:
             try:
+                # [Guard] 1. 활성화 상태 체크 (최상단)
+                # False일 경우 아래의 모든 로직(API 호출 포함)을 건너뜁니다.
+                if not self.state.get("is_active", False):
+                    # 활성화를 기다리며 긴 주기로 체크
+                    time.sleep(10) 
+                    continue
+
                 now = datetime.now()
 
-                # [1] 1초 주기 감시 루프: 스탑로스 체크
+                # [2] 스탑로스 감시 (매초 실행)
                 if self.state["is_holding"] and self.state["stop_loss"] > 0:
                     current_price = self.loader.get_current_price()
                     if current_price <= self.state["stop_loss"]:
                         self.execute_emergency_sell(current_price, "Stop-loss 도달")
 
-                # [2] 매매 루프 테스트: 10초마다 실행 (나중에 now.minute % 15 == 0으로 변경)
+                # [3] 전략 매매 루프 (10초 주기)
                 if now.second % 10 == 0:
                     self.perform_strategy_check()
-                    time.sleep(1) # 중복 실행 방지
+                    time.sleep(1)
 
-                time.sleep(1)  # 1초 휴식
+                time.sleep(1)
 
             except Exception as e:
                 logger.error(f"❌ 메인 루프 에러: {e}", exc_info=True)
                 time.sleep(5)
 
     def perform_strategy_check(self):
-        """15분 봉 마감 후 전략 판단 및 실행"""
-        logger.info("⏳ 데이터 수집 및 전략 판단 시작")
-        df = self.loader.fetch_ohlcv(count=200)
+        """데이터 수집 및 전략 판단 파이프라인"""
+        # [Data] 전략 기반 동적 캔들 수집
+        count = getattr(self.strategy, "required_candles", 200)
+        df = self.loader.fetch_ohlcv(count=count)
 
-        if df is None:
+        if df is None: return
+
+        # [Safety] 데이터 검증 강제화
+        is_valid, msg = self.strategy.validate_data(df)
+        if not is_valid:
+            logger.warning(f"⚠️ 데이터 검증 실패: {msg}")
             return
 
-        # 1. 지표 계산 (rsi, bb 등이 추가된 데이터프레임 생성)
+        # 지표 계산 및 판단
         df_with_indicators = self.strategy.setup_indicators(df)
-
-        # 2. [수정됨] 지표가 포함된 데이터를 사용하여 판단 호출
         result = self.strategy.decide(df_with_indicators, self.state, {})
 
         decision = result["decision"]
         reason = result["reason"]
+        trade_params = result.get("trade_params", {})
 
-        logger.info(f"📊 판단 결과: {decision} (사유: {reason})")
+        logger.info(f"📊 판단: {decision} | 사유: {reason}")
 
+        # [Output] Rich Output 처리 파이프라인
+        current_close = df_with_indicators['close'].iloc[-1]
+        
         if decision == "BUY" and not self.state["is_holding"]:
-            # 매수 시점의 종가 사용
-            self.execute_buy(df_with_indicators['close'].iloc[-1], result['metadata'])
+            self.execute_buy(current_close, reason, trade_params)
         elif decision == "SELL" and self.state["is_holding"]:
-            # 매도 시점의 종가 사용
-            self.execute_sell(df_with_indicators['close'].iloc[-1], reason)
+            self.execute_sell(current_close, reason, trade_params)
 
-    def execute_buy(self, price, metadata):
+    def execute_buy(self, price, reason, trade_params):
+        """매수 실행 및 상태 업데이트"""
         self.state["is_holding"] = True
         self.state["avg_buy_price"] = price
-        self.state["stop_loss"] = metadata.get("stop_loss", price * 0.95)
-        self.save_state()
-        logger.info(f"✨ [매수 체결] 가격: {price:,.0f} | 스탑로스: {self.state['stop_loss']:,.0f}")
 
-    def execute_sell(self, price, reason):
+        # [Output] 스탑로스 오버라이드 로직
+        # 전략이 준 값이 있으면 사용, 없으면 기본 5% 적용
+        self.state["stop_loss"] = trade_params.get("stop_loss", price * 0.95)
+
+        self.save_state()
+        logger.info(f"✨ [매수 체결] 가격: {price:,.0f} | 사유: {reason}")
+        logger.info(f"🛡️ 스탑로스 설정: {self.state['stop_loss']:,.0f}")
+
+    def execute_sell(self, price, reason, trade_params):
+        """매도 실행 및 수익률 계산"""
         profit_pct = (price - self.state["avg_buy_price"]) / self.state["avg_buy_price"] * 100
+
         self.state["is_holding"] = False
         self.state["avg_buy_price"] = 0
         self.state["stop_loss"] = 0
+
         self.save_state()
         logger.info(f"💰 [매도 체결] 가격: {price:,.0f} | 수익률: {profit_pct:.2f}% | 사유: {reason}")
 
     def execute_emergency_sell(self, price, reason):
-        logger.warning(f"🚨 긴급 매도 발동!! {reason}")
-        self.execute_sell(price, reason)
+        """긴급 매도 로직"""
+        logger.warning(f"🚨 긴급 상황 발생: {reason}")
+        self.execute_sell(price, reason, {})
 
 if __name__ == "__main__":
     bot = TradingBot()
