@@ -124,19 +124,22 @@ class TradingBot:
         self.state["last_reason"] = log_msg
 
         self.save_state()
-        logger.info(f"✨ [매수 체결] 가격: {price:,.0f} | 사유: {reason}")
+        logger.info(f"✨{log_msg} | 가격: {price:,.0f}")
         logger.info(f"🛡️ 스탑로스 설정: {self.state['stop_loss']:,.0f}")
 
     def execute_sell(self, price, reason, trade_params):
         """매도 실행 및 수익률 계산"""
         profit_pct = (price - self.state["avg_buy_price"]) / self.state["avg_buy_price"] * 100
 
+        # 매도 근거와 수익률 하나로 묶음
+        log_msg = f"[매도] {reason} | 수익률: {profit_pct:.2f}%"
+        self.state["last_reason"] = log_msg
         self.state["is_holding"] = False
         self.state["avg_buy_price"] = 0
         self.state["stop_loss"] = 0
 
         self.save_state()
-        logger.info(f"💰 [매도 체결] 가격: {price:,.0f} | 수익률: {profit_pct:.2f}% | 사유: {reason}")
+        logger.info(f"💰 {log_msg} | 가격: {price:,.0f}")
 
     def execute_emergency_sell(self, price, reason):
         """긴급 매도 로직"""
