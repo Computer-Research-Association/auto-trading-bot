@@ -70,8 +70,15 @@ class DataLoader:
         time.sleep(0.1)
         try:
             price = pyupbit.get_current_price(self.ticker)
-            return float(price) if price else 0.0
+
+            # 가격 가져올 때 에러 발생 시 로그 남기기
+            if price is None:
+                logger.warning(f"⚠️ [{self.ticker}] 현재가 조회 실패 (None 반환)")
+                return None
+
+            return float(price)
+
         except Exception as e:
             logger.error(f"[{self.ticker}] 현재가 조회 실패 {e}")
-            return 0.0
+            return None
 
