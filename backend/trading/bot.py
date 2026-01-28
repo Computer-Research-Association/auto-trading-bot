@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime
 from trading.load_data import DataLoader
-from trading.strategies.test_strategy import MacdBbRsiStrategy
+from trading.strategies.rsi_bb_strategy import RSIBBStrategy
 
 # 로깅 설정
 logging.basicConfig(
@@ -13,10 +13,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 class TradingBot:
     def __init__(self, ticker="KRW-BTC"):
         self.loader = DataLoader(ticker=ticker)
-        self.strategy = MacdBbRsiStrategy(required_candles=150)
+        self.strategy = RSIBBStrategy()
         self.state_file = "bot_state.json"
 
         # 봇 상태 (시작 시 파일에서 로드)
@@ -66,6 +67,12 @@ class TradingBot:
         if df is None:
             return
 
+        # 데이터 검증 실행
+        is_valid, validation_msg = self.strategy.validate_data(df)
+        if not is_valid:
+            logger.warning(f"데이터 검증 실패: {validation_msg}")
+            return
+
         # 1. 지표 계산 (rsi, bb 등이 추가된 데이터프레임 생성)
         df_with_indicators = self.strategy.setup_indicators(df)
 
@@ -79,15 +86,15 @@ class TradingBot:
 
         if decision == "BUY" and not self.state["is_holding"]:
             # 매수 시점의 종가 사용
-            self.execute_buy(df_with_indicators['close'].iloc[-1], result['metadata'])
+            self.execute_buy(df_with_indicators['close'].iloc[-1], trade_params)
         elif decision == "SELL" and self.state["is_holding"]:
             # 매도 시점의 종가 사용
             self.execute_sell(df_with_indicators['close'].iloc[-1], reason)
 
-    def execute_buy(self, price, metadata):
+    def execute_buy(self, price, trade_params):
         self.state["is_holding"] = True
         self.state["avg_buy_price"] = price
-        self.state["stop_loss"] = metadata.get("stop_loss", price * 0.95)
+        self.state["stop_loss"] = trade_params.get("stop_loss", price * 0.95)
         self.save_state()
         logger.info(f"✨ [매수 체결] 가격: {price:,.0f} | 스탑로스: {self.state['stop_loss']:,.0f}")
 
@@ -102,6 +109,7 @@ class TradingBot:
     def execute_emergency_sell(self, price, reason):
         logger.warning(f"🚨 긴급 매도 발동!! {reason}")
         self.execute_sell(price, reason)
+
 
 if __name__ == "__main__":
     bot = TradingBot()

@@ -52,7 +52,7 @@ class RSIBBStrategy(BaseStrategy):
         decision = "HOLD"
         percentage = 0.0
         # 기본 reason에 현재 지표 상태 요약 포함
-        reason = f"관망: 조건 미충족 (RSI {rsi: .2f}, 가격: {current_price:,.0f})"
+        reason = f"관망: 조건 미충족 (RSI {rsi:.2f}, 가격: {current_price:,.0f})"
         trade_params = {}
 
         # 매수 로직 (미보유 시)
