@@ -2,8 +2,8 @@ import time
 import json
 import logging
 from datetime import datetime
-from trading.load_data import DataLoader
-from trading.strategies.rsi_bb_strategy import RSIBBStrategy
+from load_data import DataLoader
+from strategies.rsi_bb_strategy import RSIBBStrategy
 
 # 로깅 설정
 logging.basicConfig(
