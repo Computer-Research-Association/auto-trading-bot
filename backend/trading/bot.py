@@ -26,19 +26,21 @@ class TradingBot:
 
     def load_state(self):
         try:
-            with open(self.state_file, 'r') as f:
+            with open(self.state_file, 'r', encoding='utf-8') as f:
                 state = json.load(f)
-                # [Guard] 필수 필드 누락 방지
-                if "is_active" not in state: state["is_active"] = True
+                # 파일은 있는데 필드가 없는 경우를 대비한 자동 업데이트
+                if "is_active" not in state: state["is_active"] = False
+                if "last_reason" not in state: state["last_reason"] = ""
                 return state
-        except:
+        except Exception:
             # 초기 상태값
             return {
-                "is_active": True, 
+                "is_active": False, 
                 "is_holding": False, 
                 "avg_buy_price": 0, 
                 "stop_loss": 0, 
-                "balance": 1000000
+                "balance": 1000000,
+                "last_reason": "봇이 초기화 됨"  # 매매 근거 기록용
             }
 
     def save_state(self):
@@ -116,6 +118,10 @@ class TradingBot:
         # [Output] 스탑로스 오버라이드 로직
         # 전략이 준 값이 있으면 사용, 없으면 기본 5% 적용
         self.state["stop_loss"] = trade_params.get("stop_loss", price * 0.95)
+
+        # 사유 기록: 로그 찍고, bot_state.json 파일 저장
+        log_msg = f"[매수] {reason}"
+        self.state["last_reason"] = log_msg
 
         self.save_state()
         logger.info(f"✨ [매수 체결] 가격: {price:,.0f} | 사유: {reason}")
