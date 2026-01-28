@@ -44,8 +44,8 @@ class TradingBot:
             }
 
     def save_state(self):
-        with open(self.state_file, 'w') as f:
-            json.dump(self.state, f, indent=4)
+        with open(self.state_file, 'w', encoding='utf-8') as f:
+            json.dump(self.state, f, indent=4, ensure_ascii=False)
 
     def run(self):
         logger.info(f"🚀 {self.loader.ticker} 엔진 가동 (Dry-run: {self.dry_run})")
@@ -143,8 +143,10 @@ class TradingBot:
 
     def execute_emergency_sell(self, price, reason):
         """긴급 매도 로직"""
-        logger.warning(f"🚨 긴급 상황 발생: {reason}")
-        self.execute_sell(price, reason, {})
+        emergency_reason = f"긴급 매도: {reason}"
+        logger.warning(emergency_reason)
+        self.execute_sell(price, f"[긴급]{reason}", {})
+
 
 if __name__ == "__main__":
     bot = TradingBot()
