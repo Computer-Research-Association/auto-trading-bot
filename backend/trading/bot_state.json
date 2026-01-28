@@ -1,0 +1,7 @@
+{
+    "is_active": true,
+    "is_holding": false,
+    "avg_buy_price": 0,
+    "stop_loss": 0,
+    "balance": 1000000
+}
