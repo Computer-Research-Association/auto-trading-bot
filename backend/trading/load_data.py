@@ -51,6 +51,9 @@ class DataLoader:
                 df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)  # float 강제 변환
                 df.index.name = 'datetime'
 
+                # 인덱스를 일반 컬럼으로 전환
+                df = df.reset_index()
+
                 return df
 
             except Exception as e:
