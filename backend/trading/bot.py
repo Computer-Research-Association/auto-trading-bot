@@ -64,8 +64,11 @@ class TradingBot:
                 # [2] 스탑로스 감시 (매초 실행)
                 if self.state["is_holding"] and self.state["stop_loss"] > 0:
                     current_price = self.loader.get_current_price()
-                    if current_price <= self.state["stop_loss"]:
-                        self.execute_emergency_sell(current_price, "Stop-loss 도달")
+                    if current_price is not None:
+                        if current_price <= self.state["stop_loss"]:
+                            self.execute_emergency_sell(current_price, "Stop-loss 도달")
+                    else:
+                        logger.warning("⏳ 현재가를 불러올 수 없어 스탑로스 감시를 1회 건너뜁니다.")
 
                 # [3] 전략 매매 루프 (10초 주기)
                 if now.second % 10 == 0:
