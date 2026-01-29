@@ -58,13 +58,13 @@ class DataLoader:
                         message=f"{self.log_prefix} 데이터 부족: {current_len}개 (최소 {count*0.9}개 필요)"
                     )
                     return None
-                # 여기까지 수정함.
-                # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
-                elif len(df) < count:
-                    logger.warning(f"[{self.ticker}] 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
 
-                # 표준 및 반환
-                df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)  # float 강제 변환
+                # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
+                elif current_len < count:
+                    logger.warning(f"[{self.log_prefix}] 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
+
+                # 데이터 타입 변환 및 정합성 보장
+                df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
                 df.index.name = 'datetime'
 
                 # 인덱스를 일반 컬럼으로 전환
@@ -72,9 +72,14 @@ class DataLoader:
 
                 return df
 
-            except Exception as e:
-                logger.error(f"[{self.ticker}] API 호출 중 에러: {e}")
-                time.sleep(2)
+            except asyncio.TimeoutError:  # 타임아웃 전용 예외 처리
+                await save_log_to_db(
+                    level="WARING",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} API 호출 타임아웃 발생 (5초 초과)"
+                )
+                await asyncio.sleep(2)
 
         return None
 
