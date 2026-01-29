@@ -32,5 +32,6 @@ async def performance_summary(
     request_data: schemas.PerformanceChartRequest = Depends(),
     db: AsyncSession = Depends(get_database),
 ):
-    q = schemas.PerformanceQuery.model_validate(request_data)
-    return await perf_service.get_all_performance(q)
+    print("🔥 ChartRequest required:",
+          {k: v.is_required() for k, v in schemas.PerformanceChartRequest.model_fields.items()})
+    print("🔥 request_data:", request_data)

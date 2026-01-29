@@ -16,6 +16,7 @@ class PerformanceQuery(BaseModel):
     return_type: ReturnType = "simple"
 
 class PerformanceSummary(BaseModel):
+    period_label: str
     start_assets_krw: float = 0
     end_assets_krw: float = 0
     pnl_krw: float = 0
@@ -23,7 +24,7 @@ class PerformanceSummary(BaseModel):
 
 # (차트 한 점 / 일별 한 점 모두 커버 가능하게 구성)
 class PerformancePoint(BaseModel):
-    base_date: date
+    date: date
     assets_krw: float
     pnl_krw: float = 0
     pnl_rate: float = 0
@@ -32,7 +33,7 @@ class PerformanceChartResponse(BaseModel):
     points: List[PerformancePoint] = Field(default_factory=list)
 
 class PerformanceDailyRow(BaseModel):
-    base_date: date
+    date: date
     assets_krw: float
     pnl_krw: float = 0
     pnl_rate: float = 0
@@ -53,5 +54,6 @@ class PerformanceChartRequest(BaseModel):
     period: str = "30d"
     granularity: Granularity = "daily"
     return_type: ReturnType = "simple"
+
 
 
