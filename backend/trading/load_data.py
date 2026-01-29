@@ -92,23 +92,39 @@ class DataLoader:
 
         return None
 
-    def get_current_price(self) -> float:
+    def get_current_price(self) -> Optional[float]:  # async def 전환
         """
         현재가 조회 (매우 빈번하게 후출될 것을 대비해 0.05초 대기)
         api 허용 횟수 초과 시 id 밴 당할 위험 있음
         """
-        time.sleep(0.1)
+        await asyncio.sleep(0.05)
         try:
-            price = pyupbit.get_current_price(self.ticker)
+            # asyncio.to_thread 및 타임아웃 적용
+            price = await asyncio.wait_for(
+                asyncio.to_thread(pyupbit.get_current_price, self.ticker),
+                timeout=5.0
+            )
 
-            # 가격 가져올 때 에러 발생 시 로그 남기기
             if price is None:
-                logger.warning(f"⚠️ [{self.ticker}] 현재가 조회 실패 (None 반환)")
+                # 조회 실패 로그 기록
+                await save_log_to_db(
+                    level="WARING",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} 현재가 조회 실패 (None 반환)"
+                )
+
                 return None
 
             return float(price)
 
         except Exception as e:
-            logger.error(f"[{self.ticker}] 현재가 조회 실패 {e}")
+            # 예외 발생 로그 기록
+            await save_log_to_db(
+                level="ERROR",
+                category="DATA",
+                event_name="FETCH_FAIL",
+                message=f"{self.log_prefix} 현재가 조회 중 에러: {str(e)}"
+            )
             return None
 
