@@ -1,32 +1,19 @@
-import os
-from pathlib import Path
+from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
+import core.cors as cors_config
 from app.api.router import api_router
+from core.logger import logger, setup_logging
 
-# 1) .env 로드
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
 
-# 2) app 생성
-app = FastAPI(title="Auto Trading Bot API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    setup_logging()
+    logger.info("lifespan started")
+    yield
+    logger.info("lifespan stopped")
+app = FastAPI(lifespan=lifespan)
 
-# 3) CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 4) 라우터 등록 (반드시 app 만든 다음!)
+cors_config.setup_cors(app)
 app.include_router(api_router)
-
-# 5) 루트 확인용
-@app.get("/")
-def root():
-    return {"message": "Server is up and running"}

@@ -38,6 +38,7 @@
 .ask-row {
   background-color: var(--upbit-blue-bg);
 }
+
 .price-down {
   color: var(--upbit-blue);
   font-weight: bold;
@@ -47,6 +48,7 @@
 .bid-row {
   background-color: var(--upbit-red-bg);
 }
+
 .price-up {
   color: var(--upbit-red);
   font-weight: bold;

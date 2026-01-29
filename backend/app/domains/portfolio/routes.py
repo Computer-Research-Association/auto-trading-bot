@@ -1,15 +1,22 @@
 from __future__ import annotations
-from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException
-from sqlalchemy.util import await_only
 
+from datetime import date
+
+from fastapi import APIRouter, Depends
+from sqlmodel import Session
+
+from core.deps import get_database
 from app.domains.portfolio.schemas import PortfolioAssetsResponse
-import app.domains.portfolio.service as service
+from app.domains.portfolio.service import get_assets as get_assets_service
+from app.domains.portfolio.service import take_portfolio_snapshot
 
-router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
-@router.get("/assets") #response_model=PortfolioAssetsResponse)
-async def get_assets() -> PortfolioAssetsResponse:
-    try:
-        return await service.get_assets()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+router = APIRouter()
+
+@router.get("/assets", response_model=PortfolioAssetsResponse)
+def get_assets_route():
+    return get_assets_service()
+
+
+@router.post("/snapshot")
+def create_snapshot(db = Depends(get_database)):
+    return take_portfolio_snapshot(db, base_date=date.today())

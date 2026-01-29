@@ -18,6 +18,5 @@ postgres_data/
 .DS_Store
 Thumbs.db
 
-# test
-
-trading.log
+alembic.ini
+alembic/versions/env.py
