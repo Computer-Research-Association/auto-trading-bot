@@ -19,6 +19,7 @@ try:
 except ImportError:
     class LogCategory: SYSTEM = "SYSTEM"; DATA = "DATA"; STRATEGY = "STRATEGY"; TRADE = "TRADE"
     class LogLevel: INFO = "INFO"; WARNING = "WARNING"; ERROR = "ERROR"
+    class LogEvent: ERROR = "ERROR"; FETCH_FAIL = "FETCH_FAIL"; DECISION = "DECISION"
     log_event = None
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 async def save_log_to_db(level: str, category: str, event_name: str, message: str):
     """
-    트레이빙 봇의 로그를 비동기 방식으로 db에 저장
+    트레이딩 봇의 로그를 비동기 방식으로 db에 저장
     유효성 검사 및 네트워크 순단에 대비한 재시도 로직 포함
     """
 
@@ -34,10 +35,12 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
     try:
         e_level = LogLevel[level.upper()]
         e_category = LogCategory[category.upper()]
+        e_event = LogEvent[event_name.upper()]
     except (KeyError, AttributeError):
         # 매칭되는 enum이 없을 경우 기본값으로 매핑
         e_level = LogLevel.INFO
         e_category = LogCategory.SYSTEM
+        e_event = event_name.upper()
 
     # 메세지 길이 제한
     safe_message = message[:1000]  # 최대 1000자
@@ -56,7 +59,7 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                     db=session,
                     level=e_level,
                     category=e_category,
-                    event_name=event_name,
+                    event=e_event,
                     message=safe_message,
                     commit=True
                 )
@@ -72,6 +75,6 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                 # 모든 재시도 실패 시 최종 에러 및 백업 로그 출력
                 error_msg = f"[DB_LOG_FATAL] 모든 재시도 실패: {e}"
                 print(error_msg)
-                logger.error(error_msg)
                 # 유실 방지를 위해 콘솔에 최종 백업 내용을 출력
-                print(f"📌 [FINAL_BACKUP] {safe_level} | {safe_category} | {safe_event_name} | {safe_message}")
+                display_event = e_event.value if hasattr(e_event, 'value') else e_event
+                print(f"📌 [FINAL_BACKUP] {level} | {category} | {display_event} | {safe_message}")
