@@ -81,6 +81,15 @@ class DataLoader:
                 )
                 await asyncio.sleep(2)
 
+            except Exception as e:  # 기타 런타임 에러 발생 시 기록
+                await save_log_to_db(
+                    level="ERROR",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} API 호출 중 예외: {str(e)}"
+                )
+                await asyncio.sleep(2)
+
         return None
 
     def get_current_price(self) -> float:
