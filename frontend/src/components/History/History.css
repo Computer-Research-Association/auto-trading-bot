@@ -1,11 +1,12 @@
-/* History.css */
+/* src/components/History/History.css */
 
 .history-panel {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
     padding: 24px;
-    background: #fdfdf8;
-    /* 아주 연한 노란 배경 */
-    min-height: 100vh;
-    font-family: 'Pretendard', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-light);
 }
 
 .history-header {
@@ -13,184 +14,238 @@
 }
 
 .history-title {
-    font-size: 24px;
-    font-weight: 800;
-    color: #423e20;
-    /* 진한 갈색/노란 톤 */
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
     margin: 0;
 }
 
-/* 필터 영역 */
 .history-filters {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 16px;
     margin-bottom: 20px;
-    background: #ffffff;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #efeec0;
-    /* 연한 노란 테두리 */
-    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-main);
+    border-radius: 10px;
 }
 
 .filter-group {
     display: flex;
     gap: 8px;
-    align-items: center;
 }
 
 .filter-btn {
+    background: white;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
     padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid #e0dfb0;
-    background: #fff;
-    color: #7a7650;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .filter-btn:hover {
-    background: #fffbef;
-    border-color: #dcdca0;
+    border-color: #d4af37;
+    color: #d4af37;
 }
 
 .filter-btn.active {
-    background: #f7d54e;
-    /* 강조된 노란색 */
-    color: #3b2d00;
-    border-color: #f7d54e;
+    background: #f7e28b;
+    border-color: #d4af37;
+    color: #3e3002;
     font-weight: 700;
 }
 
+.strategy-filter-trigger {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px dashed var(--border-light);
+}
+
+.strategy-filter-trigger.active {
+    border-style: solid;
+}
+
+/* Strategy Modal (Dropdown) */
+.strategy-modal {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.813rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.strategy-options {
+    padding: 8px;
+}
+
+.strategy-opt {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.strategy-opt:hover {
+    background: #f1f5f9;
+}
+
+.strategy-opt.active {
+    background: #fdf5d5;
+    color: #d4af37;
+    font-weight: 600;
+}
+
+/* Search Box */
 .search-box {
     margin-left: auto;
     position: relative;
-    width: 240px;
-}
-
-.search-input {
-    width: 100%;
-    padding: 10px 12px 10px 36px;
-    border: 1px solid #e0dfb0;
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    background: #fffff8;
-}
-
-.search-input:focus {
-    border-color: #f7d54e;
-    background: #fff;
+    display: flex;
+    align-items: center;
 }
 
 .search-icon {
     position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaaaaa;
+    left: 12px;
+    color: var(--text-muted);
 }
 
-/* 테이블 영역 */
+.search-input {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 8px 12px 8px 36px;
+    font-size: 0.875rem;
+    width: 220px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* Table */
 .history-table-wrap {
-    background: #ffffff;
-    border: 1px solid #efeec0;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(230, 200, 50, 0.05);
-    /* 노란 계열 그림자 */
+    overflow-x: auto;
 }
 
 .history-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
 }
 
 .history-table th {
-    background: #fff9e0;
-    /* 헤더 배경 (연한 노랑) */
-    color: #5c5528;
-    font-weight: 700;
-    padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid #e8e6c4;
+    padding: 12px 16px;
+    background: #fcfcfc;
+    border-bottom: 2px solid #f1f5f9;
+    font-size: 0.813rem;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 .history-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #f6f5e6;
-    color: #333333;
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 0.875rem;
+    color: var(--text-primary);
 }
 
-.history-table tr:last-child td {
-    border-bottom: none;
-}
-
-.history-table tr:hover td {
-    background: #fffdxf5;
-}
-
-/* 컬럼 스타일 */
 .col-date {
-    color: #888;
-    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
 }
 
 .col-coin {
-    font-weight: 600;
-    color: #333;
-}
-
-.col-type {
     font-weight: 700;
+    color: #334155;
 }
 
 .col-right {
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
-/* 거래 종류 뱃지 */
+/* Badges */
 .badge {
-    display: inline-block;
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
 }
 
 .badge.buy {
-    color: #d32f2f;
-    background: #ffebee;
+    background: #fee2e2;
+    color: #ef4444;
 }
 
-/* 매수: 빨강 */
 .badge.sell {
-    color: #1976d2;
-    background: #e3f2fd;
+    background: #dbeafe;
+    color: #1261c4;
 }
 
-/* 매도: 파랑 */
 .badge.deposit {
-    color: #2e7d32;
-    background: #e8f5e9;
+    background: #dcfce7;
+    color: #16a34a;
 }
 
-/* 입금: 초록 */
 .badge.withdraw {
-    color: #ed6c02;
-    background: #fff3e0;
+    background: #fef3c7;
+    color: #d97706;
 }
 
-/* 출금: 주황 */
-
-/* 반응형 */
-@media (max-width: 768px) {
-    .search-box {
-        width: 100%;
-        margin-left: 0;
-        margin-top: 10px;
-    }
+/* Strategy Tag in Table */
+.strategy-tag {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
 }

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from typing import List, Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +20,6 @@ class PerformanceSummary(BaseModel):
     end_assets_krw: float = 0
     pnl_krw: float = 0
     pnl_rate: float = 0
-
 
 # (차트 한 점 / 일별 한 점 모두 커버 가능하게 구성)
 class PerformancePoint(BaseModel):
@@ -45,3 +45,13 @@ class PerformanceResponse(BaseModel):
     summary: PerformanceSummary
     chart: List[PerformancePoint] = Field(default_factory=list)
     daily: List[PerformanceDailyRow] = Field(default_factory=list)
+
+
+class PerformanceChartRequest(BaseModel):
+    start_date: date
+    end_date: date
+    period: str = "30d"
+    granularity: Granularity = "daily"
+    return_type: ReturnType = "simple"
+
+

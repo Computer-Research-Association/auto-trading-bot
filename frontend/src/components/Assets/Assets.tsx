@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
+import Loading from "../Common/Loading";
 
 /* =======================
    Types
@@ -87,12 +88,21 @@ function buildRatio(
 /* =======================
    Donut Chart
 ======================= */
+const ASSET_COLORS = [
+  "#f7d54e", // Yellow
+  "#ef4444", // Red
+  "#d4af37", // Gold
+  "#ed6c02", // Orange
+  "#64748b", // Grey
+];
+
 function DonutChart({ ratio }: { ratio: RatioItem[] }) {
   let acc = 0;
   const stops = ratio.map((r, idx) => {
     const start = acc;
     acc += r.pct;
-    return `hsl(${(idx * 55) % 360} 70% 55%) ${start}% ${acc}%`;
+    const color = ASSET_COLORS[idx % ASSET_COLORS.length];
+    return `${color} ${start}% ${acc}%`;
   });
 
   return (
@@ -109,7 +119,7 @@ function DonutChart({ ratio }: { ratio: RatioItem[] }) {
               <span
                 className="legend-dot"
                 style={{
-                  background: `hsl(${(idx * 55) % 360} 70% 55%)`,
+                  background: ASSET_COLORS[idx % ASSET_COLORS.length],
                 }}
               />
               <span className="legend-name">{r.symbol}</span>
@@ -148,7 +158,7 @@ export default function Assets() {
   }, []);
 
   if (err) return <div className="main-panel">에러: {err}</div>;
-  if (!data) return <div className="main-panel">로딩중...</div>;
+  if (!data) return <Loading />;
 
   const { summary, items } = data;
   const ratio =
@@ -196,9 +206,8 @@ export default function Assets() {
             <div className="kpi-card">
               <div className="kpi-label">평가손익</div>
               <div
-                className={`kpi-value ${
-                  summary.total_pnl_krw >= 0 ? "positive" : "negative"
-                }`}
+                className={`kpi-value ${summary.total_pnl_krw >= 0 ? "positive" : "negative"
+                  }`}
               >
                 {formatKRW(summary.total_pnl_krw)}
               </div>
@@ -207,9 +216,8 @@ export default function Assets() {
             <div className="kpi-card">
               <div className="kpi-label">수익률</div>
               <div
-                className={`kpi-value ${
-                  summary.total_pnl_rate >= 0 ? "positive" : "negative"
-                }`}
+                className={`kpi-value ${summary.total_pnl_rate >= 0 ? "positive" : "negative"
+                  }`}
               >
                 {formatPercent(summary.total_pnl_rate)}
               </div>
@@ -223,7 +231,7 @@ export default function Assets() {
 
       {/* 보유 자산 테이블 */}
       <div className="assets-table-wrap">
-        <h2 className="asset-title" style={{ marginBottom: "16px" }}>
+        <h2 className="asset-title" style={{ padding: "16px 16px 0" }}>
           보유 자산
         </h2>
 
@@ -232,65 +240,58 @@ export default function Assets() {
             보유 중인 자산이 없습니다.
           </div>
         ) : (
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "12px",
-              border: "1px solid #eef0f6",
-              overflow: "hidden",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f7f8fb" }}>
-                    <th className="col-left">종목</th>
-                    <th className="col-right">보유수량</th>
-                    <th className="col-right">평균매수가</th>
-                    <th className="col-right">현재가</th>
-                    <th className="col-right">평가금액</th>
-                    <th className="col-right">손익</th>
-                    <th className="col-right">수익률</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const pnl =
-                    item.evaluation_krw -
-                    item.avg_buy_price * item.quantity;
-                  const pnlRate =
-                    item.avg_buy_price > 0
-                      ? ((item.current_price - item.avg_buy_price) /
-                          item.avg_buy_price) *
-                        100
-                      : 0;
+          <table className="asset-table">
+            <thead>
+              <tr>
+                <th>종목</th>
+                <th className="col-right">보유수량</th>
+                <th className="col-right">평균매수가</th>
+                <th className="col-right">현재가</th>
+                <th className="col-right">평가금액</th>
+                <th className="col-right">손익</th>
+                <th className="col-right">수익률</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const pnl =
+                  item.evaluation_krw -
+                  item.avg_buy_price * item.quantity;
+                const pnlRate =
+                  item.avg_buy_price > 0
+                    ? ((item.current_price - item.avg_buy_price) /
+                      item.avg_buy_price) *
+                    100
+                    : 0;
 
-                  return (
-                    <tr key={item.symbol}>
-                      <td>{item.symbol}</td>
-                      <td>{item.quantity.toLocaleString()}</td>
-                      <td>{formatKRW(item.avg_buy_price)}</td>
-                      <td>{formatKRW(item.current_price)}</td>
-                      <td>{formatKRW(item.evaluation_krw)}</td>
-                      <td
-                        style={{
-                          color: pnl >= 0 ? "#16a34a" : "#ef4444",
-                        }}
-                      >
-                        {formatKRW(pnl)}
-                      </td>
-                      <td
-                        style={{
-                          color: pnlRate >= 0 ? "#16a34a" : "#ef4444",
-                        }}
-                      >
-                        {formatPercent(pnlRate)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                return (
+                  <tr key={item.symbol}>
+                    <td style={{ fontWeight: 600 }}>{item.symbol}</td>
+                    <td className="col-right">{item.quantity.toLocaleString()}</td>
+                    <td className="col-right">{formatKRW(item.avg_buy_price)}</td>
+                    <td className="col-right">{formatKRW(item.current_price)}</td>
+                    <td className="col-right">{formatKRW(item.evaluation_krw)}</td>
+                    <td
+                      className="col-right"
+                      style={{
+                        color: pnl >= 0 ? "#ef4444" : "#1261c4",
+                      }}
+                    >
+                      {formatKRW(pnl)}
+                    </td>
+                    <td
+                      className="col-right"
+                      style={{
+                        color: pnlRate >= 0 ? "#ef4444" : "#1261c4",
+                      }}
+                    >
+                      {formatPercent(pnlRate)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

@@ -1,30 +1,30 @@
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Optional
+from datetime import datetime
 
-from sqlmodel import SQLModel, Field
-from sqlalchemy import Column
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class PortfolioSnapshot(SQLModel, table=True):
-    __tablename__ = "portfolio_snapshots"
+class Base(DeclarativeBase):
+    pass
 
-    id: Optional[int] = Field(default=None, primary_key=True)
 
-    # “어느 날의 결과”를 안정적으로 보여주려면 date가 제일 좋아
-    base_date: date = Field(index=True)
+class BaseEntity(Base):
+    __abstract__ = True
 
-    # 총 투자원금 / 현재평가 / 손익
-    invested_krw: float
-    equity_krw: float
-    pnl_krw: float
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
-    # 수익률은 저장해도 되고, 계산해도 됨
-    pnl_rate: float  # 예: 0.023 (2.3%)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+        index=True,
+    )
 
-    # (선택) 자산 구성 상세: 화면에서 종목별도 보여주고 싶으면 저장
-    assets: dict = Field(sa_column=Column(JSONB), default_factory=dict)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

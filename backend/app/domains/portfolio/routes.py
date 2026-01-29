@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.concurrency import run_in_threadpool
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
-from app.api.deps import get_session
+from core.deps import get_database
 from app.domains.portfolio.schemas import PortfolioAssetsResponse
 from app.domains.portfolio.service import get_assets as get_assets_service
 from app.domains.portfolio.service import take_portfolio_snapshot
@@ -19,5 +18,5 @@ def get_assets_route():
 
 
 @router.post("/snapshot")
-def create_snapshot(session: Session = Depends(get_session)):
-    return take_portfolio_snapshot(session, base_date=date.today())
+def create_snapshot(db = Depends(get_database)):
+    return take_portfolio_snapshot(db, base_date=date.today())

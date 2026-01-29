@@ -1,6 +1,7 @@
 .main-panel {
   padding: 24px;
-  background: #f6f7fb; /* ✅ 전체 배경을 살짝 톤다운 */
+  background: #f6f7fb;
+  /* ✅ 전체 배경을 살짝 톤다운 */
   min-height: 100vh;
 }
 
@@ -27,7 +28,7 @@
   border: 1px solid #eef0f6;
   border-radius: 14px;
   padding: 14px;
-  margin-bottom:  12px;
+  margin-bottom: 12px;
 }
 
 .asset-total-label {
@@ -37,7 +38,7 @@
 }
 
 .asset-total-value {
-  font-size:30px;
+  font-size: 30px;
   font-weight: 900;
   letter-spacing: -0.6px;
   color: #0f172a;
@@ -81,40 +82,56 @@
 }
 
 /* 손익 색상*/
-.kpi-value.positive { color: #16a34a; }
-.kpi-value.negative { color: #ef4444; }
-.kpi-value.neutral  { color: #0f172a; }
+.kpi-value.positive {
+  color: #ef4444;
+}
+
+.kpi-value.negative {
+  color: #1261c4;
+}
+
+.kpi-value.neutral {
+  color: #0f172a;
+}
 
 /* 모바일 */
 @media (max-width: 640px) {
-  .asset-summary-card { padding: 18px; border-radius: 18px; }
-  .asset-total { border-radius: 16px; }
-  .asset-total-value { font-size: 28px; }
-  .asset-kpi-grid { grid-template-columns: 1fr; }
+  .asset-summary-card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .asset-total {
+    border-radius: 16px;
+  }
+
+  .asset-total-value {
+    font-size: 28px;
+  }
+
+  .asset-kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .main-panel {
   padding: 24px;
   background: #f6f7fb;
   min-height: 100vh;
-
-  display: flex;
-  justify-content: flex-start; /* 왼쪽 */
-  align-items: flex-start;     /* 위쪽 */
 }
 
-.assets-top-row{
+.assets-top-row {
   display: flex;
   gap: 24px;
   align-items: flex-start;
   padding: 24px;
 }
 
-.assets-table-wrap{
+.assets-table-wrap {
   padding: 0 24px 24px 24px;
 }
 
-.asset-empty{
+.asset-empty {
   background: #ffffff;
   border: 1px solid #eef0f6;
   border-radius: 12px;
@@ -124,7 +141,7 @@
   font-size: 14px;
 }
 
-.donut-card{
+.donut-card {
   flex: 1;
   min-width: 360px;
   background: #ffffff;
@@ -133,34 +150,34 @@
   padding: 18px;
 }
 
-.donut-wrap{
+.donut-wrap {
   display: flex;
   gap: 18px;
   align-items: center;
 }
 
-.donut{
+.donut {
   width: 180px;
   height: 180px;
   border-radius: 50%;
   position: relative;
 }
 
-.donut::after{
-  content:"";
-  position:absolute;
+.donut::after {
+  content: "";
+  position: absolute;
   inset: 36px;
-  background:#fff;
+  background: #fff;
   border-radius: 50%;
   border: 1px solid #eef0f6;
 }
 
-.donut-legend{
+.donut-legend {
   flex: 1;
   min-width: 200px;
 }
 
-.legend-row{
+.legend-row {
   display: grid;
   grid-template-columns: 14px 1fr auto auto;
   gap: 10px;
@@ -169,27 +186,74 @@
   border-bottom: 1px dashed #eef0f6;
 }
 
-.legend-dot{
+.legend-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.legend-name{
+.legend-name {
   font-size: 13px;
   color: #0f172a;
   font-weight: 600;
 }
 
-.legend-pct{
+.legend-pct {
   font-size: 13px;
   color: #64748b;
   font-variant-numeric: tabular-nums;
 }
 
-.legend-val{
+.legend-val {
   font-size: 13px;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+/* 보유 자산 테이블 스타일 */
+.asset-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
+  background: #ffffff;
+}
+
+.asset-table th {
+  background: #f8fafc;
+  padding: 14px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  border-bottom: 2px solid #eef0f6;
+  white-space: nowrap;
+}
+
+.asset-table td {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.asset-table tr:hover td {
+  background: #fdfdfd;
+}
+
+.asset-table tr:last-child td {
+  border-bottom: none;
+}
+
+.col-right {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 수치 강조 */
+.asset-table td:nth-child(1) {
+  font-weight: 700;
+  color: #0f172a;
 }

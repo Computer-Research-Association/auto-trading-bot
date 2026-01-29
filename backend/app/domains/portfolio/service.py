@@ -9,12 +9,11 @@ from sqlmodel import Session
 
 from app.utills.upbit_client import client
 from app.domains.portfolio.schemas import AssetItem, PortfolioAssetsResponse, PortfolioSummary
-from app.utills.models import PortfolioSnapshot  # ✅ 네 공용 모델 위치
+from app.domains.portfolio.models import PortfolioSnapshot
 
 
-# -------------------------
+
 # 1) 보유자산 조회 (탭 응답)
-# -------------------------
 def get_assets() -> PortfolioAssetsResponse:
     # balances 한 번만
     balances = client.get_balances()

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import List, Any
 
-from .repository import PerformanceRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+
+import app.domains.performance.repository as performance_repository
 from .schemas import (
     PerformanceQuery,
     PerformanceSummary,
@@ -33,8 +35,8 @@ def _snap_assets(s) -> float:
 # =============================================================================
 # 공개 API (routes.py가 호출하는 함수들) - 반드시 존재해야 함
 # =============================================================================
-def get_summary(repo: PerformanceRepository, q: PerformanceQuery) -> PerformanceSummary:
-    snaps = repo.get_daily_snapshots(q.start_date, q.end_date)
+def get_summary( q: PerformanceQuery) -> PerformanceSummary:
+    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
 
     if not snaps:
         return PerformanceSummary()
@@ -53,10 +55,11 @@ def get_summary(repo: PerformanceRepository, q: PerformanceQuery) -> Performance
     )
 
 
-def get_chart(repo: PerformanceRepository, q: PerformanceQuery) -> PerformanceChartResponse:
-    snaps = repo.get_daily_snapshots(q.start_date, q.end_date)
+def get_chart(q: PerformanceQuery,   db: AsyncSession ) -> PerformanceChartResponse:
+    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date,db)
 
     points: List[PerformancePoint] = []
+
     if not snaps:
         return PerformanceChartResponse(points=points)
 
@@ -80,8 +83,8 @@ def get_chart(repo: PerformanceRepository, q: PerformanceQuery) -> PerformanceCh
     return PerformanceChartResponse(points=points)
 
 
-def get_daily_table(repo: PerformanceRepository, q: PerformanceQuery) -> PerformanceDailyResponse:
-    snaps = repo.get_daily_snapshots(q.start_date, q.end_date)
+def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
+    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
 
     rows: List[PerformanceDailyRow] = []
     if not snaps:
@@ -107,67 +110,60 @@ def get_daily_table(repo: PerformanceRepository, q: PerformanceQuery) -> Perform
     return PerformanceDailyResponse(rows=rows)
 
 
-def get_all_performance(repo: PerformanceRepository, q: PerformanceQuery) -> PerformanceResponse:
+def get_all_performance(q: PerformanceQuery) -> PerformanceResponse:
     # 1. 한 번만 조회
-    try:
-        print(f"DEBUG: get_all_performance called with start={q.start_date}, end={q.end_date}")
-        snaps = repo.get_daily_snapshots(q.start_date, q.end_date)
-    
-        points: List[PerformancePoint] = []
-        rows: List[PerformanceDailyRow] = []
-    
-        start_assets = 0.0
-        end_assets = 0.0
-    
-        if snaps:
-            # 시작 자산/종료 자산 계산
-            start_assets = _snap_assets(snaps[0])
-            end_assets = _snap_assets(snaps[-1])
-    
-            # 기준 자산 (0으로 나누기 방지)
-            base_assets = start_assets if start_assets != 0 else 1.0
-    
-            for s in snaps:
-                d = _snap_date(s)
-                val = _snap_assets(s)
-                pnl = val - base_assets
-                pnl_rate = (pnl / base_assets) if base_assets != 0 else 0.0
-    
-                # 차트용 포인트 생성
-                points.append(PerformancePoint(
-                    base_date=d,
-                    assets_krw=float(val),
-                    pnl_krw=float(pnl),
-                    pnl_rate=float(pnl_rate)
-                ))
-    
-                # 일별 데이터 행 생성
-                rows.append(PerformanceDailyRow(
-                    base_date=d,
-                    assets_krw=float(val),
-                    pnl_krw=float(pnl),
-                    pnl_rate=float(pnl_rate)
-                ))
-    
-        # 2. 요약 정보 생성
-        pnl_total = end_assets - start_assets
-        pnl_rate_total = (pnl_total / start_assets) if start_assets != 0 else 0.0
-    
-        summary = PerformanceSummary(
-            start_assets_krw=float(start_assets),
-            end_assets_krw=float(end_assets),
-            pnl_krw=float(pnl_total),
-            pnl_rate=float(pnl_rate_total)
-        )
-    
-        # 3. 통합 응답 반환
-        return PerformanceResponse(
-            summary=summary,
-            chart=points,
-            daily=rows
-        )
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print(f"CRITICAL ERROR in get_all_performance: {e}")
-        raise e
+    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+
+    points: List[PerformancePoint] = []
+    rows: List[PerformanceDailyRow] = []
+
+    start_assets = 0.0
+    end_assets = 0.0
+
+    if snaps:
+        # 시작 자산/종료 자산 계산
+        start_assets = _snap_assets(snaps[0])
+        end_assets = _snap_assets(snaps[-1])
+
+        # 기준 자산 (0으로 나누기 방지)
+        base_assets = start_assets if start_assets != 0 else 1.0
+
+        for s in snaps:
+            d = _snap_date(s)
+            val = _snap_assets(s)
+            pnl = val - base_assets
+            pnl_rate = (pnl / base_assets) if base_assets != 0 else 0.0
+
+            # 차트용 포인트 생성
+            points.append(PerformancePoint(
+                base_date=d,
+                assets_krw=float(val),
+                pnl_krw=float(pnl),
+                pnl_rate=float(pnl_rate)
+            ))
+
+            # 일별 데이터 행 생성
+            rows.append(PerformanceDailyRow(
+                base_date=d,
+                assets_krw=float(val),
+                pnl_krw=float(pnl),
+                pnl_rate=float(pnl_rate)
+            ))
+
+    # 2. 요약 정보 생성
+    pnl_total = end_assets - start_assets
+    pnl_rate_total = (pnl_total / start_assets) if start_assets != 0 else 0.0
+
+    summary = PerformanceSummary(
+        start_assets_krw=float(start_assets),
+        end_assets_krw=float(end_assets),
+        pnl_krw=float(pnl_total),
+        pnl_rate=float(pnl_rate_total)
+    )
+
+    # 3. 통합 응답 반환
+    return PerformanceResponse(
+        summary=summary,
+        chart=points,
+        daily=rows
+    )

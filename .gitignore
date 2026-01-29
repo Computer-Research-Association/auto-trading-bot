@@ -19,3 +19,4 @@ postgres_data/
 Thumbs.db
 
 alembic.ini
+alembic/versions/env.py

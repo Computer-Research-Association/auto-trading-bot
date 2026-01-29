@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
+import Loading from "../Common/Loading";
 
 type Period = "30d" | "90d" | "1y" | "all";
 
@@ -112,7 +113,7 @@ export default function Performance() {
   ];
 
   if (err) return <div className="main-panel">에러: {err}</div>;
-  if (!data) return <div className="main-panel">로딩중...</div>;
+  if (!data) return <Loading />;
 
   return (
     <div className="main-panel">
