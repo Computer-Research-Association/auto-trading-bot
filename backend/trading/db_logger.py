@@ -14,11 +14,12 @@ if project_root not in sys.path:
 # 비동기 db 세션 및 모델 임포트
 from core.database import AsyncSessionLocal
 try:
-    from app.domains.log.models import OperatingLog
+    from app.domains.log.logger import log_event, LogCategory, LogLevel, LogEvent
 
 except ImportError:
-    OperatingLog = None
-
+    class LogCategory: SYSTEM = "SYSTEM"; DATA = "DATA"; STRATEGY = "STRATEGY"; TRADE = "TRADE"
+    class LogLevel: INFO = "INFO"; WARNING = "WARNING"; ERROR = "ERROR"
+    log_event = None
 
 logger = logging.getLogger(__name__)
 
