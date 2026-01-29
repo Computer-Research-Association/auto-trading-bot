@@ -1,8 +1,9 @@
 import pyupbit
 import pandas as pd
-import time
+import asyncio
 import logging
 from typing import Optional
+from .db_logger import save_log_to_db
 
 logger = logging.getLogger(__name__)
 
