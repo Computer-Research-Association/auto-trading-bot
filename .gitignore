@@ -20,3 +20,6 @@ Thumbs.db
 
 alembic.ini
 alembic/versions/env.py
+
+# trading
+backend/trading/trading.log
