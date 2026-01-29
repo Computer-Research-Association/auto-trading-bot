@@ -52,7 +52,7 @@ class DataLoader:
                 # 요청 데이터 개수 보다 적은 데이터로 지표 계산 시 에러 날 수 있음
                 if current_len < count * 0.9:
                     await save_log_to_db(
-                        level="WARING",
+                        level="WARNING",
                         category="DATA",
                         event_name="VALID_FAIL",
                         message=f"{self.log_prefix} 데이터 부족: {current_len}개 (최소 {count*0.9}개 필요)"
@@ -61,7 +61,7 @@ class DataLoader:
 
                 # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
                 elif current_len < count:
-                    logger.warning(f"[{self.log_prefix}] 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
+                    logger.warning(f"{self.log_prefix} 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
 
                 # 데이터 타입 변환 및 정합성 보장
                 df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
@@ -74,7 +74,7 @@ class DataLoader:
 
             except asyncio.TimeoutError:  # 타임아웃 전용 예외 처리
                 await save_log_to_db(
-                    level="WARING",
+                    level="WARNING",
                     category="DATA",
                     event_name="FETCH_FAIL",
                     message=f"{self.log_prefix} API 호출 타임아웃 발생 (5초 초과)"
@@ -92,7 +92,7 @@ class DataLoader:
 
         return None
 
-    def get_current_price(self) -> Optional[float]:  # async def 전환
+    async def get_current_price(self) -> Optional[float]:  # async def 전환
         """
         현재가 조회 (매우 빈번하게 후출될 것을 대비해 0.05초 대기)
         api 허용 횟수 초과 시 id 밴 당할 위험 있음
@@ -108,7 +108,7 @@ class DataLoader:
             if price is None:
                 # 조회 실패 로그 기록
                 await save_log_to_db(
-                    level="WARING",
+                    level="WARNING",
                     category="DATA",
                     event_name="FETCH_FAIL",
                     message=f"{self.log_prefix} 현재가 조회 실패 (None 반환)"
