@@ -30,7 +30,7 @@ async def performance_daily(
 @router.get("/summary", response_model=schemas.PerformanceResponse)
 async def performance_summary(
     request_data: schemas.PerformanceChartRequest = Depends(),
-    db: AsyncSession = Depends(get_database),
+    db: AsyncSession = Depends(get_database)
 ):
     query = schemas.PerformanceQuery.model_validate(request_data.model_dump())
     return await perf_service.get_all_performance(db, query)

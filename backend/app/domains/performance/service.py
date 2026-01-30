@@ -127,8 +127,6 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
         raise HTTPException(status_code=400, detail="start_date must be <= end_date")
 
     snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
-
-    logger
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
 
@@ -153,12 +151,18 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
             pnl_rate = (pnl / base_assets) if base_assets != 0 else 0.0
 
             # 차트용 포인트 생성
-            points.append(PerformancePoint(
-                base_date=d,
-                assets_krw=float(val),
-                pnl_krw=float(pnl),
-                pnl_rate=float(pnl_rate)
-            ))
+            if hasattr(d, "date"):
+                d = d.date()
+
+            points.append(
+                PerformancePoint(
+                    date=d,
+                    invested_krw=float(inv),
+                    equity_krw=float(eq),
+                    pnl_krw=float(pnl),
+                    pnl_rate=float(pnl_rate),
+                )
+            )
 
             # 일별 데이터 행 생성
             rows.append(PerformanceDailyRow(

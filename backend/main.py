@@ -1,17 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.params import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 import core.cors as cors_config
 from app.api.router import api_router
 from core.deps import get_database
 from core.logger import logger, setup_logging
-
-from fastapi import  Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()

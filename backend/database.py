@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from app.utills.models import Base
 
 BASE_DIR = Path(__file__).resolve().parent  # backend 폴더
 ENV_PATH = BASE_DIR / ".env"
@@ -19,7 +21,7 @@ engine = create_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
 
 def init_db() -> None:
     """서버 시작 시 테이블 생성"""
-    SQLModel.metadata.create_all(engine)
+    Base.metadata.create_all(engine)
 
 def get_session():
     """FastAPI Depends로 주입할 DB 세션"""

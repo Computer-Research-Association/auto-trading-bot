@@ -5,7 +5,7 @@ from pathlib import Path
 from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
-from sqlmodel import SQLModel
+from app.utills.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -22,11 +22,11 @@ load_dotenv(BASE_DIR / ".env")
 
 # 모델들을 임포트해야 SQLModel.metadata에 등록됩니다.
 from models import User
-from app.utills.models import PortfolioSnapshot
+from app.domains.portfolio.models import PortfolioSnapshot
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = SQLModel.metadata
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

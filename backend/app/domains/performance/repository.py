@@ -19,7 +19,7 @@ async def get_snapshots(
         stmt = stmt.where(PortfolioSnapshot.base_date <= end)
     stmt = stmt.order_by(PortfolioSnapshot.base_date.asc())
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    return result.scalars().all()
 
 # service가 기대하는 이름을 맞춰주는 alias 메서드 추가
 async def get_daily_snapshots(start: date, end: date, db: AsyncSession) -> list[PortfolioSnapshot]:
