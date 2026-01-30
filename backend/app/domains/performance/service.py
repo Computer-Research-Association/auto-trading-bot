@@ -3,17 +3,10 @@ from __future__ import annotations
 from typing import List, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
 
 import app.domains.performance.repository as performance_repository
-from .schemas import (
-    PerformanceQuery,
-    PerformanceSummary,
-    PerformancePoint,
-    PerformanceChartResponse,
-    PerformanceDailyRow,
-    PerformanceDailyResponse,
-    PerformanceResponse,
-)
+from app.domains.performance.schemas import *
 
 # =============================================================================
 # 내부 유틸: 스냅샷 객체에서 날짜/자산 필드 안전하게 꺼내기
@@ -35,11 +28,15 @@ def _snap_assets(s) -> float:
 # =============================================================================
 # 공개 API (routes.py가 호출하는 함수들) - 반드시 존재해야 함
 # =============================================================================
-def get_summary( q: PerformanceQuery) -> PerformanceSummary:
-    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+async def get_summary( q: PerformanceQuery) -> PerformanceSummary:
+
+    if q.start_date and q.end_date and q.start_date > q.end_date:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date")
+
+    snaps = await performance_repository.get_daily_snapshots(q.start_date, q.end_date)
 
     if not snaps:
-        return PerformanceSummary()
+        raise HTTPException(status_code=404, detail="No snapshots found for given date range")
 
     start_assets = _snap_assets(snaps[0])
     end_assets = _snap_assets(snaps[-1])
@@ -54,14 +51,21 @@ def get_summary( q: PerformanceQuery) -> PerformanceSummary:
         pnl_rate=float(pnl_rate),
     )
 
+async def get_chart(q: PerformanceQuery, db: AsyncSession ) -> PerformanceChartResponse:
 
-def get_chart(q: PerformanceQuery,   db: AsyncSession ) -> PerformanceChartResponse:
-    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date,db)
+    if q.start_date and q.end_date and q.start_date > q.end_date:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date")
 
-    points: List[PerformancePoint] = []
+    snaps = await performance_repository.get_daily_snapshots(
+        db,
+        q.start_date,
+        q.end_date,
+    )
 
     if not snaps:
-        return PerformanceChartResponse(points=points)
+        raise HTTPException(status_code=404, detail="No snapshots found for given date range")
+
+    points: List[PerformancePoint] = []
 
     start_assets = _snap_assets(snaps[0]) or 1.0
 
@@ -83,10 +87,18 @@ def get_chart(q: PerformanceQuery,   db: AsyncSession ) -> PerformanceChartRespo
     return PerformanceChartResponse(points=points)
 
 
-def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
-    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+async def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
+
+    if q.start_date and q.end_date and q.start_date > q.end_date:
+        raise HTTPException(status_code=422, detail="start_date must be <= end_date")
+
+    snaps = await performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+
+    if not snaps:
+        raise HTTPException(status_code=404, detail="No snapshots found for given date range")
 
     rows: List[PerformanceDailyRow] = []
+
     if not snaps:
         return PerformanceDailyResponse(rows=rows)
 
@@ -107,12 +119,18 @@ def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
             )
         )
 
-    return PerformanceDailyResponse(rows=rows)
+        return PerformanceDailyResponse(rows=rows)
 
 
-def get_all_performance(q: PerformanceQuery) -> PerformanceResponse:
-    # 1. 한 번만 조회
-    snaps = performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> PerformanceResponse:
+    if q.start_date and q.end_date and q.start_date > q.end_date:
+        raise HTTPException(status_code=400, detail="start_date must be <= end_date")
+
+    snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
+
+    logger
+    if not snaps:
+        raise HTTPException(status_code=404, detail="No snapshots found for given date range")
 
     points: List[PerformancePoint] = []
     rows: List[PerformanceDailyRow] = []

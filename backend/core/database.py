@@ -2,9 +2,10 @@ from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 import os
-
-
+from dotenv import load_dotenv
+load_dotenv()
 DB_USER = os.getenv("DB_USER")
+# TODO : 지우세요~
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))

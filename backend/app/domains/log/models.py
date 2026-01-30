@@ -21,7 +21,7 @@ class OperatingLog(SQLModel, table=True):
     # 로그 심각도 (INFO / WARNING / ERROR)
     level: str = Field(
         index=True,
-        description="로그 레벨 (INFO, WARNING, ERROR)",
+        description="로그 레벨",
     )
 
     # 로그 대분류 (SYSTEM / DATA / STRATEGY / TRADE)
