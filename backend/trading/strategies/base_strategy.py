@@ -1,6 +1,6 @@
 import pandas as pd
 from abc import ABC, abstractmethod
-from indicators import add_indicators
+from trading.indicators import add_indicators
 
 
 class BaseStrategy(ABC):
