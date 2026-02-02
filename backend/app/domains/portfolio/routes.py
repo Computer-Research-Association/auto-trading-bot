@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter, Depends
-from sqlmodel import Session
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.deps import get_database
 from app.domains.portfolio.schemas import PortfolioAssetsResponse
