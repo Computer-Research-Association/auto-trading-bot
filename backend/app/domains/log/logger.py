@@ -86,13 +86,3 @@ async def log_event(
         timestamp=timestamp,
         commit=commit,
     )
-
-
-'''
-SELECT 
-    *,
-    created_at AT TIME ZONE 'Asia/Seoul' AS created_at_kst,
-    "timestamp" AT TIME ZONE 'Asia/Seoul' AS timestamp_kst,
-    updated_at AT TIME ZONE 'Asia/Seoul' AS updated_at_kst
-FROM operating_log order by timestamp desc limit 10;
-'''
