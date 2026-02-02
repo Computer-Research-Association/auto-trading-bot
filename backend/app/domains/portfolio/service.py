@@ -5,7 +5,8 @@ from datetime import date
 from typing import Any, Iterable
 
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from app.utills.upbit_client import client
 from app.domains.portfolio.schemas import AssetItem, PortfolioAssetsResponse, PortfolioSummary
@@ -98,29 +99,12 @@ def take_portfolio_snapshot(session: Session, base_date: date) -> PortfolioSnaps
         ],
     }
 
-    # 같은 날짜 스냅샷 중복 저장 방지(강추)
-    # (DB에 base_date unique가 아니더라도, 서비스 레벨에서 막아주면 편함)
-    existing = session.exec(
-        # SQLModel select import 안 쓰려고 session.exec + text 안 쓰는 형태가 애매함
-        # 그래서 아래처럼 최소 변경: SQLModel의 select를 쓰는 게 깔끔함
-        # -> import 추가하는 버전이 정석
-        #
-        # 하지만 "코드만 여기서 끝내겠다"면 중복 방지 로직을 빼도 됨.
-        #
-        # 여기서는 중복 방지 로직을 "옵션"으로 남겨둠.
-        #
-        # 결론: 아래 블록은 주석 처리하고,
-        # DB에서 base_date unique 제약을 걸어두는 걸 더 추천.
-        #
-        # (원하면 내가 너 모델에 unique 설정까지 딱 맞춰줄게)
-        #
-        # select(PortfolioSnapshot).where(PortfolioSnapshot.base_date == base_date)
-        #
-        # 라고 써야 함.
-        #
-        # -> 주석 처리
-        None
-    )
+    # 같은 날짜 스냅샷 중복 저장 방지 (필요 시 주석 해제)
+    # existing = session.execute(
+    #     select(PortfolioSnapshot).where(PortfolioSnapshot.base_date == base_date)
+    # ).scalars().first()
+    # if existing:
+    #     return existing
 
     snap = PortfolioSnapshot(
         base_date=base_date,
