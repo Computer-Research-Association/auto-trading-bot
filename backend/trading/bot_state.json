@@ -1,8 +1,9 @@
 {
     "is_active": false,
     "is_holding": false,
-    "avg_buy_price": 0,
-    "stop_loss": 0,
+    "avg_buy_price": 0, 
+    "target_price": 0,
+    "stop_loss": 0, 
     "balance": 10000,
     "last_reason": ""
 }
