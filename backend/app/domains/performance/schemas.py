@@ -12,6 +12,7 @@ ReturnType = Literal["simple", "detailed"]
 class PerformanceQuery(BaseModel):
     start_date: date
     end_date: date
+    period: str
     granularity: Granularity = "daily"
     return_type: ReturnType = "simple"
 
