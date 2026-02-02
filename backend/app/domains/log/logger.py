@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -51,7 +51,7 @@ async def log_to_db(
 ) -> OperatingLog:
 
     row = OperatingLog(
-        timestamp=timestamp or datetime.utcnow(),
+        timestamp=timestamp or datetime.now(timezone.utc),
         level=level.value,
         category=category.value,
         event_name=event_name,  # 필요하면 LogEvent로 강제 가능
