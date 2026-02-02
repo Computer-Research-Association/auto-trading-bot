@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from core.settings import settings
 from core.logger import logger
 
+
 # 디버깅을 위한 로그 (비밀번호 제외)
 logger.info(f"Connecting to DB: {settings.DB_USER}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
 

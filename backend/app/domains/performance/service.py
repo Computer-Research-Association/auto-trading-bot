@@ -157,8 +157,7 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
             points.append(
                 PerformancePoint(
                     date=d,
-                    invested_krw=float(inv),
-                    equity_krw=float(eq),
+                    assets_krw=float(val),
                     pnl_krw=float(pnl),
                     pnl_rate=float(pnl_rate),
                 )
@@ -166,7 +165,7 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
 
             # 일별 데이터 행 생성
             rows.append(PerformanceDailyRow(
-                base_date=d,
+                date=d,
                 assets_krw=float(val),
                 pnl_krw=float(pnl),
                 pnl_rate=float(pnl_rate)
@@ -177,6 +176,7 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
     pnl_rate_total = (pnl_total / start_assets) if start_assets != 0 else 0.0
 
     summary = PerformanceSummary(
+        period_label=q.period,
         start_assets_krw=float(start_assets),
         end_assets_krw=float(end_assets),
         pnl_krw=float(pnl_total),
