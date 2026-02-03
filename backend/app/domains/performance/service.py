@@ -28,12 +28,12 @@ def _snap_assets(s) -> float:
 # =============================================================================
 # 공개 API (routes.py가 호출하는 함수들) - 반드시 존재해야 함
 # =============================================================================
-async def get_summary( q: PerformanceQuery) -> PerformanceSummary:
+async def get_summary( q: PerformanceQuery, db: AsyncSession) -> PerformanceSummary:
 
     if q.start_date and q.end_date and q.start_date > q.end_date:
         raise HTTPException(status_code=422, detail="start_date must be <= end_date")
 
-    snaps = await performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+    snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
 
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
@@ -56,11 +56,7 @@ async def get_chart(q: PerformanceQuery, db: AsyncSession ) -> PerformanceChartR
     if q.start_date and q.end_date and q.start_date > q.end_date:
         raise HTTPException(status_code=422, detail="start_date must be <= end_date")
 
-    snaps = await performance_repository.get_daily_snapshots(
-        db,
-        q.start_date,
-        q.end_date,
-    )
+    snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
 
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
@@ -87,12 +83,12 @@ async def get_chart(q: PerformanceQuery, db: AsyncSession ) -> PerformanceChartR
     return PerformanceChartResponse(points=points)
 
 
-async def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
+async def get_daily_table(q: PerformanceQuery, db: AsyncSession) -> PerformanceDailyResponse:
 
     if q.start_date and q.end_date and q.start_date > q.end_date:
         raise HTTPException(status_code=422, detail="start_date must be <= end_date")
 
-    snaps = await performance_repository.get_daily_snapshots(q.start_date, q.end_date)
+    snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
 
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
@@ -119,14 +115,16 @@ async def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
             )
         )
 
-        return PerformanceDailyResponse(rows=rows)
+    return PerformanceDailyResponse(rows=rows)
 
 
 async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> PerformanceResponse:
     if q.start_date and q.end_date and q.start_date > q.end_date:
         raise HTTPException(status_code=400, detail="start_date must be <= end_date")
 
-    snaps = await performance_repository.get_daily_snapshots(db=db, start=q.start_date, end=q.end_date)
+    snaps = await performance_repository.get_daily_snapshots(db=db, 
+    start=q.start_date, 
+    end=q.end_date)
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
 
