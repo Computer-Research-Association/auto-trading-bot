@@ -62,7 +62,7 @@ export default function StrategyPanel() {
   }, [query]);
 
   const toggleStrategy = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭(선택) 이벤트 전파 방지
+    e.stopPropagation();
     setRunningIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
