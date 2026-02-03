@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 from datetime import datetime, timezone
+from sqlalchemy.ext.asyncio import AsyncSession 
+from .models import OperatingLog
 
 class LogLevel(str, Enum):
     INFO = "INFO"
