@@ -3,10 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from .models import OperatingLog
+from datetime import datetime, timezone
 
 class LogLevel(str, Enum):
     INFO = "INFO"

@@ -77,7 +77,7 @@ async def get_chart(q: PerformanceQuery, db: AsyncSession ) -> PerformanceChartR
 
         points.append(
             PerformancePoint(
-                base_date=d,
+                date=d,
                 assets_krw=float(assets),
                 pnl_krw=float(pnl),
                 pnl_rate=float(pnl_rate),
@@ -112,7 +112,7 @@ async def get_daily_table(q: PerformanceQuery) -> PerformanceDailyResponse:
 
         rows.append(
             PerformanceDailyRow(
-                base_date=d,
+                date=d,
                 assets_krw=float(assets),
                 pnl_krw=float(pnl),
                 pnl_rate=float(pnl_rate),
