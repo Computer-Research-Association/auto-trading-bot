@@ -1,164 +1,85 @@
-/* src/components/Auto_Strategy/Auto_Strategy.css */
-
-.strategy-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 24px;
+/* 전체 패널 */
+.log-panel {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.strategy-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 24px;
-    position: relative;
-    transition: all 0.2s;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+/* 헤더 */
+.log-header {
+  margin-bottom: 12px;
 }
 
-.strategy-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    border-color: #f7d54e;
+.log-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+.log-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8a8a8a;
 }
 
-.strategy-name {
-    font-size: 1.125rem;
-    font-weight: 800;
-    color: #1e293b;
-    margin-bottom: 4px;
+/* 로그 리스트 */
+.log-list {
+  flex: 1;
+  background: #0f1117;
+  border: 1px solid #1f2330;
+  border-radius: 8px;
+  padding: 8px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
 }
 
-.strategy-desc {
-    font-size: 0.875rem;
-    color: #64748b;
-    line-height: 1.5;
+/* 로그 한 줄 */
+.log-row {
+  display: grid;
+  grid-template-columns: 80px 80px 80px 1fr;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+  align-items: center;
+  border-radius: 4px;
 }
 
-.status-badge {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
+.log-row:not(:last-child) {
+  margin-bottom: 4px;
 }
 
-.status-badge.running {
-    background: #dcfce7;
-    color: #16a34a;
+/* 컬럼 */
+.log-time {
+  color: #7a7f8c;
 }
 
-.status-badge.stopped {
-    background: #f1f5f9;
-    color: #64748b;
+.log-level {
+  font-weight: 600;
 }
 
-/* Metrics Grid */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    padding: 16px;
-    background: #f8fafc;
-    border-radius: 8px;
+.log-slot {
+  color: #c3c7d1;
 }
 
-.metric-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.log-message {
+  color: #e6e8ee;
 }
 
-.metric-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #94a3b8;
+/* 레벨별 색상 */
+.log-row.info .log-level {
+  color: #6aa9ff;
 }
 
-.metric-value {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #334155;
+.log-row.warning .log-level {
+  color: #f0ad4e;
 }
 
-.metric-value.positive {
-    color: #ef4444;
+.log-row.error .log-level {
+  color: #ff6b6b;
 }
 
-.metric-value.negative {
-    color: #1261c4;
-}
-
-/* Performance Bar */
-.perf-bar-wrap {
-    width: 100%;
-}
-
-.perf-bar-label {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    margin-bottom: 6px;
-}
-
-.perf-bar-bg {
-    height: 8px;
-    background: #e2e8f0;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.perf-bar-fill {
-    height: 100%;
-    transition: width 1s ease-out;
-}
-
-/* Buttons */
-.card-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: auto;
-}
-
-.action-btn {
-    flex: 1;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid #e5e7eb;
-}
-
-.action-btn.settings {
-    background: #fff;
-    color: #334155;
-}
-
-.action-btn.start {
-    background: #f7d54e;
-    border-color: #f7d54e;
-    color: #3e3002;
-}
-
-.action-btn.stop {
-    background: #fef2f2;
-    border-color: #fee2e2;
-    color: #ef4444;
-}
-
-.action-btn:hover {
-    filter: brightness(0.95);
+/* hover 효과 (과하지 않게) */
+.log-row:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
