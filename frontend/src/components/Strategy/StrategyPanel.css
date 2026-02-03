@@ -332,3 +332,40 @@
   line-height: 1.5;
   text-align: center;
 }
+
+.strategy-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 10px 0 6px;
+}
+
+.metric {
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.metric-label {
+  display: block;
+  font-size: 11px;
+  color: #9aa4b2;
+}
+
+.metric-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metric-value.plus {
+  color: #ff5a5a;
+}
+
+.metric-value.minus {
+  color: #4da3ff;
+}
+
+.metric.score {
+  background: rgba(255, 215, 0, 0.08);
+}

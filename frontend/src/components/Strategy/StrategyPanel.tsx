@@ -7,6 +7,10 @@ type Strategy = {
   subtitle: string;
   desc: string;
   tags: string[];
+  rateOfReturn: number;
+  winRate: number;
+  mdd: number;
+  performanceScore: number;
 };
 
 const STRATEGIES: Strategy[] = [
@@ -16,6 +20,10 @@ const STRATEGIES: Strategy[] = [
     subtitle: "Trend Following",
     desc: "단기 이평선이 장기 이평선을 상향 돌파할 때 진입",
     tags: ["추세", "중간 리스크", "5m·15m"],
+    rateOfReturn: 12.5,
+    winRate: 64,
+    mdd: 4.2,
+    performanceScore: 62.2,
   },
   {
     id: "rsi_rebound",
@@ -23,6 +31,10 @@ const STRATEGIES: Strategy[] = [
     subtitle: "Mean Reversion",
     desc: "RSI 30 이하 구간에서 과매도 반등을 노리는 진입",
     tags: ["역추세", "낮은 리스크", "5m·1h"],
+    rateOfReturn: 13,
+    winRate: 72,
+    mdd: 3.8,
+    performanceScore: 69,
   },
   {
     id: "bb_lower",
@@ -30,6 +42,10 @@ const STRATEGIES: Strategy[] = [
     subtitle: "Volatility Bounce",
     desc: "하단 밴드 터치 후 되돌림 구간에서 반등 매수",
     tags: ["변동성", "중간~높음", "15m·1h"],
+    rateOfReturn: -9.8,
+    winRate: 48,
+    mdd: 12.5,
+    performanceScore: 26.1,
   },
 ];
 
@@ -46,7 +62,7 @@ export default function StrategyPanel() {
   }, [query]);
 
   const toggleStrategy = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭(선택) 이벤트 전파 방지
+    e.stopPropagation();
     setRunningIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -109,6 +125,27 @@ export default function StrategyPanel() {
               </div>
 
               <p className="strategy-desc">{s.desc}</p>
+
+                <div className="strategy-metrics">
+                <div className="metric">
+                  <span className="metric-label">수익률</span>
+                  <span className={`metric-value ${s.rateOfReturn >= 0 ? "plus" : "minus"}`}>
+                    {s.rateOfReturn > 0 && "+"}{s.rateOfReturn}%
+                  </span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">승률</span>
+                  <span className="metric-value">{s.winRate}%</span>
+                </div>
+                <div className="metric">
+                  <span className="metric-label">MDD</span>
+                  <span className="metric-value minus">{s.mdd}%</span>
+                </div>
+                <div className="metric score">
+                  <span className="metric-label">성과 점수</span>
+                  <span className="metric-value">{s.performanceScore}</span>
+                </div>
+              </div>
 
               <div className="strategy-item-bottom">
                 <div className="strategy-tags">
