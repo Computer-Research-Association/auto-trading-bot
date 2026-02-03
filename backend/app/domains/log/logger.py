@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 from enum import Enum
 from typing import Optional
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from .models import OperatingLog
+from datetime import datetime, timezone
 
 class LogLevel(str, Enum):
     INFO = "INFO"
@@ -51,7 +47,7 @@ async def log_to_db(
 ) -> OperatingLog:
 
     row = OperatingLog(
-        timestamp=timestamp or datetime.utcnow(),
+        timestamp=timestamp or datetime.now(timezone.utc),
         level=level.value,
         category=category.value,
         event_name=event_name,  # 필요하면 LogEvent로 강제 가능

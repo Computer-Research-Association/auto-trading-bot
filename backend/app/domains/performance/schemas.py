@@ -48,7 +48,6 @@ class PerformanceResponse(BaseModel):
     chart: List[PerformancePoint] = Field(default_factory=list)
     daily: List[PerformanceDailyRow] = Field(default_factory=list)
 
-
 class PerformanceChartRequest(BaseModel):
     start_date: date
     end_date: date

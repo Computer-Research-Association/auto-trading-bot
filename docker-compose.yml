@@ -1,13 +1,29 @@
 services:
   db:
-    image: postgres:17          # 사용할 도커 이미지
-    container_name: gold_db          # 도커에서 보여질 이름
-    restart: always                  # 컴퓨터를 켜면 자동으로 DB 실행
+    image: postgres:17
+    container_name: gold_db
+    restart: always
+    env_file: .env
     environment:
-      POSTGRES_USER: ${DB_USER}      # DB 접속 아이디
-      POSTGRES_PASSWORD: ${DB_PASSWORD} # DB 접속 비밀번호 (연습용) 수정해야함.
-      POSTGRES_DB: ${DB_NAME}           # 생성할 데이터베이스 이름
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"                  # 노트북의 5432 포트와 DB의 5432 포트 연결
+      - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data # 데이터 저장소 (도커를 꺼도 데이터 유지)
+      - ./postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    container_name: gold_backend
+    restart: always
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db

@@ -90,7 +90,7 @@ export default function Performance() {
     setErr(null);
     setData(null);
 
-    fetch(`http://127.0.0.1:8000/api/performance/summary?period=${period}`)
+    fetch(`http://127.0.0.1:8000/api/performance/summary?start_date=2026-01-01&end_date=2026-01-29&period=30d`)
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.text()) || `HTTP ${r.status}`);
         return r.json() as Promise<PerfResponse>;

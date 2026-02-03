@@ -12,8 +12,6 @@ from app.utills.upbit_client import client
 from app.domains.portfolio.schemas import AssetItem, PortfolioAssetsResponse, PortfolioSummary
 from app.domains.portfolio.models import PortfolioSnapshot
 
-
-
 # 1) 보유자산 조회 (탭 응답)
 def get_assets() -> PortfolioAssetsResponse:
     # balances 한 번만
@@ -202,3 +200,4 @@ class _BalanceRow:
     qty_available: float
     avg_buy_price: float
     ticker: str
+
