@@ -15,16 +15,17 @@ async def performance_chart(
     request_data: schemas.PerformanceChartRequest = Depends(),
     db: AsyncSession = Depends(get_database),
 ):
-    query = schemas.PerformanceQuery.model_validate(request_data)
+    query = schemas.PerformanceQuery.model_validate(request_data.model_dump())
     return await perf_service.get_chart(query, db)
 
 
 @router.get("/daily", response_model=schemas.PerformanceDailyResponse)
 async def performance_daily(
     request_data: schemas.PerformanceChartRequest = Depends(),
+    db: AsyncSession = Depends(get_database),
 ):
-    query = schemas.PerformanceQuery.model_validate(request_data)
-    return await perf_service.get_daily_table(query)
+    query = schemas.PerformanceQuery.model_validate(request_data.model_dump())
+    return await perf_service.get_daily_table(query, db)
 
 
 @router.get("/summary", response_model=schemas.PerformanceResponse)
