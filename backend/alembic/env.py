@@ -23,6 +23,7 @@ load_dotenv(BASE_DIR / ".env")
 # 모델들을 임포트해야 SQLModel.metadata에 등록됩니다.
 from models import User
 from app.domains.portfolio.models import PortfolioSnapshot
+from app.domains.log.models import OperatingLog
 
 # add your model's MetaData object here
 # for 'autogenerate' support
