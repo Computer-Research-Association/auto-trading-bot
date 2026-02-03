@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import './Auto_Strategy.css';
-import Loading from '../Common/Loading';
+import './Log.css';
+import Loading from '../Common/Loading.js';
 
-interface Auto_Strategy {
+interface Log {
     id: string;
     strategyName: string;
     strategyDescription: string;
@@ -14,7 +14,7 @@ interface Auto_Strategy {
     status: 'running' | 'stopped';
 }
 
-const types_strategies: Auto_Strategy[] = [
+const types_strategies: Log[] = [
     {
         id: "ma_cross",
         strategyName: "이동평균선 골든크로스",
@@ -50,7 +50,7 @@ const types_strategies: Auto_Strategy[] = [
     },
 ];
 
-const Auto_strategy: React.FC = () => {
+const Log: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -119,4 +119,4 @@ const Auto_strategy: React.FC = () => {
     );
 };
 
-export default Auto_strategy;
+export default Log;

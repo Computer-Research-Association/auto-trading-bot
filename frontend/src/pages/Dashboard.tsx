@@ -7,9 +7,9 @@ import StrategyPanel from "../components/Strategy/StrategyPanel";
 import Assets from "../components/Assets/Assets";
 import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
 import History from "../components/History/History";
-import Auto_strategy from "../components/Auto_Strategy/Auto_Strategy";
+import Log from "../components/Log/Log";
 
-type TabType = "balance" | "profit" | "history" | "auto";
+type TabType = "balance" | "profit" | "history" | "log";
 
 export default function Dashboard() {
     // 탭 상태 관리 (기본값: 'balance'로 변경 - 사용자가 요청한 주요 화면이므로)
@@ -38,10 +38,10 @@ export default function Dashboard() {
                     거래내역
                 </button>
                 <button
-                    className={`sub-tab ${tab === "auto" ? "active" : ""}`}
-                    onClick={() => setTab("auto")}
+                    className={`sub-tab ${tab === "log" ? "active" : ""}`}
+                    onClick={() => setTab("log")}
                 >
-                    자동매매
+                    로그
                 </button>
             </div>
 
@@ -51,7 +51,7 @@ export default function Dashboard() {
                     {tab === "balance" && <Assets />}
                     {tab === "profit" && <ProfitLoss />}
                     {tab === "history" && <History />}
-                    {tab === "auto" && <Auto_strategy />}
+                    {tab === "log" && <Log />}
                 </div>
 
                 {/* 오른쪽 전략 패널은 항상 고정 */}
