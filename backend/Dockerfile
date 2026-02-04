@@ -1,5 +1,5 @@
-# 1. 파이썬 3.12 버전 사용 (pandas-ta 및 기타 의존성 지원을 위해)
-FROM python:3.12-bookworm
+# 1. 파이썬 3.12 버전 사용 (플랫폼 명시)
+FROM --platform=linux/amd64 python:3.12-bookworm
 
 # 2. 컨테이너 내부의 작업 디렉토리 설정
 WORKDIR /app
