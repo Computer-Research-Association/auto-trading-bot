@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
+import { apiFetch } from "../../lib/apiFetch";
 
 type Period = "30d" | "90d" | "1y" | "all";
 
@@ -86,18 +87,27 @@ export default function Performance() {
   const [data, setData] = useState<PerfResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  useEffect(() => {
-    setErr(null);
-    setData(null);
+const [profitLoss, setProfitLoss] = useState<any>(null);
 
-    fetch(`http://127.0.0.1:8000/api/performance/summary?start_date=2026-01-01&end_date=2026-01-29&period=30d`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error((await r.text()) || `HTTP ${r.status}`);
-        return r.json() as Promise<PerfResponse>;
-      })
-      .then(setData)
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
-  }, [period]);
+useEffect(() => {
+  setErr(null);
+  setData(null);
+
+  const start = "2026-01-01";
+  const end = "2026-02-04";
+
+  apiFetch("/api/performance", {
+    params: {
+      start_date: start,
+      end_date: end,
+    },
+  })
+    .then(setProfitLoss)
+    .catch((e: unknown) => {
+      setErr(e instanceof Error ? e.message : String(e));
+    });
+}, [period]);
+
 
   const summary = data?.summary;
   const chart = data?.chart ?? [];

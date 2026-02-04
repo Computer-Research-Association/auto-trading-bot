@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
+import { apiFetch } from "../../lib/apiFetch";
 
 /* =======================
    Types
@@ -143,19 +144,13 @@ export default function Assets() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/portfolio/assets")
-      .then(async (r) => {
-        if (!r.ok) {
-          const text = await r.text();
-          throw new Error(text || `HTTP ${r.status}`);
-        }
-        return r.json() as Promise<PortfolioAssetsResponse>;
-      })
-      .then(setData)
-      .catch((e: unknown) =>
-        setErr(e instanceof Error ? e.message : String(e))
-      );
+  apiFetch("/api/portfolio/assets")
+    .then(setData)
+    .catch((e: unknown) => {
+      setErr(e instanceof Error ? e.message : String(e));
+    });
   }, []);
+
 
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;

@@ -3,7 +3,7 @@ services:
     image: postgres:17
     container_name: gold_db
     restart: always
-    env_file: .env
+    env_file: ./backend/.env
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,7 +17,7 @@ services:
     build: ./backend
     container_name: gold_backend
     restart: always
-    env_file: .env
+    env_file: ./backend/.env
     environment:
       - DB_HOST=db
       - DB_PORT=5432
