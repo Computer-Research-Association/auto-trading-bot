@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
-import { apiFetch } from '../../lib/apiFetch';
+import { apiFetch } from "../../lib/apiFetch";
 
 /* =======================
    Types
@@ -145,12 +145,9 @@ export default function Assets() {
 
   useEffect(() => {
   apiFetch("/api/portfolio/assets")
-    .then((res: PortfolioAssetsResponse) => {
-      setData(res);
-    })
+    .then(setData)
     .catch((e: unknown) => {
-      console.error(e);
-      setErr("자산 정보를 불러오지 못했습니다.");
+      setErr(e instanceof Error ? e.message : String(e));
     });
   }, []);
 
@@ -159,7 +156,6 @@ export default function Assets() {
   if (!data) return <Loading />;
 
   const { summary, items } = data;
-
   const ratio =
     buildRatio(summary, items).length > 0
       ? buildRatio(summary, items)
