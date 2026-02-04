@@ -1,5 +1,5 @@
 # 1. 파이썬 3.11 슬림 버전 이미지 사용 (가볍고 빠름)
-FROM python:3.11-slim
+FROM --platform=linux/amd64 python:3.12-bookworm
 
 # 2. 컨테이너 내부의 작업 디렉토리 설정
 WORKDIR /app
