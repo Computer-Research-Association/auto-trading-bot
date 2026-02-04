@@ -17,3 +17,9 @@ postgres_data/
 # OS
 .DS_Store
 Thumbs.db
+
+alembic.ini
+alembic/versions/env.py
+
+# trading
+backend/trading/trading.log

@@ -1,32 +1,36 @@
-import os
-from pathlib import Path
+from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
+import core.cors as cors_config
 from app.api.router import api_router
+from core.deps import get_database
+from core.logger import logger, setup_logging
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    setup_logging()
+    logger.info("lifespan started")
 
-# 1) .env 로드
-env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=env_path)
 
-# 2) app 생성
-app = FastAPI(title="Auto Trading Bot API")
 
-# 3) CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    yield
+    logger.info("lifespan stopped")
 
-# 4) 라우터 등록 (반드시 app 만든 다음!)
+
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/db-test")
+async def db_test(db: AsyncSession = Depends(get_database)):
+    result = await db.execute(text("SELECT 1"))
+    value = result.scalar()
+    return {"db": "ok", "result": value}
+
+
+
+cors_config.setup_cors(app)
 app.include_router(api_router)
-
-# 5) 루트 확인용
-@app.get("/")
-def root():
-    return {"message": "Server is up and running"}

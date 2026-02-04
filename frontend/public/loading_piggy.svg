@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cloud -->
+  <ellipse cx="100" cy="160" rx="60" ry="20" fill="#f1f5f9" />
+  <ellipse cx="60" cy="150" rx="30" ry="15" fill="#f1f5f9" />
+  <ellipse cx="140" cy="150" rx="30" ry="15" fill="#f1f5f9" />
+  
+  <!-- Piggy Body -->
+  <ellipse cx="100" cy="110" rx="55" ry="45" fill="#ffccd5" stroke="#ffb3c1" stroke-width="2" />
+  
+  <!-- Piggy Ears -->
+  <path d="M60,80 Q50,55 75,75 Z" fill="#ffb3c1" stroke="#ffb3c1" stroke-width="2" />
+  <path d="M140,80 Q150,55 125,75 Z" fill="#ffb3c1" stroke="#ffb3c1" stroke-width="2" />
+  
+  <!-- Piggy Snout -->
+  <ellipse cx="100" cy="120" rx="18" ry="12" fill="#ff8da1" />
+  <circle cx="94" cy="120" r="3" fill="#ffffff" opacity="0.5" />
+  <circle cx="106" cy="120" r="3" fill="#ffffff" opacity="0.5" />
+  
+  <!-- Piggy Eyes -->
+  <circle cx="80" cy="100" r="4" fill="#334155" />
+  <circle cx="120" cy="100" r="4" fill="#334155" />
+  
+  <!-- Gold Bar -->
+  <rect x="90" cy="135" width="20" height="10" rx="2" fill="#f7d54e" />
+  <path d="M90,135 L110,135 L108,138 L92,138 Z" fill="#ffffff" opacity="0.3" />
+  
+  <!-- Blush -->
+  <circle cx="65" cy="115" r="8" fill="#ff8da1" opacity="0.3" />
+  <circle cx="135" cy="115" r="8" fill="#ff8da1" opacity="0.3" />
+</svg>

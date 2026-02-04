@@ -2,43 +2,68 @@
 .app-root {
   background: #f0f3f7;
   min-height: 100vh;
-  width: 100%; /* 너비를 100%로 확실하게 지정 */
+  width: 100%;
+  /* 너비를 100%로 확실하게 지정 */
   display: flex;
   flex-direction: column;
 }
 
 /* ... 나머지 스타일 ... */
 
-/* 상단 헤더 */
+/* 상단 헤더 (Gold Bar) */
 .top-nav {
-  height: 56px;
-  background: #e1cc2a; /* 노란색/금색 헤더 */
-  color: #ffffff;
+  height: 64px;
+  background: linear-gradient(135deg, #d4af37 0%, #f7e28b 50%, #d4af37 100%);
+  color: #3e3002;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 32px;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .logo {
-  font-weight: 700;
-  font-size: 20px;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  color: #5c4d08;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
+}
+
+.nav-time {
+  font-weight: 600;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: #5c4d08;
 }
 
 .nav-small {
-  background: #0f172a;
-  border: none;
-  color: #ffffff;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #c9a44a;
+  color: #5c4d08;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nav-small:hover {
+  background: #fffdf5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 전체 컨텐츠 래퍼 */
@@ -75,7 +100,8 @@
 /* 메인 그리드 레이아웃 */
 .page-content {
   display: grid;
-  grid-template-columns: 1fr 400px; /* 왼쪽 유동적, 오른쪽 400px 고정 */
+  grid-template-columns: 1fr 400px;
+  /* 왼쪽 유동적, 오른쪽 400px 고정 */
   gap: 16px;
   padding: 20px 80px;
   max-width: 1600px;

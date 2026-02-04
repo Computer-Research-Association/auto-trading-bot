@@ -1,0 +1,251 @@
+/* src/components/History/History.css */
+
+.history-panel {
+    flex: 1;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-light);
+}
+
+.history-header {
+    margin-bottom: 24px;
+}
+
+.history-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.history-filters {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--bg-main);
+    border-radius: 10px;
+}
+
+.filter-group {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    background: white;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+.filter-btn.active {
+    background: #f7e28b;
+    border-color: #d4af37;
+    color: #3e3002;
+    font-weight: 700;
+}
+
+.strategy-filter-trigger {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px dashed var(--border-light);
+}
+
+.strategy-filter-trigger.active {
+    border-style: solid;
+}
+
+/* Strategy Modal (Dropdown) */
+.strategy-modal {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.813rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.strategy-options {
+    padding: 8px;
+}
+
+.strategy-opt {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.strategy-opt:hover {
+    background: #f1f5f9;
+}
+
+.strategy-opt.active {
+    background: #fdf5d5;
+    color: #d4af37;
+    font-weight: 600;
+}
+
+/* Search Box */
+.search-box {
+    margin-left: auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+}
+
+.search-input {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 8px 12px 8px 36px;
+    font-size: 0.875rem;
+    width: 220px;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* Table */
+.history-table-wrap {
+    overflow-x: auto;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: #fcfcfc;
+    border-bottom: 2px solid #f1f5f9;
+    font-size: 0.813rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.history-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f8fafc;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.col-date {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.col-coin {
+    font-weight: 700;
+    color: #334155;
+}
+
+.col-right {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Badges */
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge.buy {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.badge.sell {
+    background: #dbeafe;
+    color: #1261c4;
+}
+
+.badge.deposit {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.badge.withdraw {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+/* Strategy Tag in Table */
+.strategy-tag {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+}
