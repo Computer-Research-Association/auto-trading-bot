@@ -6,6 +6,8 @@ from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 from app.utills.models import Base
+import sys
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -18,6 +20,8 @@ if config.config_file_name is not None:
 
 # .env 로드
 BASE_DIR = Path(__file__).resolve().parent.parent
+# 프로젝트 루트 디렉토리를 sys.path에 추가
+sys.path.append(str(BASE_DIR))
 load_dotenv(BASE_DIR / ".env")
 
 # 모델들을 임포트해야 SQLModel.metadata에 등록됩니다.
