@@ -12,26 +12,22 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
-    # [추가] DB가 실제 쿼리를 받을 준비가 되었는지 체크
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # backend:
-  #   build: ./backend
-  #   container_name: gold_backend
-  #   restart: always
-  #   env_file: ./backend/.env
-  #   environment:
-  #     - DB_HOST=db
-  #     - DB_PORT=5432
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./backend:/app
-  #   # [수정] DB 컨테이너가 뜨는 것뿐만 아니라, '건강한(healthy)' 상태일 때 시작
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
+  backend:
+    build: ./backend
+    container_name: gold_backend
+    restart: always
+    env_file: ./backend/.env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
