@@ -165,7 +165,9 @@
 
 /* Table */
 .history-table-wrap {
-    overflow-x: auto;
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .history-table {

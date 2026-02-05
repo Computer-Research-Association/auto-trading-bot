@@ -185,7 +185,9 @@ message: '전략 사이클이 정상적으로 종료되지 않았습니다.',
 },
 ];
 
-export const mockHistory = [
+import type { History } from '../components/History/History';
+
+export const mockHistory: History[] = [
 {
 id: 1,
 DateTime: '2026.01.27 14:30:47',
@@ -240,6 +242,171 @@ TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
 Strategy: 'RSI 과매도 반동'
-}
+},
+{
+id: 6,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 7,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 8,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 9,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 10,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 11,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 12,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 13,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 14,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 15,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 16,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 17,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 18,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 19,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
+{
+id: 20,
+DateTime: '2026.01.30 11:00:45',
+CoinName:'KRW-AAPL',
+Type: 'Buy',
+TVolume: 2,
+TUnitPrice: 799395,
+TAmount: 400000,
+TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
+},
 ];
 

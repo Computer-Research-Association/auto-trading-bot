@@ -6,12 +6,12 @@ import {mockHistory} from '../../mocks/mockData';
 interface History {
   id: number;
   DateTime: string;
-  CoinName: string; // e.g. KRW-BTC
+  CoinName: string;
   Type: string;
   TVolume: number;
   TUnitPrice: number;
-  TAmount: number; // 거래금액
-  TCharge: number; // 수수료
+  TAmount: number;
+  TCharge: number;
   Strategy: Strategy;
 }
 
@@ -33,6 +33,13 @@ interface History {
   type Strategy = 'All Strategy' | 'Moving Average Golden Cross' 
                   | 'RSI Oversold Reaction' | 'Bollinger band bottom touch';
 
+  const STRATEGY_TO_COINS: Record<Strategy, string[] | 'ALL'> = {
+  'All Strategy': 'ALL',
+  'Moving Average Golden Cross': ['BTC'],
+  'RSI Oversold Reaction': ['ETH'],
+  'Bollinger band bottom touch': ['AAPL'],
+  };
+
   const periodOptions = [
     { label: '1 MONTH', value: '1 개월' },
     { label: '6 MONTH', value: '6 개월' },
@@ -47,10 +54,10 @@ interface History {
   ];
 
   const StrategyOptions = [
-    { label: '전체 전략', value: 'All Strategy'},
-    { label: '이동평균선 골든크로스', value: 'Moving Average Golden Cross'},
-    { label: 'RSI 과매도 반동', value: 'RSI Oversold Reaction'},
-    { label: '볼린저 밴드 하단 터치', value: 'Bollinger band bottom touch'},
+    { label: '전체 전략', value: '전체 전략'},
+    { label: '이동평균선 골든크로스', value: '이동평균선'},
+    { label: 'RSI 과매도 반동', value: 'RSI 과매도'},
+    { label: '볼린저 밴드 하단 터치', value: '볼린저 밴드'},
   ];
 
  export default function History() {
@@ -66,21 +73,24 @@ interface History {
   const [loading, setLoading] = useState(false);
   const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
-const historyData: History[] = mockHistory as History[];
-const filteredData = historyData
+  const historyData: History[] = mockHistory as History[];
+  const filteredData = historyData
   .filter(item => {
-    if (HistoryType === 'All') return true;
-    return item.Type === HistoryType;
+  if (HistoryType === 'All') return true;
+  return item.Type === HistoryType;
   })
-  .filter(item => {
-    if (Strategy === 'All Strategy') return true;
-    return item.Strategy === Strategy;
+
+ .filter(item => {
+  const rule = STRATEGY_TO_COINS[Strategy] ?? 'ALL';
+  if (rule === 'ALL') return true;
+  const coinSymbol = item.CoinName.split('-')[1];
+  if (!coinSymbol) return false;
+
+  return rule.includes(coinSymbol);
   })
   .filter(item =>
     item.CoinName.toLowerCase().includes(query.toLowerCase())
   );
-
-
 
   return (
     <div className="history-panel">
@@ -88,10 +98,10 @@ const filteredData = historyData
 
       <div className="history-filters">
           <div className="filter-time">
-            {periodOptions.map(opt => (   //이게 위에 있는 periodOptions 읽어와서 버튼으로 바꿔주는 기계
+            {periodOptions.map(opt => (
               <button 
                 key={opt.value} 
-                className={`filter-btn ${period === opt.value ? 'active' : ''}`} // 버튼이 선택되면 active 클래스 붙여라
+                className={`filter-btn ${period === opt.value ? 'active' : ''}`}
                 onClick={() => setPeriod(opt.value as Period)}>
                 {opt.label}
               </button>
@@ -176,7 +186,7 @@ const filteredData = historyData
                   </tr>
                 ) : (
                   filteredData.map((item) => (
-                    <tr>
+                    <tr key={item.id}>
                       <td className="col-date">{item.DateTime}</td>
                       <td className="col-coin">{item.CoinName}</td>
                       <td>
