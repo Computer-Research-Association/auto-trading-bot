@@ -11,60 +11,74 @@ interface History {
   TVolume: number;
   TUnitPrice: number;
   TAmount: number; // 거래금액
+  TCharge: number; // 수수료
 }
 
-function formatKRW(val: number) {
-  return new Intl.NumberFormat('ko-KR').format(val);
-}
-
- function filterTrades(
+   function filterTrades(
   data: History[],
-  type: 'Buy' | 'Sell' | 'All') {
+  type: string) {
     return data.filter(item => {
       if(type === 'All') return true;
       return item.Type === type;
     });
-  };
+  }
+
+    function formatKRW(val: number) {
+      return `${new Intl.NumberFormat('ko-KR').format(val)} KRW`;
+  }
 
   type Period = '1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL';
+  type HistoryType = 'Buy' | 'Sell' | 'All';
+  type Strategy = 'All Strategy' | 'Moving Average Golden Cross' 
+                  | 'RSI Oversold Reaction' | 'Bollinger band bottom touch';
 
-  const periodOptions:{label: string; value:Period }[] = [
-    { label: '1 MONTH', value: '1 MONTH' },
-    { label: '6 MONTH', value: '6 MONTH' },
-    { label: '1 YEAR', value: '1 YEAR' },
-    { label: 'ALL', value: 'ALL' },
+  const periodOptions = [
+    { label: '1 MONTH', value: '1 개월' },
+    { label: '6 MONTH', value: '6 개월' },
+    { label: '1 YEAR', value: '1 년' },
+    { label: 'ALL', value: '다' },
   ];
 
-  const [period, setPeriod] = useState<Period>('1 MONTH');
-
   const typeOptions = [
-    { label: 'ALL', value: 'All' },
-    { label: 'BUY', value: 'Buy' },
-    { label: 'SELL', value: 'Sell' },
+    { label: '전체', value: 'All' },
+    { label: '매수', value: 'Buy' },
+    { label: '매도', value: 'Sell' },
+  ];
+
+  const StrategyOptions = [
+    { label: '전체 전략', value: 'All Strategy'},
+    { label: '이동평균선 골든크로스', value: 'Moving Average Golden Cross'},
+    { label: 'RSI 과매도 반동', value: 'RSI Oversold Reaction'},
+    { label: '볼린저 밴드 하단 터치', value: 'Bollinger band bottom touch'},
   ];
 
  export default function History() {
   const [period, setPeriod] =
-    useState<'1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL'>('1 MONTH');
+    useState<Period>('1 MONTH');
 
-  const [type, setType] =
-    useState<'Buy' | 'Sell' | 'All'>('All');
+  const [HistoryType, setType] =
+    useState<HistoryType>('All');
+
+  const [Strategy, setStrategy] = 
+    useState<Strategy>('All Strategy');
 
   const [loading, setLoading] = useState(false);
 
-  const filteredData = filterTrades(mockHistory, type);
+  const filteredData = filterTrades(mockHistory, HistoryType);
+
+  const [query, setQuery] = useState('');
 
   return (
     <div className="history-panel">
       <h2>거래내역</h2>
 
       <div className="history-filters">
-          <div className="filter-Buy-Sell">
-            {periodOptions.map(opt => (
+          <div className="filter-time">
+            {periodOptions.map(opt => (   //이게 위에 있는 periodOptions 읽어와서 버튼으로 바꿔주는 기계
               <button 
                 key={opt.value} 
-                className={`filter-btn ${period === opt.value ? 'active' : ''}`}
-                onClick={() => setPeriod(opt.value)}>
+                className={`filter-btn ${period === opt.value ? 'active' : ''}`} // 버튼이 선택되면 active 클래스 붙여라
+                onClick={() => setPeriod(opt.value as Period)}>
                 {opt.label}
               </button>
             ))}
@@ -76,11 +90,36 @@ function formatKRW(val: number) {
             {typeOptions.map(opt => (
               <button 
                 key={opt.value} 
-                className={`filter-btn ${type === opt.value ? 'active' : ''}`}
-                onClick={() => setType(opt.value as any)}>
+                className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
+                onClick={() => setType(opt.value as HistoryType)}>
                 {opt.label.toUpperCase()}
               </button>
             ))}
+        </div>
+
+        <div className="filter-divider">|</div>
+
+        <div className="filter-Strategies">
+          {typeOptions.map(opt => (
+            <button
+              key={opt.value}
+              className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
+              onClick={() => setStrategy(opt.value as Strategy)}>
+              {opt.label.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        {/* 검색바 */}
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            className="search-input"
+            placeholder="코인명 검색"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
       </div>
 
@@ -91,14 +130,16 @@ function formatKRW(val: number) {
           <table className="history-table">
             <thead>
               <tr>
-                <th>채결시간</th>
-                    <th>코인</th>
-                    <th>종류</th>
-                    <th>거래수량</th>
-                    <th>거래단가</th>
-                    <th>거래금액</th>
-                    <th>수수료</th>
+                <th className="col-date">체결시간</th>
+                <th className="col-coin">코인</th>
+                <th className="col-type">종류</th>
+                <th className="col-right">거래수량</th>
+                <th className="col-right">거래단가</th>
+                <th className="col-right">거래금액</th>
+                <th className="col-right">수수료</th>
               </tr>
+              </thead>
+
               <tbody>
                 {filteredData.length === 0 ? (
                   <tr>
@@ -111,17 +152,20 @@ function formatKRW(val: number) {
                     <tr>
                       <td className="col-date">{item.DateTime}</td>
                       <td className="col-coin">{item.CoinName}</td>
-                      <td className={`col-type ${item.Type === 'Buy' ? 'buy' : 'sell'}`}>
-                        {item.Type}
+                      <td>
+                        <span className={`trade-badge ${item.Type === 'Buy' ? 'buy' : 'sell'}`}>
+                        {item.Type === 'Buy' ? '매수' : '매도'}
+                        </span>
                       </td>
+
                       <td className="col-right">{item.TVolume}</td>
                       <td className="col-right">{formatKRW(item.TUnitPrice)}</td>
                       <td className="col-right">{formatKRW(item.TAmount)}</td>
+                      <td className="col-right">{formatKRW(item.TCharge)}</td>
                     </tr>
                   ))
                 )}
               </tbody>
-            </thead>
           </table>
         )}
       </div>

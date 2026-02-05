@@ -135,6 +135,7 @@
     position: relative;
     display: flex;
     align-items: center;
+    margin-top: -100px;
 }
 
 .search-icon {
@@ -169,6 +170,7 @@
     border-collapse: collapse;
 }
 
+.history-table td,
 .history-table th {
     text-align: left;
     padding: 12px 16px;
@@ -176,29 +178,6 @@
     border-bottom: 2px solid #f1f5f9;
     font-size: 0.813rem;
     font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.history-table td {
-    padding: 16px;
-    border-bottom: 1px solid #f8fafc;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-}
-
-.col-date {
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-.col-coin {
-    font-weight: 700;
-    color: #334155;
-}
-
-.col-right {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
 }
 
 /* Badges */
@@ -234,10 +213,12 @@
 .col-coin {
   font-weight: 700;
   color: #334155;
+  text-align: left;
 }
 
 .col-type {
   font-weight: 700;
+  text-align: center;
 }
 
 .col-type.buy {
@@ -251,4 +232,24 @@
 .col-right {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.trade-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 1500;
+  text-align: center;
+  min-width: 44px;
+}
+
+.trade-badge.buy {
+  background-color: #f8c5c5;
+  color: #ef4444;
+}
+
+.trade-badge.sell {
+  background-color: #c0d9fa;
+  color: #2563eb;
 }
