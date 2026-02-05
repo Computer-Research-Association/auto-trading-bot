@@ -96,7 +96,7 @@ useEffect(() => {
   const start = "2026-01-01";
   const end = "2026-02-04";
 
-  apiFetch("/api/performance", {
+  apiFetch("/api/performance/summary", {
     params: {
       start_date: start,
       end_date: end,
