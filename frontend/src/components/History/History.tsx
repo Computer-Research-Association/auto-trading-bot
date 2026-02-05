@@ -12,6 +12,7 @@ interface History {
   TUnitPrice: number;
   TAmount: number; // 거래금액
   TCharge: number; // 수수료
+  Strategy: Strategy;
 }
 
    function filterTrades(
@@ -56,17 +57,30 @@ interface History {
   const [period, setPeriod] =
     useState<Period>('1 MONTH');
 
-  const [HistoryType, setType] =
+  const [HistoryType, setHistory] =
     useState<HistoryType>('All');
 
   const [Strategy, setStrategy] = 
     useState<Strategy>('All Strategy');
 
   const [loading, setLoading] = useState(false);
-
-  const filteredData = filterTrades(mockHistory, HistoryType);
-
+  const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
+const historyData: History[] = mockHistory as History[];
+const filteredData = historyData
+  .filter(item => {
+    if (HistoryType === 'All') return true;
+    return item.Type === HistoryType;
+  })
+  .filter(item => {
+    if (Strategy === 'All Strategy') return true;
+    return item.Strategy === Strategy;
+  })
+  .filter(item =>
+    item.CoinName.toLowerCase().includes(query.toLowerCase())
+  );
+
+
 
   return (
     <div className="history-panel">
@@ -88,26 +102,39 @@ interface History {
 
         <div className="filter-Buy-Sell">
             {typeOptions.map(opt => (
-              <button 
-                key={opt.value} 
+              <button
                 className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
-                onClick={() => setType(opt.value as HistoryType)}>
-                {opt.label.toUpperCase()}
+                onClick={() => setHistory(opt.value as HistoryType)}>
+                {opt.label}
               </button>
+
             ))}
         </div>
 
-        <div className="filter-divider">|</div>
+        <div className="strategy-filter">
+          <button
+            className={`filter-btn strategy-trigger ${Strategy !== 'All Strategy' ? 'active' : ''}`}
+            onClick={() => setIsStrategyOpen(prev => !prev)}
+          >
+            전략 {Strategy !== 'All Strategy' ? `(${Strategy})` : ''} ▾
+          </button>
 
-        <div className="filter-Strategies">
-          {typeOptions.map(opt => (
-            <button
-              key={opt.value}
-              className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
-              onClick={() => setStrategy(opt.value as Strategy)}>
-              {opt.label.toUpperCase()}
-            </button>
-          ))}
+          {isStrategyOpen && (
+            <div className="strategy-dropdown">
+              {StrategyOptions.map(opt => (
+                <div
+                  key={opt.value}
+                  className={`strategy-option ${Strategy === opt.value ? 'active' : ''}`}
+                  onClick={() => {
+                    setStrategy(opt.value as Strategy);
+                    setIsStrategyOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 검색바 */}

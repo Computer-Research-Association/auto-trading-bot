@@ -195,6 +195,7 @@ TVolume: 0.005,
 TUnitPrice: 136200000,
 TAmount: 681000,
 TCharge: 5000,
+Strategy: '이동평균선 골든크로스'
 },
 {
 id: 2,
@@ -205,6 +206,7 @@ TVolume: 0.002,
 TUnitPrice: 89700000,
 TAmount: 391000,
 TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
 },
 {
 id: 3,
@@ -215,6 +217,7 @@ TVolume: 2,
 TUnitPrice: 6134904,
 TAmount: 306700,
 TCharge: 5000,
+Strategy: '볼린저 밴드 하단 터치'
 },
 {
 id: 4,
@@ -225,6 +228,7 @@ TVolume: 1,
 TUnitPrice: 3067452,
 TAmount: 148900,
 TCharge: 5000,
+Strategy: '이동평균선 골든크로스'
 },
 {
 id: 5,
@@ -235,6 +239,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
+Strategy: 'RSI 과매도 반동'
 }
 ];
 
