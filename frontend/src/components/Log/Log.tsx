@@ -1,87 +1,78 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
+import {mockLogs} from '../../mocks/mockData';
 
-type LogLevel = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
+type tpstring = 'System' | 'Data' | 'Strategy' | 'Trade';
 
 interface LogItem {
   id: number;
   timestamp: string;
+  category: tpstring;
+  eventname: string;
   level: LogLevel;
-  source: string;
   message: string;
 }
 
-const mockLogs: LogItem[] = [
-  {
-    id: 1,
-    timestamp: '2026-01-14 15:30:22.451',
-    level: 'SUCCESS',
-    source: 'Strategy: Scalp_V1',
-    message: 'Order Placed: 0.5 BTC at 42,100 KRW',
-  },
-  {
-    id: 2,
-    timestamp: '2026-01-14 15:31:05.112',
-    level: 'ERROR',
-    source: 'System',
-    message: 'Connection Timeout: API endpoint /v1/orders unreachable',
-  },
-  {
-    id: 3,
-    timestamp: '2026-01-14 15:32:01.002',
-    level: 'INFO',
-    source: 'Strategy: Momentum',
-    message: 'Analyzing trend data for USDT pairs across 4 exchanges',
-  },
-  {
-    id: 4,
-    timestamp: '2026-01-14 15:32:45.890',
-    level: 'WARNING',
-    source: 'System',
-    message: 'High volatility detected in KRW markets. Adjusting risk parameters...',
-  },
-  {
-    id: 5,
-    timestamp: '2026-01-14 15:33:10.221',
-    level: 'SUCCESS',
-    source: 'Strategy: Scalp_V1',
-    message: 'Take profit executed: 0.1 BTC sold at $43,250',
-  },
-  {
-    id: 6,
-    timestamp: '2026-01-14 15:34:00.005',
-    level: 'INFO',
-    source: 'System',
-    message: 'Periodic health check: All services operational. Database latency: 12ms.',
-  },
-  {
-    id: 7,
-    timestamp: '2026-01-14 15:34:45.001',
-    level: 'INFO',
-    source: 'Strategy: Grid_Bot',
-    message: 'Rebalancing grid levels for ETH/USDT. Range: 2,400 - 2,800.',
-  },
-  {
-    id: 8,
-    timestamp: '2026-01-14 15:35:12.887',
-    level: 'WARNING',
-    source: 'Exchange: Private',
-    message: 'Rate limit approaching (85% of quota used). Throttling requests for 180s.',
-  },
-  {
-    id: 9,
-    timestamp: '2026-01-14 15:36:01.002',
-    level: 'SUCCESS',
-    source: 'Strategy: Arbitrage',
-    message: 'Cycle complete: Profit +$14.22 across gap between endpoints.',
-  },
-];
+function getPageItems(page: number, total: number) {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  if (page <= 2) return [1, 2, "...", total];
+  if (page >= total - 1) return [1, "...", total - 1, total];
+  return [1, "...", page, "...", total];
+}
+
+export function PageBlock({
+  page,
+  totalPages,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (p: number) => void;
+}) {
+  const items = getPageItems(page, totalPages);
+
+  return (
+    <div className="pagination">
+      <button
+        className="pageNav"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+      >
+        ‹
+      </button>
+
+      {items.map((it, idx) =>
+        it === "..." ? (
+          <span key={`dots-${idx}`} className="pageDots">…</span>
+        ) : (
+          <button
+            key={it}
+            className={`pageBtn ${page === it ? "active" : ""}`}
+            onClick={() => onChange(it as number)}
+          >
+            {it}
+          </button>
+        )
+      )}
+
+      <button
+        className="pageNav"
+        onClick={() => onChange(Math.min(totalPages, page + 1))}
+        disabled={page === totalPages}
+      >
+        ›
+      </button>
+    </div>
+  );
+}
+
+
 
 const Filters: Array<{key: 'ALL' | LogLevel; label: string}> = [
     {key: 'ALL', label: 'All Logs'},
     {key: 'INFO', label: 'Info'},
-    {key: 'SUCCESS', label: 'Success'},
     {key: 'WARNING', label: 'Warning'},
     {key: 'ERROR', label: 'Error'},
 ];
@@ -91,6 +82,10 @@ const Log: React.FC = () => {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | LogLevel>('ALL');
+  
+
+    const pageSize = 5;
+    const [page, setPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -108,12 +103,23 @@ const Log: React.FC = () => {
         if (!q) return true;
         return (
           l.timestamp.toLowerCase().includes(q) ||
+          l.category.toLowerCase().includes(q) ||
+          l.eventname.toLowerCase().includes(q) ||
           l.level.toLowerCase().includes(q) ||
-          l.source.toLowerCase().includes(q) ||
           l.message.toLowerCase().includes(q)
         );
       });
   }, [logs, query, levelFilter]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const startIndex = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, filtered.length);
+
+
+    const pagedLogs = useMemo<LogItem[]>(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+    }, [filtered, page]);
 
   const onClearView = () => {
     setQuery('');
@@ -130,7 +136,6 @@ const Log: React.FC = () => {
       <div className="logTopbar">
         <div className="brand">
           <div className="brandIcon" aria-hidden />
-          <div className="brandName">SystemLog Dashboard</div>
         </div>
 
         <div className="searchWrap">
@@ -145,26 +150,25 @@ const Log: React.FC = () => {
 
         <div className="rightHint">
           <span className="dotLive" aria-hidden />
-          Live Streaming Enabled
+          Active
         </div>
       </div>
 
       {/* Title + actions */}
-      <div className="logHeader">
+        <div className="logHeader">
         <div>
           <h1 className="title">System Activity Logs</h1>
-          <p className="subtitle">Real-time monitoring and event history across all services.</p>
+          <p className="subtitle">
+            Real-time monitoring and event history across all services.
+          </p>
         </div>
 
         <div className="actions">
-          <button className="btn primary" type="button">
-            ⬇ Export CSV
-          </button>
           <button className="btn ghost" type="button" onClick={onClearView}>
             🗑 Clear View
           </button>
         </div>
-      </div>
+      </div>  
 
       {/* Filters */}
       <div className="filterRow">
@@ -180,45 +184,44 @@ const Log: React.FC = () => {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="tableCard">
-        <div className="tableHead">
-          <div>TIMESTAMP</div>
-          <div>LEVEL</div>
-          <div>SOURCE</div>
-          <div>MESSAGE</div>
-        </div>
+    {/* Table */}
+    <div className="tableCard">
+      <div className="tableHead">
+        <div>TIMESTAMP</div>
+        <div>CATEGORY</div>
+        <div>EVENT NAME</div>
+        <div>LEVEL</div>
+        <div>MESSAGE</div>
+      </div>
 
-        <div className="tableBody">
-          {filtered.map((l) => (
-            <div className="row" key={l.id}>
-              <div className="cell mono">{l.timestamp}</div>
-              <div className="cell">
-                <span className={`badge ${l.level.toLowerCase()}`}>{l.level}</span>
+      <div className="tableBody">
+        {pagedLogs.map((l) => (
+          <div className="row" key={l.id}>
+            <div className="cell mono">{l.timestamp}</div>
+            <div className="cell">{l.category}</div>
+            <div className="cell">{l.eventname}</div>
+            <div className="cell level">
+              <div className={`badge ${l.level.toLowerCase()}`}>
+                {l.level}
               </div>
-              <div className="cell">
-                <span className="sourceTag">{l.source}</span>
-              </div>
+            </div>
               <div className="cell message">{l.message}</div>
-            </div>
-          ))}
-
-          {filtered.length === 0 && (
-            <div className="empty">
-              검색/필터 결과가 없습니다.
-            </div>
-          )}
-        </div>
+          </div>
+        ))}
+        {pagedLogs.length === 0 && (
+          <div className="empty">검색/필터 결과가 없습니다.</div>
+        )}
+      </div>
+        <PageBlock
+          page={page}
+          totalPages={Math.ceil(filtered.length / pageSize)}
+          onChange={setPage}
+          />
 
         <div className="tableFooter">
           <span className="footerText">
-            Showing 1-{Math.min(filtered.length, 50)} of {filtered.length} logs
+            Showing {startIndex}-{endIndex} of {filtered.length} logs
           </span>
-
-          <div className="pager">
-            <button className="iconBtn" type="button" disabled>‹</button>
-            <button className="iconBtn" type="button" disabled>›</button>
-          </div>
         </div>
       </div>
 
@@ -226,5 +229,6 @@ const Log: React.FC = () => {
     </div>
   );
 };
+
 
 export default Log;
