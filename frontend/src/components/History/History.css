@@ -9,54 +9,40 @@
     border: 1px solid var(--border-light);
 }
 
-.history-header {
-    margin-bottom: 24px;
-}
-
-.history-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-}
-
 .history-filters {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding: 12px 16px;
-    background: var(--bg-main);
-    border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .filter-group {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .filter-btn {
-    background: white;
-    border: 1px solid var(--border-light);
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .filter-btn:hover {
-    border-color: #d4af37;
-    color: #d4af37;
+  border-color: #d4af37;
+  color: #d4af37;
 }
 
 .filter-btn.active {
-    background: #f7e28b;
-    border-color: #d4af37;
-    color: #3e3002;
-    font-weight: 700;
+  background: #f7e28b;
+  border-color: #d4af37;
+  color: #3e3002;
+  font-weight: 800;
 }
 
 .strategy-filter-trigger {
@@ -233,19 +219,36 @@
     color: #1261c4;
 }
 
-.badge.deposit {
-    background: #dcfce7;
-    color: #16a34a;
-}
-
-.badge.withdraw {
-    background: #fef3c7;
-    color: #d97706;
-}
-
 /* Strategy Tag in Table */
 .strategy-tag {
     font-size: 0.75rem;
     color: #64748b;
     font-style: italic;
+}
+
+.col-date {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-coin {
+  font-weight: 700;
+  color: #334155;
+}
+
+.col-type {
+  font-weight: 700;
+}
+
+.col-type.buy {
+  color: #ef4444;
+}
+
+.col-type.sell {
+  color: #2563eb;
+}
+
+.col-right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
