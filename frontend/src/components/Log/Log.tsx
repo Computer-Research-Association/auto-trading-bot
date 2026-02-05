@@ -147,26 +147,20 @@ const Log: React.FC = () => {
             placeholder="Search logs..."
           />
         </div>
-
-        <div className="rightHint">
-          <span className="dotLive" aria-hidden />
-          Active
+        <div className="actions">
+          <button className="btn ghost" type="button" onClick={onClearView}>
+            🗑 Clear View
+          </button>
         </div>
       </div>
 
-      {/* Title + actions */}
+      {/* Title*/}
         <div className="logHeader">
         <div>
           <h1 className="title">System Activity Logs</h1>
           <p className="subtitle">
             Real-time monitoring and event history across all services.
           </p>
-        </div>
-
-        <div className="actions">
-          <button className="btn ghost" type="button" onClick={onClearView}>
-            🗑 Clear View
-          </button>
         </div>
       </div>  
 
