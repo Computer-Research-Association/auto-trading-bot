@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/apiFetch";
+import { api } from "../../lib/api";
 
 type Period = "30d" | "90d" | "1y" | "all";
 
@@ -96,7 +96,7 @@ useEffect(() => {
   const start = "2026-01-01";
   const end = "2026-02-04";
 
-  apiFetch("/api/performance/summary", {
+  api("/performance/summary", {
     params: {
       start_date: start,
       end_date: end,
