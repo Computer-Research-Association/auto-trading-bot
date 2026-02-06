@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/apiFetch";
+import { mockAssets } from "../../mocks/mockData";
+// import { apiFetch } from "../../lib/apiFetch";
 
 /* =======================
    Types
@@ -142,14 +143,16 @@ function DonutChart({ ratio }: { ratio: RatioItem[] }) {
 export default function Assets() {
   const [data, setData] = useState<PortfolioAssetsResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [assets, setAssets] = useState<typeof mockAssets>([]);
 
-  useEffect(() => {
-  apiFetch("/api/portfolio/assets")
-    .then(setData)
-    .catch((e: unknown) => {
-      setErr(e instanceof Error ? e.message : String(e));
-    });
-  }, []);
+   useEffect(() => {
+  // apiFetch("/api/portfolio/assets")
+  //   .then(setData)
+  //   .catch((e: unknown) => {
+  //     setErr(e instanceof Error ? e.message : String(e));
+  //   });
+    setAssets(mockAssets);
+   }, []);
 
 
   if (err) return <div className="main-panel">에러: {err}</div>;
