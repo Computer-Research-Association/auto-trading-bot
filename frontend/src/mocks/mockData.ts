@@ -197,7 +197,7 @@ TVolume: 0.005,
 TUnitPrice: 136200000,
 TAmount: 681000,
 TCharge: 5000,
-Strategy: '이동평균선 골든크로스'
+Strategy: 'Moving Average' 
 },
 {
 id: 2,
@@ -208,7 +208,7 @@ TVolume: 0.002,
 TUnitPrice: 89700000,
 TAmount: 391000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 3,
@@ -219,7 +219,7 @@ TVolume: 2,
 TUnitPrice: 6134904,
 TAmount: 306700,
 TCharge: 5000,
-Strategy: '볼린저 밴드 하단 터치'
+Strategy: 'Bollinger band'
 },
 {
 id: 4,
@@ -230,7 +230,7 @@ TVolume: 1,
 TUnitPrice: 3067452,
 TAmount: 148900,
 TCharge: 5000,
-Strategy: '이동평균선 골든크로스'
+Strategy: 'Moving Average' 
 },
 {
 id: 5,
@@ -241,7 +241,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 6,
@@ -252,7 +252,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'Bollinger band'
 },
 {
 id: 7,
@@ -263,7 +263,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 8,
@@ -274,7 +274,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 9,
@@ -285,7 +285,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 10,
@@ -296,7 +296,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 11,
@@ -307,7 +307,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 12,
@@ -318,7 +318,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 13,
@@ -329,7 +329,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 14,
@@ -340,7 +340,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 15,
@@ -351,7 +351,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 16,
@@ -362,7 +362,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 17,
@@ -373,7 +373,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 18,
@@ -384,7 +384,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 19,
@@ -395,7 +395,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 {
 id: 20,
@@ -406,7 +406,7 @@ TVolume: 2,
 TUnitPrice: 799395,
 TAmount: 400000,
 TCharge: 5000,
-Strategy: 'RSI 과매도 반동'
+Strategy: 'RSI Oversold'
 },
 ];
 

@@ -30,15 +30,8 @@ interface History {
 
   type Period = '1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL';
   type HistoryType = 'Buy' | 'Sell' | 'All';
-  type Strategy = 'All Strategy' | 'Moving Average Golden Cross' 
-                  | 'RSI Oversold Reaction' | 'Bollinger band bottom touch';
-
-  const STRATEGY_TO_COINS: Record<Strategy, string[] | 'ALL'> = {
-  'All Strategy': 'ALL',
-  'Moving Average Golden Cross': ['BTC'],
-  'RSI Oversold Reaction': ['ETH'],
-  'Bollinger band bottom touch': ['AAPL'],
-  };
+  type Strategy = 'All Strategy' | 'Moving Average' 
+                  | 'RSI Oversold' | 'Bollinger band';
 
   const periodOptions = [
     { label: '1 MONTH', value: '1 개월' },
@@ -54,10 +47,10 @@ interface History {
   ];
 
   const StrategyOptions = [
-    { label: '전체 전략', value: '전체 전략'},
-    { label: '이동평균선 골든크로스', value: '이동평균선'},
-    { label: 'RSI 과매도 반동', value: 'RSI 과매도'},
-    { label: '볼린저 밴드 하단 터치', value: '볼린저 밴드'},
+    { label: '전체 전략', value: 'All Strategy'},
+    { label: '이동평균선 골든크로스', value: 'Moving Average'},
+    { label: 'RSI 과매도 반동', value: 'RSI Oversold'},
+    { label: '볼린저 밴드 하단 터치', value: 'Bollinger band'},
   ];
 
  export default function History() {
@@ -74,23 +67,23 @@ interface History {
   const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
   const historyData: History[] = mockHistory as History[];
+
   const filteredData = historyData
+  // 전체/매수/매도
   .filter(item => {
-  if (HistoryType === 'All') return true;
-  return item.Type === HistoryType;
+    if (HistoryType === 'All') return true;
+    return item.Type === HistoryType;
   })
-
- .filter(item => {
-  const rule = STRATEGY_TO_COINS[Strategy] ?? 'ALL';
-  if (rule === 'ALL') return true;
-  const coinSymbol = item.CoinName.split('-')[1];
-  if (!coinSymbol) return false;
-
-  return rule.includes(coinSymbol);
+  // 전략
+  .filter(item => {
+    if (Strategy === 'All Strategy') return true;
+    return item.Strategy === Strategy;
   })
+  // 검색
   .filter(item =>
     item.CoinName.toLowerCase().includes(query.toLowerCase())
   );
+
 
   return (
     <div className="history-panel">
