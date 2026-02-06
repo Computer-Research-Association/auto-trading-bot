@@ -5,7 +5,7 @@ import pyupbit
 
 
 class UpbitClient:
-    """PortfolioService가 기대하는 최소 메서드만 제공하는 래퍼"""
+    """"""
 
     def __init__(self) -> None:
         load_dotenv()
@@ -28,6 +28,20 @@ class UpbitClient:
             return {k: float(v) for k, v in prices.items()}
         return {t: 0.0 for t in tickers}
 
+    def get_krw_balance(self) -> float:
+        """"가용 원화(krw) 잔고 조회"""
+        balance = self.upbit.get_balance("KRW")
+        return float(balance) if balance is not None else 0.0
+
+    def get_coin_balance(self, ticker: str) -> float:
+        """특정 코인의 보유 수량 조회"""
+        balance = self.upbit.get_balance(ticker)
+        return float(balance) if balance is not None else 0.0
+
+    def get_avg_buy_price(self, ticker: str) -> float:
+        """업비트 서버 기준의 실제 평단가 조회"""
+        avg_price = self.upbit.get_avg_buy_price(ticker)
+        return float(avg_price) if avg_price else 0.0
 
 
 client = UpbitClient()
