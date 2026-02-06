@@ -40,9 +40,9 @@
 
 .filter-btn.active {
   background: #f7e28b;
-  border-color: #d4af37;
+  border-color: #facc15;
   color: #3e3002;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .strategy-filter-trigger {
