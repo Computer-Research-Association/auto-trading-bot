@@ -144,7 +144,7 @@ export default function Assets() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-  api("/portfolio/assets")
+  api("/api/portfolio/assets")
     .then(setData)
     .catch((e: unknown) => {
       setErr(e instanceof Error ? e.message : String(e));
