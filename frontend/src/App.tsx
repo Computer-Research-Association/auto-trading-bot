@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";      // 메인 페이지
 import "./App.css"; // 전체 스타일
 
 function App() {
+
     return (
         <div className="app-root">
             {/* 1. 헤더는 페이지가 바뀌어도 무조건 떠 있음 */}
