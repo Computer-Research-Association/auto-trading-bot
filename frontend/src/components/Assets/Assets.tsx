@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
-import { api } from "../../lib/api";
+import { apiFetch } from "../../lib/api";
 
 /* =======================
    Types
@@ -144,7 +144,7 @@ export default function Assets() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-  api("/api/portfolio/assets")
+  apiFetch<PortfolioAssetsResponse>("/api/portfolio/assets")
     .then(setData)
     .catch((e: unknown) => {
       setErr(e instanceof Error ? e.message : String(e));

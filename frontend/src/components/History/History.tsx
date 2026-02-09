@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './History.css';
 import Loading from '../Common/Loading';
 import {mockHistory} from '../../mocks/mockData';
+import { apiFetch } from "../../lib/api";
 
 interface History {
   id: number;
@@ -66,7 +67,8 @@ interface History {
   const [loading, setLoading] = useState(false);
   const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const historyData: History[] = mockHistory as History[];
+  const [historyData, setHistoryData] = useState<History[]>(mockHistory);
+
 
   const filteredData = historyData
   // 전체/매수/매도
@@ -83,6 +85,18 @@ interface History {
   .filter(item =>
     item.CoinName.toLowerCase().includes(query.toLowerCase())
   );
+
+    useEffect(() => {
+    setLoading(true);
+
+    apiFetch<History[]>("/api/trades/history")
+      .then(setHistoryData)
+      .catch(() => {
+        // 서버 안 되면 mock 유지
+        setHistoryData(mockHistory);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
 
   return (

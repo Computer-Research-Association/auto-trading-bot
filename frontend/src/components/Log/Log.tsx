@@ -2,9 +2,14 @@ import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
 import {mockLogs} from '../../mocks/mockData';
+import { apiFetch } from "../../lib/api";
 
 type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
 type tpstring = 'System' | 'Data' | 'Strategy' | 'Trade';
+type LogsResponse = {
+  items: LogItem[];
+};
+
 
 interface LogItem {
   id: number;
@@ -68,8 +73,6 @@ export function PageBlock({
   );
 }
 
-
-
 const Filters: Array<{key: 'ALL' | LogLevel; label: string}> = [
     {key: 'ALL', label: 'All Logs'},
     {key: 'INFO', label: 'Info'},
@@ -115,11 +118,25 @@ const Log: React.FC = () => {
   const startIndex = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, filtered.length);
 
-
     const pagedLogs = useMemo<LogItem[]>(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
     }, [filtered, page]);
+
+    useEffect(() => {
+      setLoading(true);
+      apiFetch<LogsResponse>("/api/logs")
+        .then((res: LogsResponse) => {
+        setLogs(res.items);
+      })
+        .catch(() => {
+        setLogs(mockLogs);
+      })
+      .finally(() => {
+      setLoading(false);
+    });
+}, []);
+
 
   const onClearView = () => {
     setQuery('');
