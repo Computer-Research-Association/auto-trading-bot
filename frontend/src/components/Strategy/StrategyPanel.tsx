@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import "./StrategyPanel.css";
+import { useEffect } from "react";
 
 type Strategy = {
   id: string;
@@ -13,7 +14,7 @@ type Strategy = {
   performanceScore: number;
 };
 
-const STRATEGIES: Strategy[] = [
+const INITIAL_STRATEGIES: Strategy[] = [
   {
     id: "ma_cross",
     name: "이동평균선 골든크로스",
@@ -50,28 +51,47 @@ const STRATEGIES: Strategy[] = [
 ];
 
 export default function StrategyPanel() {
+  const [strategies, setStrategies] = useState<Strategy[]>(INITIAL_STRATEGIES);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>("ma_cross");
   // 실행 중인 전략 ID들을 Set으로 관리
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+  fetch("/api/strategies")
+    .then((res) => res.json())
+    .then(setStrategies)
+    .catch(console.error);
+}, []);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return STRATEGIES;
-    return STRATEGIES.filter((s) => s.name.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return strategies;
+    return strategies.filter((s) =>
+      s.name.toLowerCase().includes(q)
+    );
+  }, [query, strategies]);
 
-  const toggleStrategy = (id: string, e: React.MouseEvent) => {
+
+  const toggleStrategy = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setRunningIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+
+    const isRunning = runningIds.has(id);
+    const url = isRunning
+      ? `/api/strategies/${id}/stop`
+      : `/api/strategies/${id}/start`;
+
+    try {
+      await fetch(url, { method: "POST" });
+
+      setRunningIds((prev) => {
+        const next = new Set(prev);
+        isRunning ? next.delete(id) : next.add(id);
+        return next;
+      });
+    } catch (err) {
+      alert("전략 상태 변경 실패");
+    }
   };
 
   const stopAll = () => setRunningIds(new Set());

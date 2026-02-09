@@ -23,3 +23,6 @@ alembic/versions/env.py
 
 # trading
 backend/trading/trading.log
+
+# dependencies
+node_modules/

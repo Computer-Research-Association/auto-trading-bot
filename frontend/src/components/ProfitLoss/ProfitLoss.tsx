@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/apiFetch";
+import { apiFetch } from "../../lib/api";
 
 type Period = "30d" | "90d" | "1y" | "all";
 
@@ -93,15 +93,12 @@ useEffect(() => {
   setErr(null);
   setData(null);
 
-  const start = "2026-01-01";
-  const end = "2026-02-04";
+const params = new URLSearchParams({
+  start_date: "2026-01-01",
+  end_date: "2026-02-04",
+});
 
-  apiFetch("/api/performance/summary", {
-    params: {
-      start_date: start,
-      end_date: end,
-    },
-  })
+apiFetch<PerfSummary>(`/api/performance/summary?${params}`)
     .then(setProfitLoss)
     .catch((e: unknown) => {
       setErr(e instanceof Error ? e.message : String(e));
