@@ -164,7 +164,7 @@ class TradingBot:
         )
 
     async def execute_sell(self, price, reason, event_name="SELL"):
-        """매도 로직 실행 후 즉시 API 동기화"""
+        """매도 로직 실행(API로 매도 주문 실행) 후 즉시 API 동기화, 로그 기록 저장 수행."""
         avg_price = self.state.get("avg_buy_price", 0)
         profit_pct = ((price - avg_price) / avg_price * 100) if avg_price > 0 else 0.0
         
@@ -196,31 +196,31 @@ class TradingBot:
                     await asyncio.sleep(0.2)
                     continue
 
-                await self._check_market_conditions()
+                await self._check_market_conditions()  # 익절/손절 조건 체크 후 매도 실행
                 await asyncio.sleep(0.2)
             except Exception:
                 await self._log_loop_error("감시 루프", traceback.format_exc())
 
     async def perform_analysis_loop(self):
-        """[지휘부] 10초 주기: 데이터 분석 및 주기적 동기화"""
+        """[지휘부] 10초 주기(활성/비활성 체트는 1초 주기): 데이터 분석 및 주기적 동기화"""
         while True:
             try:
-                await self.load_state_async()
+                await self.load_state_async()  # bot_state.json 변경사항 있으면 로드
                 if not self.is_active:
-                    await asyncio.sleep(1); continue
+                    await asyncio.sleep(1); continue  # 비활성 시 대기 시간은 1초
 
                 # 주기적 무결성 체크 (1시간)
                 if time.time() - self.last_sync_time >= 3600:
                     await self.sync_state_with_api()
 
                 await self._process_strategy_analysis()
-                await asyncio.sleep(10)
+                await asyncio.sleep(10)  # 매수 판단은 10초 주기
             except Exception:
                 await self._log_loop_error("분석 루프", traceback.format_exc())
 
     async def check_heartbeat(self):
         current_time = time.time()
-        if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
+        if current_time - self.last_heartbeat_time >= self.heartbeat_interval:  # 하트비트 찍을 시간 됐는지 검증
             msg = f"[매매 가동 중] 엔진 생존 신고 (보유: {self.is_holding})" if self.is_active \
                   else "[대기 모드] 엔진 생존 신고 (사용자 명령 대기 중)"
             
@@ -233,8 +233,15 @@ class TradingBot:
     # [Helpers] 내부 보조 메서드 (Flattening을 위한 분리)
     # -----------------------------------------------------------
     async def _check_market_conditions(self):
-        current_price = await self.loader.get_current_price()
-        if not current_price: return
+        """
+        즉각적인 매도 조건(익절/손절) 체크 및 실행(execute_sell 호출)
+        1. 현재가 조회
+        2. 익절가 도달 시 매도
+        3. 손절가 도달 시 매도
+        4. 조건 미충족 시 종료
+        """
+        current_price = await self.loader.get_current_price()  # 현재가를 dataloader에서 조회
+        if not current_price: return  # 시세 조회 실패 시 중단
 
         # 익절 체크
         if current_price >= self.state["target_price"]:
@@ -245,13 +252,13 @@ class TradingBot:
             await self.execute_sell(current_price, "스탑로스 도달", "STOPLOSS")
 
     async def _process_strategy_analysis(self):
-        df = await self.loader.fetch_ohlcv()
+        df = await self.loader.fetch_ohlcv()  # 최신 ohlcv 데이터 로드ㄴ
         if df is None: return
         
         is_valid, _ = self.strategy.validate_data(df)
         if not is_valid: return
 
-        df_indicators = self.strategy.setup_indicators(df)
+        df_indicators = self.strategy.setup_indicators(df)  #
         result = self.strategy.decide(df_indicators, self.state, {})
         current_close = df_indicators['close'].iloc[-1]
         
