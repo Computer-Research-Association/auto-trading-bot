@@ -188,8 +188,8 @@ class TradingBot:
         """[파수꾼] 0.2초 주기: 즉각적인 매도(익절/손절) 감시"""
         while True:
             try:
-                await self.load_state_async()
-                await self.check_heartbeat()
+                await self.load_state_async()  # 파일 내 변경사항이 있을 때 비동기 로드
+                await self.check_heartbeat()  # 하트비트 로그
 
                 # 가드 클로즈: 비활성 또는 미보유 시 스킵
                 if not self.is_active or not self.is_holding:
@@ -218,6 +218,17 @@ class TradingBot:
             except Exception:
                 await self._log_loop_error("분석 루프", traceback.format_exc())
 
+    async def check_heartbeat(self):
+        current_time = time.time()
+        if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
+            msg = f"[매매 가동 중] 엔진 생존 신고 (보유: {self.is_holding})" if self.is_active \
+                  else "[대기 모드] 엔진 생존 신고 (사용자 명령 대기 중)"
+            
+            await save_log_to_db(
+                level="INFO", category="SYSTEM", event_name="HEARTBEAT",
+                message=f"{self.log_prefix} {msg}"
+            )
+            self.last_heartbeat_time = current_time
     # -----------------------------------------------------------
     # [Helpers] 내부 보조 메서드 (Flattening을 위한 분리)
     # -----------------------------------------------------------
