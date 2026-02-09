@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
+import { apiFetch } from "../../Lib/apiFetch";
+import type { PortfolioAssetsResponse } from "./types";
 import { mockAssets } from "../../mocks/mockData";
-// import { apiFetch } from "../../lib/apiFetch";
+// import axios from "axios";
 
 /* =======================
    Types
@@ -56,53 +58,38 @@ function safeDiv(n: number, d: number): number {
   return n / d;
 }
 
-function buildRatio(
-  summary: PortfolioSummary,
-  items: AssetItem[]
-): RatioItem[] {
-  const total = Math.max(0, summary.total_assets_krw);
-
-  const coinSum = items.reduce(
-    (acc, it) => acc + Math.max(0, it.evaluation_krw),
-    0
-  );
-
-  const krwValue = Math.max(0, total - coinSum);
-
-  const rows: RatioItem[] = [
-    {
-      symbol: "KRW",
-      value_krw: krwValue,
-      pct: safeDiv(krwValue, total) * 100,
-    },
-    ...items.map((it) => ({
-      symbol: it.symbol,
-      value_krw: Math.max(0, it.evaluation_krw),
-      pct: safeDiv(Math.max(0, it.evaluation_krw), total) * 100,
-    })),
-  ];
-
-  return rows
-    .filter((r) => r.value_krw > 0)
-    .sort((a, b) => b.value_krw - a.value_krw);
-}
-
 /* =======================
    Donut Chart
 ======================= */
 const ASSET_COLORS = [
-  "#f7d54e", // Yellow
-  "#ef4444", // Red
-  "#d4af37", // Gold
-  "#ed6c02", // Orange
-  "#64748b", // Grey
+  "#f7d54e",
+  "#ef4444",
+  "#d4af37",
+  "#ed6c02",
+  "#64748b",
 ];
 
 function DonutChart({ ratio }: { ratio: RatioItem[] }) {
+  // ✅ 1) ratio가 없거나 비면 차트 대신 안내 문구
+  if (!Array.isArray(ratio) || ratio.length === 0) {
+    return (
+      <div className="donut-card">
+        <h2 className="asset-title">자산 비중</h2>
+        <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
+          자산 비중 데이터 없음
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ 2) pct가 NaN/undefined여도 안전하게 누적
   let acc = 0;
   const stops = ratio.map((r, idx) => {
     const start = acc;
-    acc += r.pct;
+
+    const safePct = Number.isFinite(r.pct) ? r.pct : 0;
+    acc += safePct;
+
     const color = ASSET_COLORS[idx % ASSET_COLORS.length];
     return `${color} ${start}% ${acc}%`;
   });
@@ -110,25 +97,28 @@ function DonutChart({ ratio }: { ratio: RatioItem[] }) {
   return (
     <div className="donut-card">
       <h2 className="asset-title">자산 비중</h2>
+
       <div className="donut-wrap">
         <div
           className="donut"
           style={{ background: `conic-gradient(${stops.join(",")})` }}
         />
+
         <div className="donut-legend">
           {ratio.map((r, idx) => (
-            <div key={r.symbol} className="legend-row">
+            <div key={`${r.symbol}-${idx}`} className="legend-row">
               <span
                 className="legend-dot"
-                style={{
-                  background: ASSET_COLORS[idx % ASSET_COLORS.length],
-                }}
+                style={{ background: ASSET_COLORS[idx % ASSET_COLORS.length] }}
               />
               <span className="legend-name">{r.symbol}</span>
-              <span className="legend-pct">{r.pct.toFixed(1)}%</span>
-              <span className="legend-val">
-                {formatKRW(r.value_krw)}
+
+              {/* ✅ 3) toFixed도 안전하게 */}
+              <span className="legend-pct">
+                {Number.isFinite(r.pct) ? r.pct.toFixed(1) : "0.0"}%
               </span>
+
+              <span className="legend-val">{formatKRW(r.value_krw)}</span>
             </div>
           ))}
         </div>
@@ -137,161 +127,101 @@ function DonutChart({ ratio }: { ratio: RatioItem[] }) {
   );
 }
 
+
 /* =======================
    Main Component
 ======================= */
+
 export default function Assets() {
+  // 1️⃣ 모든 Hook은 최상단
   const [data, setData] = useState<PortfolioAssetsResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [assets, setAssets] = useState<typeof mockAssets>([]);
+  const [assetRatio, setAssetRatio] = useState<RatioItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-   useEffect(() => {
-  // apiFetch("/api/portfolio/assets")
-  //   .then(setData)
-  //   .catch((e: unknown) => {
-  //     setErr(e instanceof Error ? e.message : String(e));
-  //   });
-    setAssets(mockAssets);
-   }, []);
+  // 2️⃣ useEffect도 무조건 위
+  useEffect(() => {
+    setLoading(true);
 
+    apiFetch<PortfolioAssetsResponse>("/api/portfolio/assets")
+      .then(setData)
+      .catch(() => {
+        // fallback mock
+        setData(mockAssets);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 3️⃣ 여기서부터 조건 분기 (이 아래에는 Hook ❌)
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (err) {
+    return <div>에러 발생: {err}</div>;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+
+  // 🔹 도넛 차트용 JSON fetch (여기만 바뀐 부분)
+  useEffect(() => {
+    fetch("/JSON/assetRatio.json")
+      .then((res) => res.json())
+      .then((rows) => {
+        const normalized: RatioItem[] = rows.map((r: any) => ({
+          symbol: r.currency,
+          value_krw: r.value,
+          pct: r.percent,
+        }));
+        setAssetRatio(normalized);
+      })
+      .catch((e) => setErr(String(e)));
+  }, []);
 
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;
 
   const { summary, items } = data;
-  const ratio =
-    buildRatio(summary, items).length > 0
-      ? buildRatio(summary, items)
-      : [{ symbol: "KRW", value_krw: summary.krw_total, pct: 100 }];
 
   return (
-    <div className="main-panel">
-      {/* 상단 영역 */}
-      <div className="assets-top-row">
-        {/* 자산 요약 */}
-        <div className="asset-summary-card">
-          <h2 className="asset-title">자산 요약</h2>
 
-          <div className="asset-total">
-            <div className="asset-total-label">총 보유자산</div>
-            <div className="asset-total-value">
-              {formatKRW(summary.total_assets_krw)}
-            </div>
-          </div>
+  <div className="asset-summary-grid">
+  <div className="asset-card">
+    <span>총 보유자산</span>
+    <strong>{formatKRW(summary.total_assets_krw)}</strong>
+  </div>
 
-          <div className="asset-kpi-grid">
-            <div className="kpi-card">
-              <div className="kpi-label">보유 KRW</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.krw_total)}
-              </div>
-            </div>
+  <div className="asset-card">
+    <span>보유 KRW</span>
+    <strong>{formatKRW(summary.krw_total)}</strong>
+  </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">주문가능</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.krw_available)}
-              </div>
-            </div>
+  <div className="asset-card">
+    <span>주문 가능</span>
+    <strong>{formatKRW(summary.krw_available)}</strong>
+  </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">총 매수금액</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.total_buy_krw)}
-              </div>
-            </div>
+  <div className="asset-card">
+    <span>총 매수금액</span>
+    <strong>{formatKRW(summary.total_buy_krw)}</strong>
+  </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">평가손익</div>
-              <div
-                className={`kpi-value ${summary.total_pnl_krw >= 0 ? "positive" : "negative"
-                  }`}
-              >
-                {formatKRW(summary.total_pnl_krw)}
-              </div>
-            </div>
+  <div className="asset-card">
+    <span>평가손익</span>
+    <strong
+      className={summary.total_pnl_krw >= 0 ? "pnl-plus" : "pnl-minus"}
+    >
+      {formatKRW(summary.total_pnl_krw)}
+    </strong>
+    <small>{formatPercent(summary.total_pnl_rate)}</small>
 
-            <div className="kpi-card">
-              <div className="kpi-label">수익률</div>
-              <div
-                className={`kpi-value ${summary.total_pnl_rate >= 0 ? "positive" : "negative"
-                  }`}
-              >
-                {formatPercent(summary.total_pnl_rate)}
-              </div>
-            </div>
+
+         {/* 자산 비중 (JSON 기반) */}
+          <DonutChart ratio={assetRatio} />
           </div>
         </div>
-
-        {/* 자산 비중 */}
-        <DonutChart ratio={ratio} />
-      </div>
-
-      {/* 보유 자산 테이블 */}
-      <div className="assets-table-wrap">
-        <h2 className="asset-title" style={{ padding: "16px 16px 0" }}>
-          보유 자산
-        </h2>
-
-        {items.length === 0 ? (
-          <div className="asset-empty">
-            보유 중인 자산이 없습니다.
-          </div>
-        ) : (
-          <table className="asset-table">
-            <thead>
-              <tr>
-                <th>종목</th>
-                <th className="col-right">보유수량</th>
-                <th className="col-right">평균매수가</th>
-                <th className="col-right">현재가</th>
-                <th className="col-right">평가금액</th>
-                <th className="col-right">손익</th>
-                <th className="col-right">수익률</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const pnl =
-                  item.evaluation_krw -
-                  item.avg_buy_price * item.quantity;
-                const pnlRate =
-                  item.avg_buy_price > 0
-                    ? ((item.current_price - item.avg_buy_price) /
-                      item.avg_buy_price) *
-                    100
-                    : 0;
-
-                return (
-                  <tr key={item.symbol}>
-                    <td style={{ fontWeight: 600 }}>{item.symbol}</td>
-                    <td className="col-right">{item.quantity.toLocaleString()}</td>
-                    <td className="col-right">{formatKRW(item.avg_buy_price)}</td>
-                    <td className="col-right">{formatKRW(item.current_price)}</td>
-                    <td className="col-right">{formatKRW(item.evaluation_krw)}</td>
-                    <td
-                      className="col-right"
-                      style={{
-                        color: pnl >= 0 ? "#ef4444" : "#1261c4",
-                      }}
-                    >
-                      {formatKRW(pnl)}
-                    </td>
-                    <td
-                      className="col-right"
-                      style={{
-                        color: pnlRate >= 0 ? "#ef4444" : "#1261c4",
-                      }}
-                    >
-                      {formatPercent(pnlRate)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
+      );
 }
