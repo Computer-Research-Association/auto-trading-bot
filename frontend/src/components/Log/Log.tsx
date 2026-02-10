@@ -73,11 +73,11 @@ export function PageBlock({
   );
 }
 
-const Filters: Array<{key: 'ALL' | LogLevel; label: string}> = [
-    {key: 'ALL', label: 'All Logs'},
-    {key: 'INFO', label: 'Info'},
-    {key: 'WARNING', label: 'Warning'},
-    {key: 'ERROR', label: 'Error'},
+const Filters: Array<{ key: 'ALL' | LogLevel; label: string }> = [
+  { key: 'ALL', label: 'All Logs' },
+  { key: 'INFO', label: 'Info' },
+  { key: 'WARNING', label: 'Warning' },
+  { key: 'ERROR', label: 'Error' },
 ];
 
 const Log: React.FC = () => {
@@ -85,10 +85,10 @@ const Log: React.FC = () => {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | LogLevel>('ALL');
-  
 
-    const pageSize = 5;
-    const [page, setPage] = useState(1);
+
+  const pageSize = 5;
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -98,7 +98,7 @@ const Log: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-    const filtered = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return logs
       .filter((l) => (levelFilter === 'ALL' ? true : l.level === levelFilter))
@@ -118,24 +118,24 @@ const Log: React.FC = () => {
   const startIndex = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, filtered.length);
 
-    const pagedLogs = useMemo<LogItem[]>(() => {
+  const pagedLogs = useMemo<LogItem[]>(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-    }, [filtered, page]);
+  }, [filtered, page]);
 
-//     useEffect(() => {
-//       setLoading(true);
-//       apiFetch<LogsResponse>("/api/logs")
-//         .then((res: LogsResponse) => {
-//         setLogs(res.items);
-//       })
-//         .catch(() => {
-//         setLogs(mockStrategies);
-//       })
-//       .finally(() => {
-//       setLoading(false);
-//     });
-// }, []);
+  //     useEffect(() => {
+  //       setLoading(true);
+  //       apiFetch<LogsResponse>("/api/logs")
+  //         .then((res: LogsResponse) => {
+  //         setLogs(res.items);
+  //       })
+  //         .catch(() => {
+  //         setLogs(mockStrategies);
+  //       })
+  //       .finally(() => {
+  //       setLoading(false);
+  //     });
+  // }, []);
 
 
   const onClearView = () => {
@@ -161,7 +161,7 @@ const Log: React.FC = () => {
             className="searchInput"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search logs..."
+            placeholder="검색..."
           />
         </div>
         <div className="actions">
@@ -172,14 +172,14 @@ const Log: React.FC = () => {
       </div>
 
       {/* Title*/}
-        <div className="logHeader">
+      <div className="logHeader">
         <div>
-          <h1 className="title">System Activity Logs</h1>
-          <p className="subtitle">
+          <h1 className="title">시스템 활동 로그</h1>
+          {/* <p className="subtitle">
             Real-time monitoring and event history across all services.
-          </p>
+          </p> */}
         </div>
-      </div>  
+      </div>
 
       {/* Filters */}
       <div className="filterRow">
@@ -195,39 +195,39 @@ const Log: React.FC = () => {
         ))}
       </div>
 
-    {/* Table */}
-    <div className="tableCard">
-      <div className="tableHead">
-        <div>TIMESTAMP</div>
-        <div>CATEGORY</div>
-        <div>EVENT NAME</div>
-        <div>LEVEL</div>
-        <div>MESSAGE</div>
-      </div>
+      {/* Table */}
+      <div className="tableCard">
+        <div className="tableHead">
+          <div>날짜 및 시간</div>
+          <div>분류</div>
+          <div>이벤트명</div>
+          <div>등급</div>
+          <div>상세내용</div>
+        </div>
 
-      <div className="tableBody">
-        {pagedLogs.map((l) => (
-          <div className="row" key={l.id}>
-            <div className="cell mono">{l.timestamp}</div>
-            <div className="cell">{l.category}</div>
-            <div className="cell">{l.eventname}</div>
-            <div className="cell level">
-              <div className={`badge ${l.level.toLowerCase()}`}>
-                {l.level}
+        <div className="tableBody">
+          {pagedLogs.map((l) => (
+            <div className="row" key={l.id}>
+              <div className="cell mono">{l.timestamp}</div>
+              <div className="cell">{l.category}</div>
+              <div className="cell">{l.eventname}</div>
+              <div className="cell level">
+                <div className={`badge ${l.level.toLowerCase()}`}>
+                  {l.level}
+                </div>
               </div>
-            </div>
               <div className="cell message">{l.message}</div>
-          </div>
-        ))}
-        {pagedLogs.length === 0 && (
-          <div className="empty">검색/필터 결과가 없습니다.</div>
-        )}
-      </div>
+            </div>
+          ))}
+          {pagedLogs.length === 0 && (
+            <div className="empty">검색/필터 결과가 없습니다.</div>
+          )}
+        </div>
         <PageBlock
           page={page}
           totalPages={Math.ceil(filtered.length / pageSize)}
           onChange={setPage}
-          />
+        />
 
         <div className="tableFooter">
           <span className="footerText">
