@@ -1,35 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
-import { mockPerformance } from "../../mocks/mockPerformance";
+import {
+  mockPerformance,
+  type PerfResponse,
+  type PerfChartPoint,
+  type PerfSummary,
+  type PerfDailyRow
+} from "../../mocks/mockPerformance";
+
 type Period = "30d" | "90d" | "1y" | "all";
-
-type PerfSummary = {
-  period_label: string;
-  pnl_krw: number;
-  pnl_rate: number;
-  start_assets_krw: number;
-  end_assets_krw: number;
-};
-
-type PerfChartPoint = {
-  date: string;        // YYYY-MM-DD
-  pnl_krw: number;     // 누적 손익
-  assets_krw: number;  // 자산가치
-};
-
-type PerfDailyRow = {
-  date: string;
-  pnl_krw: number;
-  pnl_rate: number;
-  assets_krw: number;
-};
-
-type PerfResponse = {
-  summary: PerfSummary;
-  chart: PerfChartPoint[];
-  daily: PerfDailyRow[];
-};
 
 function formatKRW(v: number) {
   return new Intl.NumberFormat("ko-KR", {
