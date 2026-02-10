@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
-// import { apiFetch } from "../../lib/api";
 import { mockAssets } from "../../mocks/mockAssets";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer, 
+  Tooltip, 
+  Legend 
+} from "recharts";
 
 /* =======================
    Types
@@ -30,8 +37,8 @@ type PortfolioAssetsResponse = {
 };
 
 type RatioItem = {
-  symbol: string;
-  value_krw: number;
+  name: string;
+  value: number;
   pct: number;
 };
 
@@ -61,81 +68,48 @@ function buildRatio(
   items: AssetItem[]
 ): RatioItem[] {
   const total = Math.max(0, summary.total_assets_krw);
-
   const coinSum = items.reduce(
     (acc, it) => acc + Math.max(0, it.evaluation_krw),
     0
   );
-
   const krwValue = Math.max(0, total - coinSum);
 
   const rows: RatioItem[] = [
     {
-      symbol: "KRW",
-      value_krw: krwValue,
+      name: "KRW",
+      value: krwValue,
       pct: safeDiv(krwValue, total) * 100,
     },
     ...items.map((it) => ({
-      symbol: it.symbol,
-      value_krw: Math.max(0, it.evaluation_krw),
+      name: it.symbol,
+      value: Math.max(0, it.evaluation_krw),
       pct: safeDiv(Math.max(0, it.evaluation_krw), total) * 100,
     })),
   ];
 
   return rows
-    .filter((r) => r.value_krw > 0)
-    .sort((a, b) => b.value_krw - a.value_krw);
+    .filter((r) => r.value > 0)
+    .sort((a, b) => b.value - a.value);
 }
 
 /* =======================
-   Donut Chart
+   Chart Settings
 ======================= */
-const ASSET_COLORS = [
-  "#f7d54e", // Yellow
-  "#ef4444", // Red
-  "#d4af37", // Gold
-  "#ed6c02", // Orange
-  "#64748b", // Grey
-];
+const COLORS = ["#FBBF24", "#EF4444", "#3B82F6", "#9CA3AF"]; // 노랑, 빨강, 파랑, 회색
 
-function DonutChart({ ratio }: { ratio: RatioItem[] }) {
-  let acc = 0;
-  const stops = ratio.map((r, idx) => {
-    const start = acc;
-    acc += r.pct;
-    const color = ASSET_COLORS[idx % ASSET_COLORS.length];
-    return `${color} ${start}% ${acc}%`;
-  });
-
-  return (
-    <div className="donut-card">
-      <h2 className="asset-title">자산 비중</h2>
-      <div className="donut-wrap">
-        <div
-          className="donut"
-          style={{ background: `conic-gradient(${stops.join(",")})` }}
-        />
-        <div className="donut-legend">
-          {ratio.map((r, idx) => (
-            <div key={r.symbol} className="legend-row">
-              <span
-                className="legend-dot"
-                style={{
-                  background: ASSET_COLORS[idx % ASSET_COLORS.length],
-                }}
-              />
-              <span className="legend-name">{r.symbol}</span>
-              <span className="legend-pct">{r.pct.toFixed(1)}%</span>
-              <span className="legend-val">
-                {formatKRW(r.value_krw)}
-              </span>
-            </div>
-          ))}
-        </div>
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="custom-tooltip">
+        <div className="tooltip-label">{data.name}</div>
+        <div className="tooltip-value">{formatKRW(data.value)}</div>
+        <div className="tooltip-pct">({data.pct.toFixed(1)}%)</div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+  return null;
+};
 
 /* =======================
    Main Component
@@ -145,7 +119,7 @@ export default function Assets() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock 데이터 사용 (서버 구현 전)
+    // Mock 데이터 로드
     setData(mockAssets);
   }, []);
 
@@ -153,130 +127,147 @@ export default function Assets() {
   if (!data) return <Loading />;
 
   const { summary, items } = data;
-  const ratio =
-    buildRatio(summary, items).length > 0
-      ? buildRatio(summary, items)
-      : [{ symbol: "KRW", value_krw: summary.krw_total, pct: 100 }];
+  
+  // 데이터 가공 및 색상 주입
+  const ratioRaw = buildRatio(summary, items).length > 0
+    ? buildRatio(summary, items)
+    : [{ name: "KRW", value: summary.krw_total, pct: 100 }];
+
+  // Recharts 4.0 호환을 위해 데이터에 직접 fill 속성 주입
+  const ratio = ratioRaw.map((item, index) => ({
+    ...item,
+    fill: COLORS[index % COLORS.length]
+  }));
 
   return (
     <div className="main-panel">
-      {/* 상단 영역 */}
-      <div className="assets-top-row">
-        {/* 자산 요약 */}
-        <div className="asset-summary-card">
-          <h2 className="asset-title">자산 요약</h2>
-
-          <div className="asset-total">
-            <div className="asset-total-label">총 보유자산</div>
-            <div className="asset-total-value">
-              {formatKRW(summary.total_assets_krw)}
-            </div>
-          </div>
-
-          <div className="asset-kpi-grid">
-            <div className="kpi-card">
-              <div className="kpi-label">보유 KRW</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.krw_total)}
+      {/* 상단 2단 레이아웃 (요약 / 차트) */}
+      <div className="assets-top-grid">
+        
+        {/* 1. 자산 요약 섹션 */}
+        <div className="asset-summary-section">
+          {/* ... (생략) ... */}
+          <h2 className="section-title">자산 요약</h2>
+          
+          <div className="summary-grid">
+            {/* 총 보유자산 (Hero) */}
+            <div className="summary-card hero">
+              <div className="card-label">총 보유자산</div>
+              <div className="card-value-hero">
+                {formatKRW(summary.total_assets_krw)}
               </div>
             </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">주문가능</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.krw_available)}
-              </div>
+            {/* 나머지 카드들 */}
+            <div className="summary-card">
+              <div className="card-label">보유 KRW</div>
+              <div className="card-value">{formatKRW(summary.krw_total)}</div>
             </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">총 매수금액</div>
-              <div className="kpi-value neutral">
-                {formatKRW(summary.total_buy_krw)}
-              </div>
+            <div className="summary-card">
+              <div className="card-label">주문가능</div>
+              <div className="card-value">{formatKRW(summary.krw_available)}</div>
             </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">평가손익</div>
-              <div
-                className={`kpi-value ${summary.total_pnl_krw >= 0 ? "positive" : "negative"
-                  }`}
-              >
+            <div className="summary-card">
+              <div className="card-label">총 매수금액</div>
+              <div className="card-value">{formatKRW(summary.total_buy_krw)}</div>
+            </div>
+
+            <div className="summary-card">
+              <div className="card-label">평가손익</div>
+              <div className={`card-value ${summary.total_pnl_krw >= 0 ? "pos" : "neg"}`}>
                 {formatKRW(summary.total_pnl_krw)}
               </div>
             </div>
 
-            <div className="kpi-card">
-              <div className="kpi-label">수익률</div>
-              <div
-                className={`kpi-value ${summary.total_pnl_rate >= 0 ? "positive" : "negative"
-                  }`}
-              >
+            {/* 수익률 (독립) */}
+            <div className="summary-card">
+              <div className="card-label">수익률</div>
+              <div className={`card-value ${summary.total_pnl_rate >= 0 ? "pos" : "neg"}`}>
                 {formatPercent(summary.total_pnl_rate)}
               </div>
             </div>
           </div>
         </div>
 
-        {/* 자산 비중 */}
-        <DonutChart ratio={ratio} />
+        {/* 2. 자산 비중 차트 섹션 */}
+        <div className="asset-chart-section">
+          <h2 className="section-title">자산 비중</h2>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={ratio}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {/* Cell 컴포넌트 제거됨 (데이터 자체의 fill 속성 사용) */}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend 
+                  layout="vertical" 
+                  verticalAlign="middle" 
+                  align="right"
+                  formatter={(value, entry: any) => {
+                    // entry.payload에 전체 데이터 객체가 들어있음
+                    const item = entry.payload; 
+                    return (
+                      <span className="legend-text">
+                        <span className="legend-name">{item.name}</span>
+                        <span className="legend-percent">{item.pct.toFixed(1)}%</span>
+                        <span className="legend-money">{formatKRW(item.value)}</span>
+                      </span>
+                    );
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
-      {/* 보유 자산 테이블 */}
-      <div className="assets-table-wrap">
-        <h2 className="asset-title" style={{ padding: "16px 16px 0" }}>
-          보유 자산
-        </h2>
-
+      {/* 3. 보유 자산 테이블 */}
+      <div className="assets-table-section">
+        <h2 className="section-title">보유 자산</h2>
+        
         {items.length === 0 ? (
-          <div className="asset-empty">
-            보유 중인 자산이 없습니다.
-          </div>
+          <div className="empty-message">보유 중인 자산이 없습니다.</div>
         ) : (
           <table className="asset-table">
             <thead>
               <tr>
                 <th>종목</th>
-                <th className="col-right">보유수량</th>
-                <th className="col-right">평균매수가</th>
-                <th className="col-right">현재가</th>
-                <th className="col-right">평가금액</th>
-                <th className="col-right">손익</th>
-                <th className="col-right">수익률</th>
+                <th className="right">보유수량</th>
+                <th className="right">평균매수가</th>
+                <th className="right">현재가</th>
+                <th className="right">평가금액</th>
+                <th className="right">손익</th>
+                <th className="right">수익률</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => {
-                const pnl =
-                  item.evaluation_krw -
-                  item.avg_buy_price * item.quantity;
-                const pnlRate =
-                  item.avg_buy_price > 0
-                    ? ((item.current_price - item.avg_buy_price) /
-                      item.avg_buy_price) *
-                    100
-                    : 0;
+                const pnl = item.evaluation_krw - item.avg_buy_price * item.quantity;
+                const pnlRate = item.avg_buy_price > 0
+                  ? ((item.current_price - item.avg_buy_price) / item.avg_buy_price) * 100
+                  : 0;
 
                 return (
                   <tr key={item.symbol}>
-                    <td style={{ fontWeight: 600 }}>{item.symbol}</td>
-                    <td className="col-right">{item.quantity.toLocaleString()}</td>
-                    <td className="col-right">{formatKRW(item.avg_buy_price)}</td>
-                    <td className="col-right">{formatKRW(item.current_price)}</td>
-                    <td className="col-right">{formatKRW(item.evaluation_krw)}</td>
-                    <td
-                      className="col-right"
-                      style={{
-                        color: pnl >= 0 ? "#ef4444" : "#1261c4",
-                      }}
-                    >
+                    <td className="symbol-cell">{item.symbol}</td>
+                    <td className="right">{item.quantity.toLocaleString()}</td>
+                    <td className="right">{formatKRW(item.avg_buy_price)}</td>
+                    <td className="right">{formatKRW(item.current_price)}</td>
+                    <td className="right">{formatKRW(item.evaluation_krw)}</td>
+                    <td className={`right ${pnl >= 0 ? "pos" : "neg"}`}>
                       {formatKRW(pnl)}
                     </td>
-                    <td
-                      className="col-right"
-                      style={{
-                        color: pnlRate >= 0 ? "#ef4444" : "#1261c4",
-                      }}
-                    >
+                    <td className={`right ${pnlRate >= 0 ? "pos" : "neg"}`}>
                       {formatPercent(pnlRate)}
                     </td>
                   </tr>

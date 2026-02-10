@@ -1,259 +1,179 @@
+/* 메인 패널 */
 .main-panel {
-  padding: 24px;
-  background: #f6f7fb;
-  /* ✅ 전체 배경을 살짝 톤다운 */
+  padding: 32px;
+  background-color: #f8fafc;
   min-height: 100vh;
 }
 
-/* 섹션 카드(자산 요약 전체 박스) */
-.asset-summary-card {
-  width: 380px;
-  max-width: 380px;
-  padding: 16px;
-  border-radius: 16px;
+/* 섹션 타이틀 */
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16px;
 }
 
-/* 제목 */
-.asset-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: #0f172a;
-}
-
-/* 총 보유자산(히어로 카드) */
-.asset-total {
-  background: #f7f8fb;
-  border: 1px solid #eef0f6;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-.asset-total-label {
-  font-size: 13px;
-  color: #64748b;
-  margin-bottom: 10px;
-}
-
-.asset-total-value {
-  font-size: 30px;
-  font-weight: 900;
-  letter-spacing: -0.6px;
-  color: #0f172a;
-  line-height: 1.1;
-}
-
-/* KPI 그리드 */
-.asset-kpi-grid {
+/* 상단 그리드 (좌: 요약, 우: 차트) */
+.assets-top-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: 1.2fr 1.5fr; /* 좌측이 조금 더 작게, 우측은 차트 넉넉히 */
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
-/* KPI 카드 */
-.kpi-card {
-  background: #ffffff;
-  border: 1px solid #eef0f6;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
-  transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
+/* 카드 공통 스타일 */
+.asset-summary-section,
+.asset-chart-section,
+.assets-table-section {
+  background: white;
+  border: 1px solid #e2e8f0; /* 연한 테두리 */
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* 아주 연한 그림자 */
 }
 
-.kpi-card:hover {
-  transform: translateY(-2px);
-  border-color: #e2e8f0;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+/* --- 왼쪽 자산 요약 --- */
+.asset-summary-section {
+  background: transparent; /* 배경 투명 (카드들이 각각 박스 가지도록 변경 가능하지만 여기선 통일감 위해) */
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
-.kpi-label {
-  font-size: 13px;
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.summary-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Hero 카드는 2칸 차지 */
+.summary-card.hero {
+  grid-column: span 2;
+  background-color: #f8fafc; /* 아주 연한 배경 */
+  border-color: #cbd5e1;
+}
+
+.card-label {
+  font-size: 12px;
+  font-weight: 600;
   color: #64748b;
   margin-bottom: 8px;
 }
 
-.kpi-value {
+.card-value {
   font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-value-hero {
+  font-size: 32px; /* 아주 크게 */
   font-weight: 800;
-  letter-spacing: -0.2px;
   color: #0f172a;
+  letter-spacing: -1px;
 }
 
-/* 손익 색상*/
-.kpi-value.positive {
-  color: #ef4444;
-}
+.card-value.pos { color: #ef4444; }
+.card-value.neg { color: #3b82f6; }
 
-.kpi-value.negative {
-  color: #1261c4;
-}
-
-.kpi-value.neutral {
-  color: #0f172a;
-}
-
-/* 모바일 */
-@media (max-width: 640px) {
-  .asset-summary-card {
-    padding: 18px;
-    border-radius: 18px;
-  }
-
-  .asset-total {
-    border-radius: 16px;
-  }
-
-  .asset-total-value {
-    font-size: 28px;
-  }
-
-  .asset-kpi-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.main-panel {
-  padding: 24px;
-  background: #f6f7fb;
-  min-height: 100vh;
-}
-
-.assets-top-row {
+/* --- 오른쪽 자산 차트 --- */
+.chart-wrapper {
   display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  padding: 24px;
+  justify-content: center;
+  align-items: center;
+  height: 250px;
 }
 
-.assets-table-wrap {
-  padding: 0 24px 24px 24px;
-}
-
-.asset-empty {
-  background: #ffffff;
-  border: 1px solid #eef0f6;
-  border-radius: 12px;
-  padding: 44px 18px;
-  text-align: center;
-  color: #64748b;
-  font-size: 14px;
-}
-
-.donut-card {
-  flex: 1;
-  min-width: 360px;
-  background: #ffffff;
-  border: 1px solid #eef0f6;
-  border-radius: 12px;
-  padding: 18px;
-}
-
-.donut-wrap {
+/* Recharts Legend 커스텀 */
+.legend-text {
   display: flex;
-  gap: 18px;
   align-items: center;
-}
-
-.donut {
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  position: relative;
-}
-
-.donut::after {
-  content: "";
-  position: absolute;
-  inset: 36px;
-  background: #fff;
-  border-radius: 50%;
-  border: 1px solid #eef0f6;
-}
-
-.donut-legend {
-  flex: 1;
-  min-width: 200px;
-}
-
-.legend-row {
-  display: grid;
-  grid-template-columns: 14px 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px dashed #eef0f6;
-}
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  gap: 12px;
+  font-size: 13px;
+  color: #475569;
+  margin-left: 10px;
 }
 
 .legend-name {
-  font-size: 13px;
-  color: #0f172a;
   font-weight: 600;
+  width: 40px;
 }
 
-.legend-pct {
-  font-size: 13px;
-  color: #64748b;
-  font-variant-numeric: tabular-nums;
+.legend-money {
+  color: #94a3b8;
+  font-size: 12px;
 }
 
-.legend-val {
-  font-size: 13px;
-  color: #0f172a;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+/* 툴팁 */
+.custom-tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.tooltip-label { font-size: 12px; font-weight: 600; color: #64748b; }
+.tooltip-value { font-size: 16px; font-weight: 700; color: #0f172a; }
+.tooltip-pct { font-size: 14px; font-weight: 600; color: #64748b; }
+
+
+/* --- 하단 테이블 --- */
+.assets-table-section {
+  padding: 24px;
 }
 
-/* 보유 자산 테이블 스타일 */
 .asset-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  margin-top: 16px;
-  background: #ffffff;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
 .asset-table th {
-  background: #f8fafc;
-  padding: 14px 20px;
   text-align: left;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 16px;
+  font-size: 12px;
+  font-weight: 600;
   color: #64748b;
-  border-bottom: 2px solid #eef0f6;
-  white-space: nowrap;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
 }
 
 .asset-table td {
-  padding: 16px 20px;
-  font-size: 14px;
-  color: #1e293b;
+  padding: 16px;
   border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
+  color: #1e293b;
 }
 
-.asset-table tr:hover td {
-  background: #fdfdfd;
+.asset-table td.symbol-cell {
+  font-weight: 700;
+  color: #0f172a;
 }
 
-.asset-table tr:last-child td {
-  border-bottom: none;
-}
-
-.col-right {
-  text-align: right !important;
+.asset-table th.right,
+.asset-table td.right {
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-/* 수치 강조 */
-.asset-table td:nth-child(1) {
-  font-weight: 700;
-  color: #0f172a;
+.asset-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.asset-table .pos { color: #ef4444; font-weight: 600; }
+.asset-table .neg { color: #3b82f6; font-weight: 600; }
+
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
 }
