@@ -344,10 +344,6 @@ export default function Assets() {
             </tbody>
           </table>
         )}
-        
-        <div className="table-footer">
-          <button className="expand-btn">전체 자산 상세 보기 ⌄</button>
-        </div>
       </div>
     </div>
   );
