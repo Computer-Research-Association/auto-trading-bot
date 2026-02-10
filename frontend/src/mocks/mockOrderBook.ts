@@ -1,7 +1,9 @@
 // Order book
+import type { OrderBookData } from "../types/orderBook";
+
 export const mockOrderBook = {
     market: "KRW-BTC",
-    timestamp: 170469800000,
+    timestamp: 20260210,
     total_ask_size: 1.5,
     total_bid_size: 2.3,
     orderbook_units: [

@@ -1,6 +1,6 @@
-import type { Strategy } from '../types/Strategy';
+import type { Log } from '../types/Log';
 
-export const mockStrategies: Strategy[] = [
+export const mockLog: Log[] = [
   {
     id: 1,
 timestamp: '2026-01-14 15:30:22',

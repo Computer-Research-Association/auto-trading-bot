@@ -143,18 +143,11 @@ function DonutChart({ ratio }: { ratio: RatioItem[] }) {
 export default function Assets() {
   const [data, setData] = useState<PortfolioAssetsResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [Assets, setAssets] = useState<typeof mockAssets>([]);
-  // useEffect(() => {
-  // apiFetch<PortfolioAssetsResponse>("/api/portfolio/assets")
-  //   .then(setData)
-  //   .catch((e: unknown) => {
-  //     setErr(e instanceof Error ? e.message : String(e));
-  //   });
-  // }, []);
 
   useEffect(() => {
-    setAssets(mockAssets);
-  }, []);;
+    // Mock 데이터 사용 (서버 구현 전)
+    setData(mockAssets);
+  }, []);
 
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;

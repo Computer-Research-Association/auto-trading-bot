@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/api";
-
+import { mockPerformance } from "../../mocks/mockPerformance";
 type Period = "30d" | "90d" | "1y" | "all";
 
 type PerfSummary = {
@@ -87,23 +86,10 @@ export default function Performance() {
   const [data, setData] = useState<PerfResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-const [profitLoss, setProfitLoss] = useState<any>(null);
-
-useEffect(() => {
-  setErr(null);
-  setData(null);
-
-const params = new URLSearchParams({
-  start_date: "2026-01-01",
-  end_date: "2026-02-04",
-});
-
-apiFetch<PerfSummary>(`/api/performance/summary?${params}`)
-    .then(setProfitLoss)
-    .catch((e: unknown) => {
-      setErr(e instanceof Error ? e.message : String(e));
-    });
-}, [period]);
+  useEffect(() => {
+    // Mock 데이터 사용 (서버 구현 전)
+    setData(mockPerformance);
+  }, [period]);
 
 
   const summary = data?.summary;

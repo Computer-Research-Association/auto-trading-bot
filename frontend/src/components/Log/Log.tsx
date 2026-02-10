@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
-import {mockLogs} from '../../mocks/mockOrderBook';
-import { apiFetch } from "../../lib/api";
+import { mockLog } from '../../mocks/mockLog';
+// import { apiFetch } from "../../lib/api";
 
 type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
 type tpstring = 'System' | 'Data' | 'Strategy' | 'Trade';
@@ -92,7 +92,7 @@ const Log: React.FC = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setLogs(mockLogs);
+      setLogs(mockLog);
       setLoading(false);
     }, 400);
     return () => clearTimeout(timer);
@@ -123,19 +123,19 @@ const Log: React.FC = () => {
     return filtered.slice(start, start + pageSize);
     }, [filtered, page]);
 
-    useEffect(() => {
-      setLoading(true);
-      apiFetch<LogsResponse>("/api/logs")
-        .then((res: LogsResponse) => {
-        setLogs(res.items);
-      })
-        .catch(() => {
-        setLogs(mockLogs);
-      })
-      .finally(() => {
-      setLoading(false);
-    });
-}, []);
+//     useEffect(() => {
+//       setLoading(true);
+//       apiFetch<LogsResponse>("/api/logs")
+//         .then((res: LogsResponse) => {
+//         setLogs(res.items);
+//       })
+//         .catch(() => {
+//         setLogs(mockStrategies);
+//       })
+//       .finally(() => {
+//       setLoading(false);
+//     });
+// }, []);
 
 
   const onClearView = () => {
