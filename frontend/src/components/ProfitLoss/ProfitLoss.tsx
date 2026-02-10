@@ -39,20 +39,6 @@ function LineChart({
     const t = (val - minY) / (maxY - minY);
     return h - pad - t * (h - pad * 2);
   };
-
-  //   const d = points
-  //     .map((p, i) => {
-  //       const x = pad + i * xStep;
-  //       const y = yScale(mode === "pnl" ? p.pnl_krw : p.assets_krw);
-  //       return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-  //     })
-  //     .join(" ");
-
-  //   return (
-  //     <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="perf-chart">
-  //       <path d={d} fill="none" stroke="currentColor" strokeWidth="2" />
-  //     </svg>
-  //   );
 }
 
 export default function Performance() {
