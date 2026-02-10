@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
-import {mockLogs} from '../../mocks/mockData';
+import {mockLogs} from '../../mocks/mockOrderBook';
 import { apiFetch } from "../../lib/api";
 
 type LogLevel = 'INFO' | 'WARNING' | 'ERROR';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './History.css';
 import Loading from '../Common/Loading';
-import {mockHistory} from '../../mocks/mockData';
+import {mockHistory} from '../../mocks/mockOrderBook';
 import { apiFetch } from "../../lib/api";
 
 interface History {

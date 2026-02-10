@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import "./StrategyPanel.css";
 import { useEffect } from "react";
+import { mockStrategies } from '../../mocks/mockStrategies';
 
 type Strategy = {
   id: string;
@@ -57,21 +58,26 @@ export default function StrategyPanel() {
   // 실행 중인 전략 ID들을 Set으로 관리
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set());
 
+//   useEffect(() => {
+//   fetch("/api/strategies")
+//     .then((res) => res.json())
+//     .then(setStrategies)
+//     .catch(console.error);
+// }, []);
+
   useEffect(() => {
-  fetch("/api/strategies")
-    .then((res) => res.json())
-    .then(setStrategies)
-    .catch(console.error);
-}, []);
+    setStrategies(mockStrategies);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return strategies;
-    return strategies.filter((s) =>
-      s.name.toLowerCase().includes(q)
-    );
+    return strategies.filter((s) => s.name.toLowerCase().includes(q));
   }, [query, strategies]);
 
+// {filtered.map((s) => (
+//   <StrategyCard key={s.id} strategy={s} />
+// ))}
 
   const toggleStrategy = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
