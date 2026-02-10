@@ -40,11 +40,11 @@ export const mockPerformance: PerfResponse = {
         today_change_rate: -0.1,
     },
     chart: [
-        { date: "2026-01-10", pnl_krw: 0, assets_krw: 15000000 },
-        { date: "2026-01-15", pnl_krw: 500000, assets_krw: 15500000 },
-        { date: "2026-01-20", pnl_krw: 1200000, assets_krw: 16200000 },
-        { date: "2026-01-25", pnl_krw: 2100000, assets_krw: 17100000 },
-        { date: "2026-01-30", pnl_krw: 2800000, assets_krw: 17800000 },
+        { date: "2026-01-10", pnl_krw: -1500000, assets_krw: 13500000 },
+        { date: "2026-01-15", pnl_krw: -500000, assets_krw: 14500000 },
+        { date: "2026-01-20", pnl_krw: 800000, assets_krw: 15800000 },
+        { date: "2026-01-25", pnl_krw: -250000, assets_krw: 14750000 },
+        { date: "2026-01-30", pnl_krw: 1200000, assets_krw: 16200000 },
         { date: "2026-02-04", pnl_krw: 3250000, assets_krw: 18250000 },
     ],
     daily: [

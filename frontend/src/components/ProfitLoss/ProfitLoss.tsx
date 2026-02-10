@@ -69,7 +69,18 @@ export default function Performance() {
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;
 
-  return (
+  const gradientOffset = () => {
+    if (chart.length === 0) return 0;
+    const dataMax = Math.max(...chart.map((i) => i.pnl_krw));
+    const dataMin = Math.min(...chart.map((i) => i.pnl_krw));
+
+    if (dataMax <= 0) return 0;
+    if (dataMin >= 0) return 1;
+
+    return dataMax / (dataMax - dataMin);
+  };
+
+  const off = gradientOffset(); return (
     <div className="main-panel">
       {/* 👇 상단 3개 KPI 카드 */}
       <div className="kpi-cards">
@@ -137,39 +148,39 @@ export default function Performance() {
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={chart}>
             <defs>
-              <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+              <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset={off} stopColor="#ef4444" stopOpacity={0.3} />
+                <stop offset={off} stopColor="#3b82f6" stopOpacity={0.3} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => {
                 const date = new Date(value);
                 return `${date.getMonth() + 1}/${date.getDate()}`;
               }}
             />
-            <YAxis 
+            <YAxis
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => `₩${(value / 1000000).toFixed(0)}M`}
             />
-            <Tooltip 
+            <Tooltip
               formatter={(value) => {
-              if (typeof value !== 'number') return '';
-              return formatKRW(value);
+                if (typeof value !== 'number') return '';
+                return formatKRW(value);
               }}
               labelFormatter={(label) => `날짜: ${label}`}
             />
             <ReferenceLine y={0} stroke="#999" strokeDasharray="3 3" />
-            <Area 
-              type="monotone" 
-              dataKey="pnl_krw" 
-              stroke="#ef4444" 
+            <Area
+              type="monotone"
+              dataKey="pnl_krw"
+              stroke="#8884d8"
               strokeWidth={2}
-              fillOpacity={1} 
-              fill="url(#colorPnl)" 
+              fillOpacity={1}
+              fill="url(#splitColor)"
             />
           </AreaChart>
         </ResponsiveContainer>

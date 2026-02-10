@@ -91,10 +91,12 @@
 
 .legend-gain {
   color: #ef4444;
+  font-weight: 600;
 }
 
 .legend-loss {
   color: #3b82f6;
+  font-weight: 600;
 }
 
 /* 기간 탭 */
