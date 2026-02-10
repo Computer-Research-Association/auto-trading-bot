@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
-import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/api";
+import Loading from "../Common/Loading.js";
+import { apiFetch } from "../../Lib/api.js";
 
 type Period = "30d" | "90d" | "1y" | "all";
 
@@ -96,10 +96,11 @@ useEffect(() => {
 const params = new URLSearchParams({
   start_date: "2026-01-01",
   end_date: "2026-02-04",
+  period: period,  // 02/10 수정(하준): 백엔드 schemas.py의 PerformanceChartRequest에 대응
 });
 
-apiFetch<PerfSummary>(`/performance/summary?${params}`)
-    .then(setProfitLoss)
+apiFetch<PerfResponse>("/performance/summary?" + params.toString())
+    .then(setData)  // setProfitLoss -> setData
     .catch((e: unknown) => {
       setErr(e instanceof Error ? e.message : String(e));
     });
