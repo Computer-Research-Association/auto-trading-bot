@@ -4,7 +4,7 @@ import Loading from "../Common/Loading";
 import { mockPerformance, type PerfResponse, type PerfChartPoint, type PerfSummary, type PerfDailyRow } from "../../mocks/mockPerformance";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
-type Period = "30d" | "90d" | "1y" | "all";
+type Period = "30d" | "180d" | "1y" | "all";
 
 function formatKRW(v: number) {
   return new Intl.NumberFormat("ko-KR", {
@@ -61,13 +61,14 @@ export default function Performance() {
 
   const periodButtons: { key: Period; label: string }[] = [
     { key: "30d", label: "30일" },
-    { key: "90d", label: "3개월" },
+    { key: "180d", label: "6개월" },
     { key: "1y", label: "1년" },
     { key: "all", label: "전체" },
   ];
 
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;
+
 
   const gradientOffset = () => {
     if (chart.length === 0) return 0;
@@ -80,7 +81,9 @@ export default function Performance() {
     return dataMax / (dataMax - dataMin);
   };
 
-  const off = gradientOffset(); return (
+  const off = gradientOffset();
+
+  return (
     <div className="main-panel">
       {/* 👇 상단 3개 KPI 카드 */}
       <div className="kpi-cards">
