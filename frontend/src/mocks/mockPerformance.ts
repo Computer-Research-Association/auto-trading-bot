@@ -4,6 +4,9 @@ export type PerfSummary = {
     pnl_rate: number;
     start_assets_krw: number;
     end_assets_krw: number;
+    total_assets_krw: number;  // 총 자산
+    today_change_krw: number;  // 당일 변동 금액
+    today_change_rate: number; // 당일 변동률
 };
 
 export type PerfChartPoint = {
@@ -32,6 +35,9 @@ export const mockPerformance: PerfResponse = {
         pnl_rate: 21.67,
         start_assets_krw: 15000000,
         end_assets_krw: 18250000,
+        total_assets_krw: 125000000,
+        today_change_krw: -120000,
+        today_change_rate: -0.1,
     },
     chart: [
         { date: "2026-01-10", pnl_krw: 0, assets_krw: 15000000 },
