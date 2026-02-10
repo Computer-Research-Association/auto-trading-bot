@@ -89,7 +89,7 @@ interface History {
     useEffect(() => {
     setLoading(true);
 
-    apiFetch<History[]>("/api/trades/history")
+    apiFetch<History[]>("/trades/history")
       .then(setHistoryData)
       .catch(() => {
         // 서버 안 되면 mock 유지

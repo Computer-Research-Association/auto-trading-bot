@@ -98,7 +98,7 @@ const params = new URLSearchParams({
   end_date: "2026-02-04",
 });
 
-apiFetch<PerfSummary>(`/api/performance/summary?${params}`)
+apiFetch<PerfSummary>(`/performance/summary?${params}`)
     .then(setProfitLoss)
     .catch((e: unknown) => {
       setErr(e instanceof Error ? e.message : String(e));
