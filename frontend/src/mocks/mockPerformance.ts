@@ -46,8 +46,13 @@ export const mockPerformance: PerfResponse = {
         { date: "2026-01-25", pnl_krw: -250000, assets_krw: 14750000 },
         { date: "2026-01-30", pnl_krw: 1200000, assets_krw: 16200000 },
         { date: "2026-02-04", pnl_krw: 3250000, assets_krw: 18250000 },
+        { date: "2026-08-07", pnl_krw: 3240000, assets_krw: 18050000 },
+        { date: "2026-12-09", pnl_krw: 9890000, assets_krw: 37950000 },
     ],
     daily: [
+        { date: "2026-12-09", pnl_krw: 760000, pnl_rate: 0.87, assets_krw: 98760000 },
+        { date: "2026-08-07", pnl_krw: 290000, pnl_rate: 1.76, assets_krw: 19220000 },
+        { date: "2026-08-06", pnl_krw: 290000, pnl_rate: 1.66, assets_krw: 17220000 },
         { date: "2026-02-04", pnl_krw: 450000, pnl_rate: 2.53, assets_krw: 18250000 },
         { date: "2026-02-03", pnl_krw: 380000, pnl_rate: 2.19, assets_krw: 17800000 },
         { date: "2026-02-02", pnl_krw: 320000, pnl_rate: 1.87, assets_krw: 17420000 },

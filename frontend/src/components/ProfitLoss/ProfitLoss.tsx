@@ -48,8 +48,45 @@ export default function Performance() {
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock 데이터 사용 (서버 구현 전)
-    setData(mockPerformance);
+    // 1. 전체 데이터 가져오기
+    const allData = mockPerformance;
+    const allChart = allData.chart;
+
+    if (allChart.length === 0) {
+      setData(allData);
+      return;
+    }
+
+    // 2. 기준 날짜 설정 (데이터 중 가장 *오래된* 날짜를 시작점으로)
+    const dates = allChart.map(p => new Date(p.date).getTime());
+    const minDateVal = Math.min(...dates);
+    const startDate = new Date(minDateVal);
+
+    // 3. 필터링 종료 날짜 계산 (시작일 + n일/월)
+    let endDate = new Date(startDate);
+
+    if (period === "30d") {
+      endDate.setDate(startDate.getDate() + 30);
+    } else if (period === "180d") {
+      endDate.setMonth(startDate.getMonth() + 6);
+    } else if (period === "1y") {
+      endDate.setFullYear(startDate.getFullYear() + 1);
+    } else {
+      // 'all' : 아주 미래로 설정
+      endDate = new Date(8640000000000000); // Max valid date
+    }
+
+    // 4. 차트 데이터 필터링
+    const filteredChart = allChart.filter(p => {
+      const d = new Date(p.date);
+      return d >= startDate && d <= endDate;
+    });
+
+    // 5. 상태 업데이트
+    setData({
+      ...allData,
+      chart: filteredChart
+    });
   }, [period]);
 
 
@@ -88,26 +125,13 @@ export default function Performance() {
       {/* 👇 상단 3개 KPI 카드 */}
       <div className="kpi-cards">
         <div className="kpi-card">
-          <div className="kpi-label">총 자산</div>
-          <div className="kpi-value-large">
-            {formatKRW(summary!.total_assets_krw)}
-          </div>
-          <div className="kpi-sub">
-            <span className={summary!.pnl_krw >= 0 ? "pos" : "neg"}>
-              {formatKRW(summary!.pnl_krw)} ({summary!.pnl_rate.toFixed(2)}%)
-            </span>
-            <span className="kpi-period">지난 달 이후</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
           <div className="kpi-label">누적손익</div>
           <div className={`kpi-value-large ${summary!.pnl_krw >= 0 ? "pos" : "neg"}`}>
             {formatKRW(summary!.pnl_krw)}
           </div>
           <div className="kpi-sub">
             <span className={summary!.pnl_krw >= 0 ? "pos" : "neg"}>
-              ↗ {summary!.pnl_rate.toFixed(2)}%
+              {summary!.pnl_krw >= 0 ? "↗" : "↘"} {summary!.pnl_rate.toFixed(2)}%
             </span>
           </div>
         </div>
@@ -123,6 +147,16 @@ export default function Performance() {
             </span>
           </div>
         </div>
+
+        <div className="kpi-card">
+          <div className="kpi-label">누적 수익률</div>
+          <div className={`kpi-value-large ${summary!.pnl_rate >= 0 ? "pos" : "neg"}`}>
+            {formatPercent(summary!.pnl_rate)}
+          </div>
+          <div className="kpi-sub">
+            <span className="kpi-period">지난 달 이후</span>
+          </div>
+        </div>
       </div>
 
       {/* 👇 차트 섹션 */}
@@ -130,8 +164,12 @@ export default function Performance() {
         <div className="section-header">
           <h2>손익 성과</h2>
           <div className="chart-legend">
-            <span className="legend-gain">● 이익구간</span>
-            <span className="legend-loss">● 손실구간</span>
+            <div className="legend-item-row">
+              <div className="legend-dot gain"></div> <span className="legend-text">이익구간</span>
+            </div>
+            <div className="legend-item-row">
+              <div className="legend-dot loss"></div> <span className="legend-text">손실구간</span>
+            </div>
           </div>
         </div>
 

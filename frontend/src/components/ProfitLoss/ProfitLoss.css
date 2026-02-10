@@ -89,14 +89,29 @@
   font-size: 13px;
 }
 
-.legend-gain {
-  color: #ef4444;
-  font-weight: 600;
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.legend-loss {
-  color: #3b82f6;
-  font-weight: 600;
+.legend-dot.gain {
+  background-color: #ef4444;
+}
+
+.legend-dot.loss {
+  background-color: #3b82f6;
+}
+
+.legend-item-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-text {
+  color: #6b7280;
+  font-weight: 500;
 }
 
 /* 기간 탭 */
