@@ -125,7 +125,7 @@ const Log: React.FC = () => {
 
     useEffect(() => {
       setLoading(true);
-      apiFetch<LogsResponse>("/api/logs")
+      apiFetch<LogsResponse>("/logs")
         .then((res: LogsResponse) => {
         setLogs(res.items);
       })
