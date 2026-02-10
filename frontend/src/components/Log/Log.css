@@ -1,6 +1,6 @@
 /* Page */
 .logPage {
-  background: #f6f8fc;
+  background: #ffffff;
   padding: 18px;
   min-height: 100%;
   color: #0f172a;
@@ -166,11 +166,16 @@
 .tableHead {
   display: grid;
   grid-template-columns:
-    240px   /* TIMESTAMP */
-    110px   /* CATEGORY */
-    220px   /* EVENT NAME */
-    120px   /* LEVEL */
-    1fr;    /* MESSAGE */
+    240px
+    /* TIMESTAMP */
+    110px
+    /* CATEGORY */
+    220px
+    /* EVENT NAME */
+    120px
+    /* LEVEL */
+    1fr;
+  /* MESSAGE */
   gap: 10px;
   padding: 12px 16px;
   background: #f8fafc;
@@ -188,11 +193,7 @@
 .row {
   display: grid;
   grid-template-columns:
-    240px
-    110px
-    220px
-    120px
-    1fr;
+    240px 110px 220px 120px 1fr;
   gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid #eef2ff;
@@ -215,9 +216,9 @@
 .message {
   color: #0f172a;
   line-height: 1.35;
-  overflow:hidden;
+  overflow: hidden;
 
-  min-height:calc(1.35em * 2);
+  min-height: calc(1.35em * 2);
 }
 
 /* Badges */
@@ -312,44 +313,50 @@
   font-size: 12px;
 }
 
-.tableFooter{
-  display:grid;
+.tableFooter {
+  display: grid;
   grid-template-columns: 1fr auto 1fr;
-  align-items:center;
-  padding:14px 16px;
-  border-top:1px solid rgba(0,0,0,0.08);
+  align-items: center;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.footerText{ justify-self:start; }
-.footerSpacer{ justify-self:end; }
-
-.pagination{
-  display:flex;
-  justify-self:center;
-  gap:8px;
+.footerText {
+  justify-self: start;
 }
 
-.pageBtn, .pageNav{
-  border:1px solid rgba(0,0,0,0.15);
-  background:#fff;
-  border-radius:10px;
-  padding:8px 12px;
-  cursor:pointer;
+.footerSpacer {
+  justify-self: end;
 }
 
-.pageBtn.active{
-  background: rgba(0,0,0,0.85);
-  color:#fff;
-  border-color: rgba(0,0,0,0.85);
-  font-weight:700;
+.pagination {
+  display: flex;
+  justify-self: center;
+  gap: 8px;
 }
 
-.pageNav:disabled{
-  opacity:.4;
-  cursor:not-allowed;
+.pageBtn,
+.pageNav {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
-.pageDots{
-  padding:0 6px;
-  opacity:.6;
+.pageBtn.active {
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+}
+
+.pageNav:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.pageDots {
+  padding: 0 6px;
+  opacity: .6;
 }
