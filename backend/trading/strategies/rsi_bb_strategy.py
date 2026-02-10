@@ -63,7 +63,7 @@ class RSIBBStrategy(BaseStrategy):
                 percentage = 1.0
                 reason = f"매수: 과매도(RSI: {rsi:.2f}) 및 BB 하단({bb_lower:,.0f})"
                 # 권장 손절가
-                trade_params = {"stop_loss": current_price * 0.97}
+                trade_params = {"stop_loss": current_price * 0.97, "target_price": bb_upper * 0.997}
 
         # 매도 로직
         # 조건: RSI 70 이상(과매수) OR 현재가가 볼린저 밴드 상단선 돌파 이상
@@ -72,6 +72,14 @@ class RSIBBStrategy(BaseStrategy):
                 decision = "SELL"
                 percentage = 1.0
                 reason = f"매도: 과매수(RSI:{rsi:.2f}) 또는 BB 상단({bb_upper:,.0f}) 도달"
+            else:
+                # 아직 매도 조건은 아니지만, 실시간으로 변하는 BB 상단선을 
+                # 봇의 target_price에 계속 동기화하고 싶을 경우
+                decision = "HOLD"
+                trade_params = {
+                    "target_price": bb_upper * 0.997 # <--- 매번 업데이트되도록 추가
+                }
+                reason = f"보유 중: 목표가 업데이트 (BB 상단: {bb_upper:,.0f})"
 
         return {
             "decision": decision,
