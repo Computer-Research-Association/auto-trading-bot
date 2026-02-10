@@ -114,7 +114,7 @@ export default function Performance() {
       {/* 👇 차트 섹션 */}
       <div className="perf-section">
         <div className="section-header">
-          <h2>P&L Performance</h2>
+          <h2>손익 성과</h2>
           <div className="chart-legend">
             <span className="legend-gain">● 이익구간</span>
             <span className="legend-loss">● 손실구간</span>
@@ -177,7 +177,7 @@ export default function Performance() {
 
       {/* 👇 Daily Breakdown 테이블 */}
       <div className="perf-section">
-        <h2>Daily Breakdown</h2>
+        <h2>일일 손익 상세</h2>
         {daily.length === 0 ? (
           <div className="perf-empty">데이터가 없습니다.</div>
         ) : (
