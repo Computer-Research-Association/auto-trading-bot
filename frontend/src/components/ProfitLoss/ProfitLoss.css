@@ -9,8 +9,8 @@
 .kpi-card {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 16px;
+  padding: 28px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -23,7 +23,7 @@
 }
 
 .kpi-value-large {
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   color: #111827;
   margin-bottom: 8px;
@@ -63,7 +63,7 @@
 .perf-section {
   background: white;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -102,6 +102,7 @@
 /* 기간 탭 */
 .period-tabs {
   display: flex;
+  justify-content: center;
   gap: 8px;
   margin-bottom: 24px;
   border-bottom: 1px solid #e5e7eb;

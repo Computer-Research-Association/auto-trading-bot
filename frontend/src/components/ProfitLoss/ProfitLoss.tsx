@@ -117,7 +117,7 @@ export default function Performance() {
           <div className={`kpi-value-large ${summary!.today_change_krw >= 0 ? "pos" : "neg"}`}>
             {formatKRW(summary!.today_change_krw)}
           </div>
-          <div className="kpi-sub">
+          <div className="kpi-sub kpi-sub-col">
             <span className={summary!.today_change_krw >= 0 ? "pos" : "neg"}>
               {summary!.today_change_krw >= 0 ? "↗" : "↘"} {summary!.today_change_rate.toFixed(2)}%
             </span>
@@ -142,7 +142,7 @@ export default function Performance() {
               className={`period-tab ${period === b.key ? "active" : ""}`}
               onClick={() => setPeriod(b.key)}
             >
-              {b.label.toUpperCase()}
+              {b.label}
             </button>
           ))}
         </div>
