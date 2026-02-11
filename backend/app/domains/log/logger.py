@@ -25,6 +25,8 @@ class LogEvent(str, Enum):
     ENGINE_START = "ENGINE_START"
     HEARTBEAT = "HEARTBEAT"
     ERROR = "ERROR"
+    SYNC = "SYNC"        # <--- 추가
+    COMMAND = "COMMAND"  # <--- 추가
 
     # DATA
     FETCH_FAIL = "FETCH_FAIL"
