@@ -120,6 +120,7 @@ interface History {
         <div className="filter-Buy-Sell">
             {typeOptions.map(opt => (
               <button
+              key={opt.value}
                 className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
                 onClick={() => setHistory(opt.value as HistoryType)}>
                 {opt.label}
