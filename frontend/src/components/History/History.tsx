@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './History.css';
-import Loading from '../Common/Loading';
-import {mockHistory} from '../../mocks/mockData';
-import { apiFetch } from "../../lib/api";
+import Loading from '../Common/Loading.js';
+import {mockHistory} from '../../mocks/mockData.js';
+import { apiFetch } from "../../Lib/api.js";
 
 interface History {
   id: number;
