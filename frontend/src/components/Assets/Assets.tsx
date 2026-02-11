@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
-import Loading from "../Common/Loading";
-import { apiFetch } from "../../lib/api";
+import Loading from "../Common/Loading.js";
+import { apiFetch } from "../../Lib/api.js";
 
 /* =======================
    Types
