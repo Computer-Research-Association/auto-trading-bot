@@ -1,40 +1,22 @@
 import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
-import { mockAssets } from "../../mocks/mockAssets";
-import { 
-  PieChart, 
-  Pie, 
-  ResponsiveContainer, 
-  Tooltip, 
+import { mockAssets } from "../../mocks/mockAssets"; // Mock data restored
+import { type PortfolioAssetsResponse, type AssetItem, type PortfolioSummary } from "../../Lib/assets.api"; // Types restored
+// import { getAssets } from "../../Lib/assets.api"; // API Disabled for Phase 1
+import {
+  PieChart,
+  Pie,
+  ResponsiveContainer,
+  Tooltip,
   Legend,
-  Cell // Cell은 import만 하고 사용하지 않음 (Recharts 4.0 호환)
+  Cell
 } from "recharts";
 
 /* =======================
-   Types
+   Types (Moved to assets.api.ts)
+   - Importing them instead of redefining
 ======================= */
-type AssetItem = {
-  symbol: string;
-  quantity: number;
-  avg_buy_price: number;
-  current_price: number;
-  evaluation_krw: number;
-};
-
-type PortfolioSummary = {
-  krw_total: number;
-  krw_available: number;
-  total_buy_krw: number;
-  total_assets_krw: number;
-  total_pnl_krw: number;
-  total_pnl_rate: number;
-};
-
-type PortfolioAssetsResponse = {
-  summary: PortfolioSummary;
-  items: AssetItem[];
-};
 
 type RatioItem = {
   name: string;
@@ -109,7 +91,7 @@ function buildRatio(
    Chart Settings
 ======================= */
 // 이미지와 유사한 노랑/빨강/주황/라임 계열 색상
-const COLORS = ["#EAB308", "#EF4444", "#F97316", "#84CC16", "#3B82F6"]; 
+const COLORS = ["#EAB308", "#EF4444", "#F97316", "#84CC16", "#3B82F6"];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -134,15 +116,26 @@ export default function Assets() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // Mock 데이터 로드
+    // Phase 1: 디자인 검증을 위해 Mock Data 사용
     setData(mockAssets);
+
+    // API Call (Phase 2에서 활성화)
+    // getAssets()
+    //   .then((res) => {
+    //     setData(res);
+    //     setErr(null);
+    //   })
+    //   .catch((error) => {
+    //     console.error("Failed to fetch assets:", error);
+    //     setErr("자산 데이터를 불러오는 데 실패했습니다.");
+    //   });
   }, []);
 
   if (err) return <div className="main-panel">에러: {err}</div>;
   if (!data) return <Loading />;
 
   const { summary, items } = data;
-  
+
   // 차트 데이터 (색상 주입)
   const ratioRaw = buildRatio(summary, items).length > 0
     ? buildRatio(summary, items)
@@ -154,16 +147,16 @@ export default function Assets() {
   }));
 
   // 필터링된 리스트
-  const filteredItems = items.filter(item => 
+  const filteredItems = items.filter(item =>
     item.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="main-panel">
-      
+
       {/* 상단 2단 그리드 */}
       <div className="assets-top-grid">
-        
+
         {/* 1. 자산 요약 (좌측) */}
         <div className="asset-summary-section">
           {/* 총 보유자산 (Hero) - Row 1 */}
@@ -218,7 +211,7 @@ export default function Assets() {
             <h2 className="section-title">자산 비중</h2>
             <button className="chart-more-btn">•••</button>
           </div>
-          
+
           <div className="chart-content">
             <div className="chart-wrapper">
               <ResponsiveContainer width="100%" height={220}>
@@ -239,7 +232,7 @@ export default function Assets() {
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
-              
+
               {/* 도넛 중앙 텍스트 삭제됨 (요청 반영) */}
             </div>
 
@@ -248,16 +241,16 @@ export default function Assets() {
               {ratio.map((item, idx) => (
                 <div key={item.name} className="legend-item">
                   <div className="legend-left">
-                    <span 
-                      className="legend-dot" 
+                    <span
+                      className="legend-dot"
                       style={{ background: item.fill }}
                     />
                     <span className="legend-name">{item.name}</span>
-                    <span 
+                    <span
                       className="legend-badge"
-                      style={{ 
+                      style={{
                         backgroundColor: `${item.fill}15`, // 투명도 15% 적용 (Hex 6자리일 때만 동작, 여기선 동작함)
-                        color: item.fill 
+                        color: item.fill
                       }}
                     >
                       {item.fullName}
@@ -280,15 +273,15 @@ export default function Assets() {
           <h2 className="section-title">보유 자산</h2>
           <div className="assets-search-bar">
             <span className="assets-search-icon">🔍</span>
-            <input 
-              type="text" 
-              placeholder="검색..." 
+            <input
+              type="text"
+              placeholder="검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-        
+
         {filteredItems.length === 0 ? (
           <div className="empty-message">검색 결과가 없습니다.</div>
         ) : (
@@ -311,7 +304,7 @@ export default function Assets() {
                 const pnlRate = item.avg_buy_price > 0
                   ? ((item.current_price - item.avg_buy_price) / item.avg_buy_price) * 100
                   : 0;
-                
+
                 // 아이콘 색상 (차트 색상과 매칭하거나 랜덤)
                 const iconColor = COLORS[index % COLORS.length];
 

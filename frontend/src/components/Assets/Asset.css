@@ -16,7 +16,8 @@
 /* 상단 그리드 레이아웃 */
 .assets-top-grid {
   display: grid;
-  grid-template-columns: 1.5fr 1fr; /* 좌측 넓게, 우측 좁게 */
+  grid-template-columns: 1.5fr 1fr;
+  /* 좌측 넓게, 우측 좁게 */
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -37,7 +38,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .summary-card.hero {
@@ -76,11 +77,21 @@
   font-weight: 600;
 }
 
-.hero-pct.pos { color: #ef4444; }
-.hero-pct.neg { color: #3b82f6; }
+.hero-pct.pos {
+  color: #ef4444;
+}
 
-.card-value.pos { color: #ef4444; }
-.card-value.neg { color: #3b82f6; }
+.hero-pct.neg {
+  color: #3b82f6;
+}
+
+.card-value.pos {
+  color: #ef4444;
+}
+
+.card-value.neg {
+  color: #3b82f6;
+}
 
 /* 그리드 3열 / 2열 */
 .summary-row-3 {
@@ -102,7 +113,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   display: flex;
   flex-direction: column;
 }
@@ -200,9 +211,25 @@
   z-index: 100;
   pointer-events: none;
 }
-.tooltip-label { font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 4px;}
-.tooltip-value { font-size: 18px; font-weight: 800; color: #0f172a; }
-.tooltip-pct { font-size: 14px; font-weight: 600; color: #3b82f6; }
+
+.tooltip-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.tooltip-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tooltip-pct {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3b82f6;
+}
 
 
 /* --- 하단 테이블 --- */
@@ -211,7 +238,7 @@
   border-radius: 16px;
   border: 1px solid #e2e8f0;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .table-header-row {
@@ -263,6 +290,10 @@
   background: #fbfbfc;
 }
 
+.asset-table th.right {
+  text-align: right;
+}
+
 .asset-table td {
   padding: 16px;
   border-bottom: 1px solid #f1f5f9;
@@ -287,7 +318,8 @@
 .coin-icon-placeholder {
   width: 36px;
   height: 36px;
-  border-radius: 50%; /* 원형 아이콘 */
+  border-radius: 50%;
+  /* 원형 아이콘 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -312,11 +344,21 @@
   color: #94a3b8;
 }
 
-.right { text-align: right; }
-.bold { font-weight: 700; }
+.right {
+  text-align: right;
+}
 
-.pos { color: #ef4444; }
-.neg { color: #3b82f6; }
+.bold {
+  font-weight: 700;
+}
+
+.pos {
+  color: #ef4444;
+}
+
+.neg {
+  color: #3b82f6;
+}
 
 .empty-message {
   text-align: center;

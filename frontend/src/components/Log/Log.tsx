@@ -100,16 +100,38 @@ const Log: React.FC = () => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+
+    // 쿼리가 특정 레벨과 정확히 일치하는지 확인 (선택적)
+    // const isLevelQuery = ['info', 'warning', 'error'].includes(q);
+
     return logs
+      // 1. 등급 필터 (버튼) 적용
       .filter((l) => (levelFilter === 'ALL' ? true : l.level === levelFilter))
+      // 2. 검색어 필터 적용
       .filter((l) => {
         if (!q) return true;
+
+        // 데이터 안전성 체크
+        const timestamp = l.timestamp ? l.timestamp.toLowerCase() : '';
+        const category = l.category ? l.category.toLowerCase() : '';
+        const eventname = l.eventname ? l.eventname.toLowerCase() : '';
+        const level = l.level ? l.level.toLowerCase() : '';
+        const message = l.message ? l.message.toLowerCase() : '';
+
+        // 레벨 필터링 강화: startsWith 사용 (IN -> INFO 매칭, WARNING 제외)
+        // 한글 검색 지원 (정보, 경고, 에러)
+        const isLevelMatch =
+          level.startsWith(q) ||
+          (q === '정보' && level === 'info') ||
+          (q === '경고' && level === 'warning') ||
+          (q === '에러' && level === 'error');
+
         return (
-          l.timestamp.toLowerCase().includes(q) ||
-          l.category.toLowerCase().includes(q) ||
-          l.eventname.toLowerCase().includes(q) ||
-          l.level.toLowerCase().includes(q) ||
-          l.message.toLowerCase().includes(q)
+          timestamp.includes(q) ||
+          category.includes(q) ||
+          eventname.includes(q) ||
+          isLevelMatch ||
+          message.includes(q)
         );
       });
   }, [logs, query, levelFilter]);
@@ -161,7 +183,7 @@ const Log: React.FC = () => {
             className="searchInput"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="검색..."
+            placeholder="등급 검색..."
           />
         </div>
         <div className="actions">

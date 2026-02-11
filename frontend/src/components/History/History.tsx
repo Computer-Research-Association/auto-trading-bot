@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './History.css';
 import Loading from '../Common/Loading';
 import { mockHistory } from '../../mocks/mockHistory';
-import { apiFetch } from "../../lib/api";
+// import { apiFetch } from "../../lib/api";
 
 interface History {
   id: number;
@@ -89,13 +89,18 @@ export default function History() {
   useEffect(() => {
     setLoading(true);
 
-    apiFetch<History[]>("/api/trades/history")
-      .then(setHistoryData)
-      .catch(() => {
-        // 서버 안 되면 mock 유지
-        setHistoryData(mockHistory);
-      })
-      .finally(() => setLoading(false));
+    // Phase 1: 디자인 검증을 위해 Mock Data 사용
+    // apiFetch<History[]>("/api/trades/history")
+    //   .then(setHistoryData)
+    //   .catch(() => {
+    //     setHistoryData(mockHistory);
+    //   })
+    //   .finally(() => setLoading(false));
+
+    setTimeout(() => {
+      setHistoryData(mockHistory);
+      setLoading(false);
+    }, 500); // 0.5초 로딩 시뮬레이션
   }, []);
 
 
