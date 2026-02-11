@@ -95,7 +95,7 @@ useEffect(() => {
 
 const params = new URLSearchParams({
   start_date: "2026-01-01",
-  end_date: "2026-02-04",
+  end_date: "2026-02-11",
   period: period,  // 02/10 수정(하준): 백엔드 schemas.py의 PerformanceChartRequest에 대응
 });
 
