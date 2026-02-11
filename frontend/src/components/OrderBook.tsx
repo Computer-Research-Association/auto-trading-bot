@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 // import { fetchOrderBook } from "../../api"; // 경로 확인 필요 (components/OrderBook이므로 ../../api)
 import "./OrderBook.css";
-import {mockOrderBook} from '../../mock/mockOrderBook';
+import { mockOrderBook } from '../../mock/mockOrderBook';
 
 interface OrderBookUnit {
     ask_price: number;
@@ -25,18 +25,11 @@ export default function OrderBooks() {
         setOrderBook(mockOrderBook);
     }, []);
 
+    // API Call (Phase 2)
     // useEffect(() => {
-    //     const getData = async () => {
-    //         try {
-    //             // api.js가 아직 js라면 타입 에러가 날 수 있으니 any로 처리하거나 api.ts로 변환 필요하지만
-    //             // 일단은 호환성을 위해 그대로 사용
-    //             const data = await fetchOrderBook();
-    //             setOrderBook(data);
-    //         } catch (e) {
-    //             console.error("Failed to fetch orderbook", e);
-    //         }
-    //     };
-    //     getData();
+    //     getOrderBook('KRW-BTC')
+    //         .then(setOrderBook)
+    //         .catch(e => console.error("Failed to fetch orderbook", e));
     // }, []);
 
     if (!orderBook) return <div className="loading">로딩중...</div>;

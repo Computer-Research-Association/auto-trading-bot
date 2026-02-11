@@ -3,18 +3,9 @@ import './History.css';
 import Loading from '../Common/Loading';
 import { mockHistory } from '../../mocks/mockHistory';
 // import { apiFetch } from "../../lib/api";
+import { getHistory, type History, type Strategy, type HistoryType } from "../../Lib/history.api"; // API & Types
 
-interface History {
-  id: number;
-  DateTime: string;
-  CoinName: string;
-  Type: string;
-  TVolume: number;
-  TUnitPrice: number;
-  TAmount: number;
-  TCharge: number;
-  Strategy: Strategy;
-}
+// Local types removed (imported from api)
 
 function filterTrades(
   data: History[],
@@ -30,9 +21,7 @@ function formatKRW(val: number) {
 }
 
 type Period = '1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL';
-type HistoryType = 'Buy' | 'Sell' | 'All';
-type Strategy = 'All Strategy' | 'Moving Average'
-  | 'RSI Oversold' | 'Bollinger band';
+// HistoryType, Strategy imported from api
 
 const periodOptions = [
   { label: '1 MONTH', value: '1 개월' },
@@ -90,7 +79,8 @@ export default function History() {
     setLoading(true);
 
     // Phase 1: 디자인 검증을 위해 Mock Data 사용
-    // apiFetch<History[]>("/api/trades/history")
+    // API Call (Phase 2)
+    // getHistory()
     //   .then(setHistoryData)
     //   .catch(() => {
     //     setHistoryData(mockHistory);

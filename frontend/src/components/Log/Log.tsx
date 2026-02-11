@@ -2,23 +2,11 @@ import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
 import { mockLog } from '../../mocks/mockLog';
-// import { apiFetch } from "../../lib/api";
+import { getLogs, type LogItem, type LogLevel } from "../../Lib/log.api"; // API & Types
 
-type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
-type tpstring = 'System' | 'Data' | 'Strategy' | 'Trade';
-type LogsResponse = {
-  items: LogItem[];
-};
-
-
-interface LogItem {
-  id: number;
-  timestamp: string;
-  category: tpstring;
-  eventname: string;
-  level: LogLevel;
-  message: string;
-}
+// Local types removed (imported from api)
+// type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
+// ...
 
 function getPageItems(page: number, total: number) {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
@@ -145,18 +133,16 @@ const Log: React.FC = () => {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page]);
 
-  //     useEffect(() => {
-  //       setLoading(true);
-  //       apiFetch<LogsResponse>("/api/logs")
-  //         .then((res: LogsResponse) => {
-  //         setLogs(res.items);
-  //       })
-  //         .catch(() => {
-  //         setLogs(mockStrategies);
-  //       })
-  //       .finally(() => {
-  //       setLoading(false);
-  //     });
+  // API Call (Phase 2)
+  // useEffect(() => {
+  //   setLoading(true);
+  //   getLogs()
+  //     .then(setLogs)
+  //     .catch((err) => {
+  //       console.error("Failed to fetch logs", err);
+  //       // setLogs(mockLog); // Fallback
+  //     })
+  //     .finally(() => setLoading(false));
   // }, []);
 
 

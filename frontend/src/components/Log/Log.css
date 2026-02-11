@@ -30,9 +30,9 @@
 
 .searchWrap {
   position: relative;
-  max-width: 100px;
-  flex: 1;
-  min-width: 860px;
+  width: 100%;
+  max-width: 600px;
+  /* 너무 넓어지지 않도록 제한 */
 }
 
 .searchIcon {

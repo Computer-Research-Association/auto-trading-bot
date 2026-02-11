@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ProfitLoss.css";
 import Loading from "../Common/Loading";
-import { mockPerformance, type PerfResponse, type PerfChartPoint, type PerfSummary, type PerfDailyRow } from "../../mocks/mockPerformance";
+import { mockPerformance } from "../../mocks/mockPerformance";
+import { getPerformance, type PerfResponse, type PerfChartPoint } from "../../Lib/performance.api"; // API & Types
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 type Period = "30d" | "180d" | "1y" | "all";
@@ -87,6 +88,11 @@ export default function Performance() {
       ...allData,
       chart: filteredChart
     });
+
+    // API Call (Phase 2)
+    // getPerformance(period)
+    //   .then(setData)
+    //   .catch(err => console.error("Failed to fetch performance", err));
   }, [period]);
 
 
