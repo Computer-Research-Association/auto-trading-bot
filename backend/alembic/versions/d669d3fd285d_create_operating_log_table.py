@@ -39,6 +39,21 @@ def upgrade() -> None:
     op.create_index(op.f('ix_operating_log_id'), 'operating_log', ['id'], unique=False)
     op.create_index(op.f('ix_operating_log_level'), 'operating_log', ['level'], unique=False)
     op.create_index(op.f('ix_operating_log_timestamp'), 'operating_log', ['timestamp'], unique=False)
+    # 🔥 여기에 추가: 유니크 제약 조건을 걸기 전 중복 데이터를 정리합니다.
+    op.execute("""
+        DELETE FROM portfolio_snapshots
+        WHERE id NOT IN (
+            SELECT id
+            FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (PARTITION BY base_date ORDER BY created_at DESC) as row_num
+                FROM portfolio_snapshots
+            ) t
+            WHERE t.row_num = 1
+        )
+    """)
+
+    # 기존에 있던 유니크 제약 조건 추가 코드
     op.create_unique_constraint('uq_portfolio_snapshots_base_date', 'portfolio_snapshots', ['base_date'])
     # ### end Alembic commands ###
 
