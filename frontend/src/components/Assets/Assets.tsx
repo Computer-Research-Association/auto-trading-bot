@@ -2,14 +2,12 @@ import { useEffect, useState } from "react";
 import "./Asset.css";
 import Loading from "../Common/Loading";
 import { apiFetch } from "../../Lib/api";
-import { type PortfolioAssetsResponse, type AssetItem, type PortfolioSummary } from "../../Lib/assets.api";
 import {
-  PieChart,
-  Pie,
-  ResponsiveContainer,
-  Tooltip,
-  Cell
-} from "recharts";
+  type PortfolioAssetsResponse,
+  type AssetItem,
+  type PortfolioSummary,
+} from "../../Lib/assets.api";
+import { PieChart, Pie, ResponsiveContainer, Tooltip, Cell } from "recharts";
 
 /* =======================
    Types (Moved to assets.api.ts)
@@ -56,12 +54,12 @@ const FULL_NAMES: Record<string, string> = {
 
 function buildRatio(
   summary: PortfolioSummary,
-  items: AssetItem[]
+  items: AssetItem[],
 ): RatioItem[] {
   const total = Math.max(0, summary.total_assets_krw);
   const coinSum = items.reduce(
     (acc, it) => acc + Math.max(0, it.evaluation_krw),
-    0
+    0,
   );
   const krwValue = Math.max(0, total - coinSum);
 
@@ -80,9 +78,7 @@ function buildRatio(
     })),
   ];
 
-  return rows
-    .filter((r) => r.value > 0)
-    .sort((a, b) => b.value - a.value);
+  return rows.filter((r) => r.value > 0).sort((a, b) => b.value - a.value);
 }
 
 /* =======================
@@ -127,26 +123,25 @@ export default function Assets() {
   const { summary, items } = data;
 
   // 차트 데이터 (색상 주입)
-  const ratioRaw = buildRatio(summary, items).length > 0
-    ? buildRatio(summary, items)
-    : [{ name: "KRW", fullName: "Won", value: summary.krw_total, pct: 100 }];
+  const ratioRaw =
+    buildRatio(summary, items).length > 0
+      ? buildRatio(summary, items)
+      : [{ name: "KRW", fullName: "Won", value: summary.krw_total, pct: 100 }];
 
   const ratio = ratioRaw.map((item, index) => ({
     ...item,
-    fill: COLORS[index % COLORS.length]
+    fill: COLORS[index % COLORS.length],
   }));
 
   // 필터링된 리스트
-  const filteredItems = items.filter(item =>
-    item.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredItems = items.filter((item) =>
+    item.symbol.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
     <div className="main-panel">
-
       {/* 상단 2단 그리드 */}
       <div className="assets-top-grid">
-
         {/* 1. 자산 요약 (좌측) */}
         <div className="asset-summary-section">
           {/* 총 보유자산 (Hero) - Row 1 */}
@@ -156,7 +151,9 @@ export default function Assets() {
               <span className="card-value-hero">
                 {formatKRW(summary.total_assets_krw)}
               </span>
-              <span className={`hero-pct ${summary.total_pnl_rate >= 0 ? "pos" : "neg"}`}>
+              <span
+                className={`hero-pct ${summary.total_pnl_rate >= 0 ? "pos" : "neg"}`}
+              >
                 {formatPercent(summary.total_pnl_rate)}
               </span>
             </div>
@@ -170,11 +167,15 @@ export default function Assets() {
             </div>
             <div className="summary-card">
               <div className="card-label">주문가능</div>
-              <div className="card-value">{formatKRW(summary.krw_available)}</div>
+              <div className="card-value">
+                {formatKRW(summary.krw_available)}
+              </div>
             </div>
             <div className="summary-card">
               <div className="card-label">총 매수금액</div>
-              <div className="card-value">{formatKRW(summary.total_buy_krw)}</div>
+              <div className="card-value">
+                {formatKRW(summary.total_buy_krw)}
+              </div>
             </div>
           </div>
 
@@ -182,13 +183,18 @@ export default function Assets() {
           <div className="summary-row-2">
             <div className="summary-card">
               <div className="card-label">평가손익</div>
-              <div className={`card-value ${summary.total_pnl_krw >= 0 ? "pos" : "neg"}`}>
-                {summary.total_pnl_krw > 0 ? "+" : ""}{formatKRW(summary.total_pnl_krw)}
+              <div
+                className={`card-value ${summary.total_pnl_krw >= 0 ? "pos" : "neg"}`}
+              >
+                {summary.total_pnl_krw > 0 ? "+" : ""}
+                {formatKRW(summary.total_pnl_krw)}
               </div>
             </div>
             <div className="summary-card">
               <div className="card-label">수익률</div>
-              <div className={`card-value ${summary.total_pnl_rate >= 0 ? "pos" : "neg"}`}>
+              <div
+                className={`card-value ${summary.total_pnl_rate >= 0 ? "pos" : "neg"}`}
+              >
                 {formatPercent(summary.total_pnl_rate)}
               </div>
             </div>
@@ -199,7 +205,6 @@ export default function Assets() {
         <div className="asset-chart-section">
           <div className="chart-header">
             <h2 className="section-title">자산 비중</h2>
-            <button className="chart-more-btn">•••</button>
           </div>
 
           <div className="chart-content">
@@ -210,9 +215,9 @@ export default function Assets() {
                     data={ratio}
                     cx="50%"
                     cy="50%"
-                    innerRadius={65}   /* 얇게 */
+                    innerRadius={65} /* 얇게 */
                     outerRadius={85}
-                    paddingAngle={0}   /* 붙이기 */
+                    paddingAngle={0} /* 붙이기 */
                     dataKey="value"
                     startAngle={90}
                     endAngle={-270}
@@ -240,7 +245,7 @@ export default function Assets() {
                       className="legend-badge"
                       style={{
                         backgroundColor: `${item.fill}15`, // 투명도 15% 적용 (Hex 6자리일 때만 동작, 여기선 동작함)
-                        color: item.fill
+                        color: item.fill,
                       }}
                     >
                       {item.fullName}
@@ -290,10 +295,14 @@ export default function Assets() {
             </thead>
             <tbody>
               {filteredItems.map((item, index) => {
-                const pnl = item.evaluation_krw - item.avg_buy_price * item.quantity;
-                const pnlRate = item.avg_buy_price > 0
-                  ? ((item.current_price - item.avg_buy_price) / item.avg_buy_price) * 100
-                  : 0;
+                const pnl =
+                  item.evaluation_krw - item.avg_buy_price * item.quantity;
+                const pnlRate =
+                  item.avg_buy_price > 0
+                    ? ((item.current_price - item.avg_buy_price) /
+                        item.avg_buy_price) *
+                      100
+                    : 0;
 
                 // 아이콘 색상 (차트 색상과 매칭하거나 랜덤)
                 const iconColor = COLORS[index % COLORS.length];
@@ -301,24 +310,37 @@ export default function Assets() {
                 return (
                   <tr key={item.symbol}>
                     <td className="icon-cell">
-                      <div className="coin-icon-placeholder" style={{ background: `${iconColor}20`, color: iconColor }}>
+                      <div
+                        className="coin-icon-placeholder"
+                        style={{
+                          background: `${iconColor}20`,
+                          color: iconColor,
+                        }}
+                      >
                         {item.symbol[0]}
                       </div>
                     </td>
                     <td>
                       <div className="symbol-wrap">
                         <div className="symbol-name">{item.symbol}</div>
-                        <div className="symbol-full">{FULL_NAMES[item.symbol] || item.symbol}</div>
+                        <div className="symbol-full">
+                          {FULL_NAMES[item.symbol] || item.symbol}
+                        </div>
                       </div>
                     </td>
                     <td className="right">{item.quantity.toLocaleString()}</td>
                     <td className="right">{formatKRW(item.avg_buy_price)}</td>
                     <td className="right">{formatKRW(item.current_price)}</td>
-                    <td className="right bold">{formatKRW(item.evaluation_krw)}</td>
-                    <td className={`right bold ${pnl >= 0 ? "pos" : "neg"}`}>
-                      {pnl > 0 ? "+" : ""}{formatKRW(pnl)}
+                    <td className="right bold">
+                      {formatKRW(item.evaluation_krw)}
                     </td>
-                    <td className={`right bold ${pnlRate >= 0 ? "pos" : "neg"}`}>
+                    <td className={`right bold ${pnl >= 0 ? "pos" : "neg"}`}>
+                      {pnl > 0 ? "+" : ""}
+                      {formatKRW(pnl)}
+                    </td>
+                    <td
+                      className={`right bold ${pnlRate >= 0 ? "pos" : "neg"}`}
+                    >
                       {formatPercent(pnlRate)}
                     </td>
                   </tr>
