@@ -181,12 +181,12 @@ export default function Performance() {
         </div>
 
         {/* 👇 Recharts로 차트 그리기 */}
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chart}>
+        <ResponsiveContainer width="100%" height={300} style={{ outline: 'none' }}>
+          <AreaChart data={chart} style={{ outline: 'none' }}>
             <defs>
-              <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={off} stopColor="#ef4444" stopOpacity={0.3} />
-                <stop offset={off} stopColor="#3b82f6" stopOpacity={0.3} />
+              <linearGradient id="simpleGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={pnlPositive ? "#ef4444" : "#3b82f6"} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={pnlPositive ? "#ef4444" : "#3b82f6"} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -202,21 +202,16 @@ export default function Performance() {
               tick={{ fontSize: 12 }}
               tickFormatter={(value) => `₩${(value / 1000000).toFixed(0)}M`}
             />
-            <Tooltip
-              formatter={(value) => {
-                if (typeof value !== 'number') return '';
-                return formatKRW(value);
-              }}
-              labelFormatter={(label) => `날짜: ${label}`}
-            />
             <ReferenceLine y={0} stroke="#999" strokeDasharray="3 3" />
             <Area
               type="monotone"
               dataKey="pnl_krw"
-              stroke="#8884d8"
+              stroke={pnlPositive ? "#ef4444" : "#3b82f6"}
               strokeWidth={2}
               fillOpacity={1}
-              fill="url(#splitColor)"
+              fill="url(#simpleGrad)"
+              isAnimationActive={true}
+              animationDuration={1500}
             />
           </AreaChart>
         </ResponsiveContainer>
