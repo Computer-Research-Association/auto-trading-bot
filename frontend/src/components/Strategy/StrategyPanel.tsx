@@ -1,18 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import "./StrategyPanel.css";
-import { useEffect } from "react";
-
-type Strategy = {
-  id: string;
-  name: string;
-  subtitle: string;
-  desc: string;
-  tags: string[];
-  rateOfReturn: number;
-  winRate: number;
-  mdd: number;
-  performanceScore: number;
-};
+import type { Strategy } from "../../types/strategy.types";
+import { mockStrategyPanel } from "../../mocks/mockStrategy";
 
 const INITIAL_STRATEGIES: Strategy[] = [
   {
@@ -57,21 +46,26 @@ export default function StrategyPanel() {
   // 실행 중인 전략 ID들을 Set으로 관리
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set());
 
+  //   useEffect(() => {
+  //   fetch("/api/strategies")
+  //     .then((res) => res.json())
+  //     .then(setStrategies)
+  //     .catch(console.error);
+  // }, []);
+
   useEffect(() => {
-  fetch("/api/strategies")
-    .then((res) => res.json())
-    .then(setStrategies)
-    .catch(console.error);
-}, []);
+    setStrategies(mockStrategyPanel);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return strategies;
-    return strategies.filter((s) =>
-      s.name.toLowerCase().includes(q)
-    );
+    return strategies.filter((s) => s.name.toLowerCase().includes(q));
   }, [query, strategies]);
 
+  // {filtered.map((s) => (
+  //   <StrategyCard key={s.id} strategy={s} />
+  // ))}
 
   const toggleStrategy = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,7 +140,7 @@ export default function StrategyPanel() {
 
               <p className="strategy-desc">{s.desc}</p>
 
-                <div className="strategy-metrics">
+              <div className="strategy-metrics">
                 <div className="metric">
                   <span className="metric-label">수익률</span>
                   <span className={`metric-value ${s.rateOfReturn >= 0 ? "plus" : "minus"}`}>
@@ -169,7 +163,7 @@ export default function StrategyPanel() {
 
               <div className="strategy-item-bottom">
                 <div className="strategy-tags">
-                  {s.tags.map((t) => (
+                  {(s.tags ?? []).map((t) => (
                     <span key={t} className="tag">
                       {t}
                     </span>

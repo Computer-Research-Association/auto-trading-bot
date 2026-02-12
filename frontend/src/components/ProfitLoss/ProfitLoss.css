@@ -1,219 +1,277 @@
-import { useEffect, useMemo, useState } from "react";
-import "./Performance.css";
+/* ProfitLoss.css - 투자 손익 페이지 스타일 */
 
-type Period = "30d" | "90d" | "1y" | "all";
-
-type PerfSummary = {
-  period_label: string;
-  pnl_krw: number;
-  pnl_rate: number;
-  start_assets_krw: number;
-  end_assets_krw: number;
-};
-
-type PerfChartPoint = {
-  date: string;        // YYYY-MM-DD
-  pnl_krw: number;     // 누적 손익
-  assets_krw: number;  // 자산가치
-};
-
-type PerfDailyRow = {
-  date: string;
-  pnl_krw: number;
-  pnl_rate: number;
-  assets_krw: number;
-};
-
-type PerfResponse = {
-  summary: PerfSummary;
-  chart: PerfChartPoint[];
-  daily: PerfDailyRow[];
-};
-
-function formatKRW(v: number) {
-  return new Intl.NumberFormat("ko-KR", {
-    style: "currency",
-    currency: "KRW",
-    maximumFractionDigits: 0,
-  }).format(v);
-}
-function formatPercent(v: number) {
-  return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
+/* 메인 패널 */
+.main-panel {
+  padding: 32px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-// 아주 단순한 SVG 라인 차트 (나중에 recharts로 교체 가능)
-function LineChart({
-  points,
-  mode,
-}: {
-  points: PerfChartPoint[];
-  mode: "pnl" | "assets";
-}) {
-  const w = 720;
-  const h = 220;
-  const pad = 18;
-
-  const ys = points.map((p) => (mode === "pnl" ? p.pnl_krw : p.assets_krw));
-  const minY = Math.min(...ys, 0);
-  const maxY = Math.max(...ys, 0);
-
-  const xStep = points.length <= 1 ? 0 : (w - pad * 2) / (points.length - 1);
-  const yScale = (val: number) => {
-    if (maxY === minY) return h / 2;
-    const t = (val - minY) / (maxY - minY);
-    return h - pad - t * (h - pad * 2);
-  };
-
-  const d = points
-    .map((p, i) => {
-      const x = pad + i * xStep;
-      const y = yScale(mode === "pnl" ? p.pnl_krw : p.assets_krw);
-      return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
-
-  return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`} className="perf-chart">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
+/* 상단 KPI 카드들 3개 그리드 */
+.kpi-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
-export default function Performance() {
-  const [period, setPeriod] = useState<Period>("30d");
-  const [mode, setMode] = useState<"pnl" | "assets">("pnl");
-  const [data, setData] = useState<PerfResponse | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+.kpi-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
 
-  useEffect(() => {
-    setErr(null);
-    setData(null);
+.kpi-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+}
 
-    fetch(`http://127.0.0.1:8000/api/performance/summary?period=${period}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error((await r.text()) || `HTTP ${r.status}`);
-        return r.json() as Promise<PerfResponse>;
-      })
-      .then(setData)
-      .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
-  }, [period]);
+.kpi-value-large {
+  font-size: 32px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
 
-  const summary = data?.summary;
-  const chart = data?.chart ?? [];
-  const daily = data?.daily ?? [];
+.kpi-value-large.pos {
+  color: #ef4444;
+}
 
-  const pnlPositive = (summary?.pnl_krw ?? 0) >= 0;
+.kpi-value-large.neg {
+  color: #3b82f6;
+}
 
-  const periodButtons: { key: Period; label: string }[] = [
-    { key: "30d", label: "30일" },
-    { key: "90d", label: "3개월" },
-    { key: "1y", label: "1년" },
-    { key: "all", label: "전체" },
-  ];
+.kpi-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
 
-  if (err) return <div className="main-panel">에러: {err}</div>;
-  if (!data) return <div className="main-panel">로딩중...</div>;
+.kpi-sub.kpi-sub-col {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
 
-  return (
-    <div className="main-panel">
-      {/* 상단 요약 */}
-      <div className="perf-top">
-        <div className="perf-hero">
-          <div className="perf-hero-title">투자손익</div>
-          <div className={`perf-hero-value ${pnlPositive ? "pos" : "neg"}`}>
-            {formatKRW(summary!.pnl_krw)}
-          </div>
-          <div className={`perf-hero-sub ${pnlPositive ? "pos" : "neg"}`}>
-            {formatPercent(summary!.pnl_rate)}
-            <span className="perf-hero-period"> · {summary!.period_label}</span>
-          </div>
-        </div>
+.kpi-sub span.pos {
+  color: #ef4444;
+}
 
-        <div className="perf-filters">
-          <div className="perf-seg">
-            {periodButtons.map((b) => (
-              <button
-                key={b.key}
-                className={`seg-btn ${period === b.key ? "active" : ""}`}
-                onClick={() => setPeriod(b.key)}
-              >
-                {b.label}
-              </button>
-            ))}
-          </div>
+.kpi-sub span.neg {
+  color: #3b82f6;
+}
 
-          <div className="perf-seg">
-            <button
-              className={`seg-btn ${mode === "pnl" ? "active" : ""}`}
-              onClick={() => setMode("pnl")}
-            >
-              누적손익
-            </button>
-            <button
-              className={`seg-btn ${mode === "assets" ? "active" : ""}`}
-              onClick={() => setMode("assets")}
-            >
-              자산가치
-            </button>
-          </div>
-        </div>
-      </div>
+.kpi-period {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+}
 
-      {/* 차트 */}
-      <div className="perf-card">
-        <div className="perf-card-head">
-          <div className="perf-card-title">
-            {mode === "pnl" ? "누적 손익 추이" : "자산가치 추이"}
-          </div>
-          <div className="perf-card-meta">
-            시작 {formatKRW(summary!.start_assets_krw)} → 현재{" "}
-            {formatKRW(summary!.end_assets_krw)}
-          </div>
-        </div>
+/* 차트 섹션 */
+.perf-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
 
-        <LineChart points={chart} mode={mode} />
-      </div>
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
 
-      {/* 일별 테이블 */}
-      <div className="perf-card">
-        <div className="perf-card-head">
-          <div className="perf-card-title">일별 손익</div>
-        </div>
+.section-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
 
-        {daily.length === 0 ? (
-          <div className="perf-empty">표시할 데이터가 없습니다.</div>
-        ) : (
-          <div className="perf-table-wrap">
-            <table className="perf-table">
-              <thead>
-                <tr>
-                  <th className="left">날짜</th>
-                  <th className="right">손익</th>
-                  <th className="right">수익률</th>
-                  <th className="right">자산가치</th>
-                </tr>
-              </thead>
-              <tbody>
-                {daily.map((r) => {
-                  const pos = r.pnl_krw >= 0;
-                  return (
-                    <tr key={r.date}>
-                      <td className="left">{r.date}</td>
-                      <td className={`right ${pos ? "pos" : "neg"}`}>
-                        {formatKRW(r.pnl_krw)}
-                      </td>
-                      <td className={`right ${pos ? "pos" : "neg"}`}>
-                        {formatPercent(r.pnl_rate)}
-                      </td>
-                      <td className="right">{formatKRW(r.assets_krw)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+.chart-legend {
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.legend-dot.gain {
+  background-color: #ef4444;
+}
+
+.legend-dot.loss {
+  background-color: #3b82f6;
+}
+
+.legend-text {
+  font-weight: 500;
+}
+
+/* 기간 탭 */
+.period-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.period-tab {
+  padding: 8px 20px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-tab:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.period-tab.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* 일별 손익 테이블 섹션 */
+.daily-table-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.daily-table-section h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+.daily-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.daily-table th {
+  text-align: left;
+  padding: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fbfbfc;
+}
+
+.daily-table th.right {
+  text-align: right;
+}
+
+.daily-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.daily-table td.right {
+  text-align: right;
+}
+
+.daily-table td.pos {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.daily-table td.neg {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.daily-table .empty-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Perf Table (일일 손익 테이블) */
+.perf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.perf-table th {
+  text-align: left;
+  padding: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fbfbfc;
+}
+
+.perf-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.perf-table td.pos {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.perf-table td.neg {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.perf-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* 색상 클래스 */
+.pos {
+  color: #ef4444;
+}
+
+.neg {
+  color: #3b82f6;
 }

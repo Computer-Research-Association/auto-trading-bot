@@ -28,6 +28,12 @@ services:
       - DB_PORT=5432
     ports:
       - "8000:8000"
+    # --- 아래 부분이 추가/수정된 핵심 설정입니다 ---
+    volumes:
+      - ./backend:/app # [추가] 로컬 소스 코드를 컨테이너 내부와 동기화
+      - /app/.venv # [추가] 컨테이너 내부의 가상환경 폴더를 로컬로부터 보호 (익명 볼륨)
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload # [추가] --reload 옵션으로 실시간 반영 활성화
+    # ------------------------------------------
     depends_on:
       db:
         condition: service_healthy

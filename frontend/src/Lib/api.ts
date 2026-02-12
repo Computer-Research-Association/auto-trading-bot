@@ -1,11 +1,30 @@
+import axios from 'axios';
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`);
+export const api = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  if (!res.ok) {
-    throw new Error(`API Error ${res.status}`);
+// Response interceptor for error handling (optional but recommended)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Check if error is due to server issues (like 502)
+    if (error.response) {
+      console.error(`API Error: ${error.response.status} - ${error.response.data?.message || error.message}`);
+    } else {
+      console.error(`Network Error: ${error.message}`);
+    }
+    return Promise.reject(error);
   }
+);
 
-  return res.json() as Promise<T>;
+// Simplified API fetch wrapper
+export async function apiFetch<T>(endpoint: string): Promise<T> {
+  const response = await api.get<T>(endpoint);
+  return response.data;
 }

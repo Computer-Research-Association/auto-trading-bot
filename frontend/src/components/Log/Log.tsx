@@ -1,24 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
-import {mockLogs} from '../../mocks/mockData';
-import { apiFetch } from "../../lib/api";
+import { mockLog } from '../../mocks/mockLog';
+import { apiFetch } from "../../Lib/api";
+import { getLogs, type LogItem, type LogLevel } from "../../Lib/log.api"; // API & Types
 
-type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
-type tpstring = 'System' | 'Data' | 'Strategy' | 'Trade';
-type LogsResponse = {
-  items: LogItem[];
-};
-
-
-interface LogItem {
-  id: number;
-  timestamp: string;
-  category: tpstring;
-  eventname: string;
-  level: LogLevel;
-  message: string;
-}
+// Local types removed (imported from api)
+// type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
+// ...
 
 function getPageItems(page: number, total: number) {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
@@ -73,11 +62,11 @@ export function PageBlock({
   );
 }
 
-const Filters: Array<{key: 'ALL' | LogLevel; label: string}> = [
-    {key: 'ALL', label: 'All Logs'},
-    {key: 'INFO', label: 'Info'},
-    {key: 'WARNING', label: 'Warning'},
-    {key: 'ERROR', label: 'Error'},
+const Filters: Array<{ key: 'ALL' | LogLevel; label: string }> = [
+  { key: 'ALL', label: 'All Logs' },
+  { key: 'INFO', label: 'Info' },
+  { key: 'WARNING', label: 'Warning' },
+  { key: 'ERROR', label: 'Error' },
 ];
 
 const Log: React.FC = () => {
@@ -85,31 +74,56 @@ const Log: React.FC = () => {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | LogLevel>('ALL');
-  
 
-    const pageSize = 5;
-    const [page, setPage] = useState(1);
+
+  const pageSize = 5;
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLogs(mockLogs);
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+    setLoading(true);
+    apiFetch<{ items: LogItem[] }>("/logs")
+      .then((res) => {
+        setLogs(res.items);
+      })
+      .catch(() => {
+        setLogs(mockLog); // Fallback
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-    const filtered = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+
     return logs
+      // 1. 등급 필터 (버튼) 적용
       .filter((l) => (levelFilter === 'ALL' ? true : l.level === levelFilter))
+      // 2. 검색어 필터 적용
       .filter((l) => {
         if (!q) return true;
+
+        // 데이터 안전성 체크
+        const timestamp = l.timestamp ? l.timestamp.toLowerCase() : '';
+        const category = l.category ? l.category.toLowerCase() : '';
+        const eventname = l.eventname ? l.eventname.toLowerCase() : '';
+        const level = l.level ? l.level.toLowerCase() : '';
+        const message = l.message ? l.message.toLowerCase() : '';
+
+        // 레벨 필터링 강화: startsWith 사용 (IN -> INFO 매칭, WARNING 제외)
+        // 한글 검색 지원 (정보, 경고, 에러)
+        const isLevelMatch =
+          level.startsWith(q) ||
+          (q === '정보' && level === 'info') ||
+          (q === '경고' && level === 'warning') ||
+          (q === '에러' && level === 'error');
+
         return (
-          l.timestamp.toLowerCase().includes(q) ||
-          l.category.toLowerCase().includes(q) ||
-          l.eventname.toLowerCase().includes(q) ||
-          l.level.toLowerCase().includes(q) ||
-          l.message.toLowerCase().includes(q)
+          timestamp.includes(q) ||
+          category.includes(q) ||
+          eventname.includes(q) ||
+          isLevelMatch ||
+          message.includes(q)
         );
       });
   }, [logs, query, levelFilter]);
@@ -118,27 +132,14 @@ const Log: React.FC = () => {
   const startIndex = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, filtered.length);
 
-    const pagedLogs = useMemo<LogItem[]>(() => {
+  const pagedLogs = useMemo<LogItem[]>(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-    }, [filtered, page]);
-
-    useEffect(() => {
-      setLoading(true);
-      apiFetch<LogsResponse>("/logs")
-        .then((res: LogsResponse) => {
-        setLogs(res.items);
-      })
-        .catch(() => {
-        setLogs(mockLogs);
-      })
-      .finally(() => {
-      setLoading(false);
-    });
-}, []);
+  }, [filtered, page]);
 
 
   const onClearView = () => {
+
     setQuery('');
     setLevelFilter('ALL');
   };
@@ -161,7 +162,7 @@ const Log: React.FC = () => {
             className="searchInput"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search logs..."
+            placeholder="등급 검색..."
           />
         </div>
         <div className="actions">
@@ -172,14 +173,14 @@ const Log: React.FC = () => {
       </div>
 
       {/* Title*/}
-        <div className="logHeader">
+      <div className="logHeader">
         <div>
-          <h1 className="title">System Activity Logs</h1>
-          <p className="subtitle">
+          <h1 className="title">시스템 활동 로그</h1>
+          {/* <p className="subtitle">
             Real-time monitoring and event history across all services.
-          </p>
+          </p> */}
         </div>
-      </div>  
+      </div>
 
       {/* Filters */}
       <div className="filterRow">
@@ -195,39 +196,39 @@ const Log: React.FC = () => {
         ))}
       </div>
 
-    {/* Table */}
-    <div className="tableCard">
-      <div className="tableHead">
-        <div>TIMESTAMP</div>
-        <div>CATEGORY</div>
-        <div>EVENT NAME</div>
-        <div>LEVEL</div>
-        <div>MESSAGE</div>
-      </div>
+      {/* Table */}
+      <div className="tableCard">
+        <div className="tableHead">
+          <div>날짜 및 시간</div>
+          <div>분류</div>
+          <div>이벤트명</div>
+          <div>등급</div>
+          <div>상세내용</div>
+        </div>
 
-      <div className="tableBody">
-        {pagedLogs.map((l) => (
-          <div className="row" key={l.id}>
-            <div className="cell mono">{l.timestamp}</div>
-            <div className="cell">{l.category}</div>
-            <div className="cell">{l.eventname}</div>
-            <div className="cell level">
-              <div className={`badge ${l.level.toLowerCase()}`}>
-                {l.level}
+        <div className="tableBody">
+          {pagedLogs.map((l) => (
+            <div className="row" key={l.id}>
+              <div className="cell mono">{l.timestamp}</div>
+              <div className="cell">{l.category}</div>
+              <div className="cell">{l.eventname}</div>
+              <div className="cell level">
+                <div className={`badge ${l.level.toLowerCase()}`}>
+                  {l.level}
+                </div>
               </div>
-            </div>
               <div className="cell message">{l.message}</div>
-          </div>
-        ))}
-        {pagedLogs.length === 0 && (
-          <div className="empty">검색/필터 결과가 없습니다.</div>
-        )}
-      </div>
+            </div>
+          ))}
+          {pagedLogs.length === 0 && (
+            <div className="empty">검색/필터 결과가 없습니다.</div>
+          )}
+        </div>
         <PageBlock
           page={page}
           totalPages={Math.ceil(filtered.length / pageSize)}
           onChange={setPage}
-          />
+        />
 
         <div className="tableFooter">
           <span className="footerText">

@@ -24,6 +24,7 @@ async def lifespan(app: FastAPI):
     stop_snapshot_scheduler()
     logger.info("lifespan stopped")
 
+
 app = FastAPI(lifespan=lifespan)
 
 @app.get("/db-test")
@@ -31,7 +32,6 @@ async def db_test(db: AsyncSession = Depends(get_database)):
     result = await db.execute(text("SELECT 1"))
     value = result.scalar()
     return {"db": "ok", "result": value}
-
 
 
 cors_config.setup_cors(app)

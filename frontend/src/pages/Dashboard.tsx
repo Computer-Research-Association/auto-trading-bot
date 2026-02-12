@@ -3,7 +3,9 @@ import React, { useState } from "react";
 
 // 컴포넌트 불러오기
 // FIXME: 각 컴포넌트가 .tsx로 변환되면 확장자 없이 import 가능 또는 명시적 .tsx 필요 여부는 tsconfig 설정에 따라 다름
-import StrategyPanel from "../components/Strategy/StrategyPanel";
+// import StrategyPanel from "../components/Strategy/StrategyPanel"; // V1
+import StrategyPanelV2 from "../components/Strategy/StrategyPanelV2"; // V2 Prototype
+
 import Assets from "../components/Assets/Assets";
 import ProfitLoss from "../components/ProfitLoss/ProfitLoss";
 import History from "../components/History/History";
@@ -54,8 +56,8 @@ export default function Dashboard() {
                     {tab === "log" && <Log />}
                 </div>
 
-                {/* 오른쪽 전략 패널은 항상 고정 */}
-                <StrategyPanel />
+                {/* 오른쪽 전략 패널 V2 적용 */}
+                <StrategyPanelV2 />
             </div>
         </div>
     );
