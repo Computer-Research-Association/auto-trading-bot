@@ -252,7 +252,7 @@ class TradingBot:
             await self.execute_sell(current_price, "스탑로스 도달", "STOPLOSS")
 
     async def _process_strategy_analysis(self):
-        df = await self.loader.fetch_ohlcv()  # 최신 ohlcv 데이터 로드ㄴ
+        df = await self.loader.fetch_ohlcv()  # 최신 ohlcv 데이터 로드
         if df is None: return
         
         is_valid, _ = self.strategy.validate_data(df)
