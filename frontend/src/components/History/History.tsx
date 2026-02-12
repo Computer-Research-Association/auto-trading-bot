@@ -1,67 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import './History.css';
-import Loading from '../Common/Loading.js';
-import {mockHistory} from '../../mocks/mockData.js';
-import { apiFetch } from "../../Lib/api.js";
+import Loading from '../Common/Loading';
+import { mockHistory } from '../../mocks/mockHistory';
+import { apiFetch } from "../../Lib/api";
+import { type History, type Strategy, type HistoryType } from "../../Lib/history.api";
 
-interface History {
-  id: number;
-  DateTime: string;
-  CoinName: string;
-  Type: string;
-  TVolume: number;
-  TUnitPrice: number;
-  TAmount: number;
-  TCharge: number;
-  Strategy: Strategy;
-}
+// Local types removed (imported from api)
 
-   function filterTrades(
+function filterTrades(
   data: History[],
   type: string) {
-    return data.filter(item => {
-      if(type === 'All') return true;
-      return item.Type === type;
-    });
-  }
+  return data.filter(item => {
+    if (type === 'All') return true;
+    return item.Type === type;
+  });
+}
 
-    function formatKRW(val: number) {
-      return `${new Intl.NumberFormat('ko-KR').format(val)} KRW`;
-  }
+function formatKRW(val: number) {
+  return `${new Intl.NumberFormat('ko-KR').format(val)} KRW`;
+}
 
-  type Period = '1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL';
-  type HistoryType = 'Buy' | 'Sell' | 'All';
-  type Strategy = 'All Strategy' | 'Moving Average' 
-                  | 'RSI Oversold' | 'Bollinger band';
+type Period = '1 MONTH' | '6 MONTH' | '1 YEAR' | 'ALL';
+// HistoryType, Strategy imported from api
 
-  const periodOptions = [
-    { label: '1 MONTH', value: '1 개월' },
-    { label: '6 MONTH', value: '6 개월' },
-    { label: '1 YEAR', value: '1 년' },
-    { label: 'ALL', value: '다' },
-  ];
+const periodOptions = [
+  { label: '1 MONTH', value: '1 개월' },
+  { label: '6 MONTH', value: '6 개월' },
+  { label: '1 YEAR', value: '1 년' },
+  { label: 'ALL', value: '다' },
+];
 
-  const typeOptions = [
-    { label: '전체', value: 'All' },
-    { label: '매수', value: 'Buy' },
-    { label: '매도', value: 'Sell' },
-  ];
+const typeOptions = [
+  { label: '전체', value: 'All' },
+  { label: '매수', value: 'Buy' },
+  { label: '매도', value: 'Sell' },
+];
 
-  const StrategyOptions = [
-    { label: '전체 전략', value: 'All Strategy'},
-    { label: '이동평균선 골든크로스', value: 'Moving Average'},
-    { label: 'RSI 과매도 반동', value: 'RSI Oversold'},
-    { label: '볼린저 밴드 하단 터치', value: 'Bollinger band'},
-  ];
+const StrategyOptions = [
+  { label: '전체 전략', value: 'All Strategy' },
+  { label: '이동평균선 골든크로스', value: 'Moving Average' },
+  { label: 'RSI 과매도 반동', value: 'RSI Oversold' },
+  { label: '볼린저 밴드 하단 터치', value: 'Bollinger band' },
+];
 
- export default function History() {
+export default function History() {
   const [period, setPeriod] =
     useState<Period>('1 MONTH');
 
   const [HistoryType, setHistory] =
     useState<HistoryType>('All');
 
-  const [Strategy, setStrategy] = 
+  const [Strategy, setStrategy] =
     useState<Strategy>('All Strategy');
 
   const [loading, setLoading] = useState(false);
@@ -71,26 +60,26 @@ interface History {
 
 
   const filteredData = historyData
-  // 전체/매수/매도
-  .filter(item => {
-    if (HistoryType === 'All') return true;
-    return item.Type === HistoryType;
-  })
-  // 전략
-  .filter(item => {
-    if (Strategy === 'All Strategy') return true;
-    return item.Strategy === Strategy;
-  })
-  // 검색
-  .filter(item =>
-    item.CoinName.toLowerCase().includes(query.toLowerCase())
-  );
+    // 전체/매수/매도
+    .filter(item => {
+      if (HistoryType === 'All') return true;
+      return item.Type === HistoryType;
+    })
+    // 전략
+    .filter(item => {
+      if (Strategy === 'All Strategy') return true;
+      return item.Strategy === Strategy;
+    })
+    // 검색
+    .filter(item =>
+      item.CoinName.toLowerCase().includes(query.toLowerCase())
+    );
 
-    useEffect(() => {
+  useEffect(() => {
     setLoading(true);
 
     apiFetch<History[]>("/trades/history")
-      .then(setHistoryData)
+      .then((res: History[]) => setHistoryData(res))
       .catch(() => {
         // 서버 안 되면 mock 유지
         setHistoryData(mockHistory);
@@ -104,29 +93,29 @@ interface History {
       <h2>거래내역</h2>
 
       <div className="history-filters">
-          <div className="filter-time">
-            {periodOptions.map(opt => (
-              <button 
-                key={opt.value} 
-                className={`filter-btn ${period === opt.value ? 'active' : ''}`}
-                onClick={() => setPeriod(opt.value as Period)}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
+        <div className="filter-time">
+          {periodOptions.map(opt => (
+            <button
+              key={opt.value}
+              className={`filter-btn ${period === opt.value ? 'active' : ''}`}
+              onClick={() => setPeriod(opt.value as Period)}>
+              {opt.label}
+            </button>
+          ))}
+        </div>
 
         <div className="filter-divider">|</div>
 
         <div className="filter-Buy-Sell">
-            {typeOptions.map(opt => (
-              <button
+          {typeOptions.map(opt => (
+            <button
               key={opt.value}
-                className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
-                onClick={() => setHistory(opt.value as HistoryType)}>
-                {opt.label}
-              </button>
+              className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
+              onClick={() => setHistory(opt.value as HistoryType)}>
+              {opt.label}
+            </button>
 
-            ))}
+          ))}
         </div>
 
         <div className="strategy-filter">
@@ -183,34 +172,34 @@ interface History {
                 <th className="col-right">거래금액</th>
                 <th className="col-right">수수료</th>
               </tr>
-              </thead>
+            </thead>
 
-              <tbody>
-                {filteredData.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>
-                      거래 내역이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredData.map((item) => (
-                    <tr key={item.id}>
-                      <td className="col-date">{item.DateTime}</td>
-                      <td className="col-coin">{item.CoinName}</td>
-                      <td>
-                        <span className={`trade-badge ${item.Type === 'Buy' ? 'buy' : 'sell'}`}>
+            <tbody>
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>
+                    거래 내역이 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                filteredData.map((item) => (
+                  <tr key={item.id}>
+                    <td className="col-date">{item.DateTime}</td>
+                    <td className="col-coin">{item.CoinName}</td>
+                    <td>
+                      <span className={`trade-badge ${item.Type === 'Buy' ? 'buy' : 'sell'}`}>
                         {item.Type === 'Buy' ? '매수' : '매도'}
-                        </span>
-                      </td>
+                      </span>
+                    </td>
 
-                      <td className="col-right">{item.TVolume}</td>
-                      <td className="col-right">{formatKRW(item.TUnitPrice)}</td>
-                      <td className="col-right">{formatKRW(item.TAmount)}</td>
-                      <td className="col-right">{formatKRW(item.TCharge)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
+                    <td className="col-right">{item.TVolume}</td>
+                    <td className="col-right">{formatKRW(item.TUnitPrice)}</td>
+                    <td className="col-right">{formatKRW(item.TAmount)}</td>
+                    <td className="col-right">{formatKRW(item.TCharge)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
           </table>
         )}
       </div>
