@@ -104,8 +104,8 @@ async def save_portfolio_snapshot_job():
                     event_name="SNAPSHOT_FAILED",
                     message=f"스냅샷 저장 중 오류 발생: {str(e)}"
                 )
-                except Exception:
-                    logger.exception("[DB_LOG_FAIL] SNAPSHOT_FAILED")
+        except Exception:
+            logger.exception("[DB_LOG_FAIL] SNAPSHOT_FAILED")
 
 def start_snapshot_scheduler():
     """

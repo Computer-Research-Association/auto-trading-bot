@@ -2,16 +2,18 @@ import asyncio
 import json
 import logging
 from datetime import date
+
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from core.deps import get_database
-from core.database import AsyncSessionLocal # 매 폴링마다 세션 생성을 위해 임포트
+from app.core.event_bus import event_bus
 from app.domains.log import service, schema
 
 router = APIRouter(prefix="/v1/logs", tags=["logs"])
 logger = logging.getLogger(__name__)
+
 
 @router.get("", response_model=schema.LogListResponse)
 async def get_logs(
@@ -20,10 +22,15 @@ async def get_logs(
     level: str | None = None,
     category: str | None = None,
     search: str | None = None,
-    start_date: date | None = Query(None, description="YYYY-MM-DD"), # date 타입으로 자동 검증
+    start_date: date | None = Query(None, description="YYYY-MM-DD"),
     end_date: date | None = Query(None, description="YYYY-MM-DD"),
     db: AsyncSession = Depends(get_database),
 ):
+    """
+    ✅ 과거 로그 조회(페이지네이션)
+    - 프론트에서 페이지 처음 열 때 과거 로그 로드용
+    - SSE는 '실시간'만 담당하고, 히스토리는 이 API가 담당
+    """
     items, total_count = await service.list_logs(
         db,
         page=page,
@@ -36,53 +43,66 @@ async def get_logs(
     )
     return {"items": items, "total_count": total_count}
 
+
 @router.get("/stream")
 async def stream_logs(request: Request):
-    async def log_publisher():
-        # Last-Event-ID 헤더 확인 (표준 대응)
-        last_event_id = request.headers.get("last-event-id")
-        last_id = int(last_event_id) if last_event_id and last_event_id.isdigit() else 0
-        
+    """
+    ✅ 진짜 실시간 SSE (DB polling 제거)
+    - bot.py/save_log_to_db에서 event_bus.publish(payload) 하면
+      여기서 즉시 받아 프론트로 push
+    """
+
+    async def event_generator():
+        # 클라이언트별 구독 큐 생성
+        queue = event_bus.subscribe()
+
+        # 표준 SSE 재연결 헤더(참고용)
+        # - 이 값으로 "누락 로그 자동 재전송"을 하려면 서버가 별도 버퍼/브로커가 있어야 함
+        # - 우리는 히스토리는 GET /v1/logs 로 받는 구조이므로 여기서는 참고만
+        _ = request.headers.get("last-event-id")
+
         try:
             while True:
-                # 클라이언트 연결 끊김 감지
+                # 클라이언트가 끊기면 종료
                 if await request.is_disconnected():
                     break
-                
-                # 매 폴링마다 새로운 세션을 열어 안전하게 조회 (세션 점유 및 stale 방지)
-                async with AsyncSessionLocal() as db:
-                    new_logs = await service.get_new_logs(db, last_id)
-                    for log in new_logs:
-                        last_id = log.id
-                        yield {
-                            "id": str(log.id), # 브라우저의 Last-Event-ID 갱신
-                            "data": json.dumps({
-                                "id": log.id,
-                                "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-                                "category": log.category,
-                                "eventname": log.event_name, # schema의 alias와 일치하게 mapping
-                                "level": log.level,
-                                "message": log.message
-                            }, ensure_ascii=False)
-                        }
-                
-                await asyncio.sleep(1)
-                
+
+                # 새 이벤트를 기다림(완전 실시간)
+                message = await queue.get()
+
+                # keep-alive 용도로 가끔 ping을 보내고 싶으면 이 구조로 확장 가능
+                # (현재는 publish가 들어올 때만 이벤트가 나감)
+
+                # payload가 dict가 아니면 dict로 맞춰줌
+                if not isinstance(message, dict):
+                    message = {"message": str(message)}
+
+                # SSE 포맷으로 전송
+                # - id: 브라우저의 Last-Event-ID 갱신에 사용 가능(있으면 넣어줌)
+                # - event: 프론트에서 addEventListener로 분기하고 싶으면 사용(선택)
+                event_id = message.get("id")
+                event_name = message.get("eventname") or message.get("event_name")  # 호환 처리
+
+                yield {
+                    "id": str(event_id) if event_id is not None else None,
+                    "event": str(event_name) if event_name else None,
+                    "data": json.dumps(message, ensure_ascii=False),
+                }
+
         except asyncio.CancelledError:
             logger.info("SSE connection cancelled by client")
             raise
         except Exception as e:
             logger.error(f"SSE stream error: {e}")
             raise
+        finally:
+            # 구독 해제(메모리 누수 방지)
+            event_bus.unsubscribe(queue)
 
-    # 필수 및 권장 헤더 세트
     headers = {
         "Cache-Control": "no-cache",
         "Connection": "keep-alive",
-        "X-Accel-Buffering": "no", # nginx 버퍼링 방지
+        "X-Accel-Buffering": "no",  # nginx 사용 시 버퍼링 방지
     }
-    
-    return EventSourceResponse(
-        log_publisher(),
-        headers=headers
-    )
+
+    return EventSourceResponse(event_generator(), headers=headers)
