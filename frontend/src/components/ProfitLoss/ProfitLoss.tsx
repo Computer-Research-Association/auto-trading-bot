@@ -62,43 +62,6 @@ export default function Performance() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // useEffect(() => {
-  //   setErr(null);
-
-  //   // 1. 현재 날짜 구하기 (?? "" 를 붙여서 에러 방지)
-  //   const now = new Date();
-  //   const endDateStr: string = now.toISOString().split('T')[0] ?? "";
-
-  //   // 2. 시작 날짜 계산 함수 (반환 타입 명시 및 ?? "" 적용)
-  //   const getStartDate = (p: string): string => {
-  //     const d = new Date();
-  //     if (p === "30d") d.setDate(d.getDate() - 30);
-  //     else if (p === "180d") d.setMonth(d.getMonth() - 6);
-  //     else if (p === "1y") d.setFullYear(d.getFullYear() - 1);
-  //     else return "2020-01-01";
-  //     return d.toISOString().split('T')[0] ?? "";
-  //   };
-
-  //   const startDateStr: string = getStartDate(period);
-
-  //   // 3. API 파라미터 설정
-  //   const params = new URLSearchParams({
-  //     start_date: startDateStr,
-  //     end_date: endDateStr,
-  //     period: period,
-  //   });
-
-  //   // 4. 서버 데이터 호출 (res 타입 명시로 any 에러 해결)
-  //   apiFetch<PerfResponse>("/performance/summary?" + params.toString())
-  //     .then((res: PerfResponse) => {
-  //       setData(res); // 서버에서 온 데이터를 바로 저장 (필터링은 서버가 이미 해서 보냄)
-  //     })
-  //     .catch((e: unknown) => {
-  //       setErr(e instanceof Error ? e.message : String(e));
-  //     });
-  // }, [period]);
-
-  // useEffect 내부의 apiFetch 부분을 아래와 같이 변경하세요.
   useEffect(() => {
     setErr(null);
     setLoading(true);
@@ -117,20 +80,8 @@ export default function Performance() {
 
     const query = `?start_date=${getStartDate(period)}&end_date=${endDateStr}`;
 
-    console.log('📅 [Performance] 요청 날짜 범위:', {
-      start_date: getStartDate(period),
-      end_date: endDateStr,
-      period: period
-    });
-
-    // 백엔드 /performance/summary 엔드포인트에서 모든 데이터 가져오기
     apiFetch<PerfResponse>(`/performance/summary${query}`)
       .then((res) => {
-        console.log('📊 [Performance] 백엔드 응답 데이터:', res);
-        console.log('📊 [Performance] Summary:', res.summary);
-        console.log('📊 [Performance] Chart 데이터 개수:', res.chart?.length);
-        console.log('📊 [Performance] Daily 데이터 개수:', res.daily?.length);
-        
         setData({
           summary: res.summary,
           chart: res.chart,
@@ -138,7 +89,6 @@ export default function Performance() {
         });
       })
       .catch((e) => {
-        console.error('❌ [Performance] API 에러:', e);
         setErr(e instanceof Error ? e.message : "Error");
       })
       .finally(() => setLoading(false));
