@@ -5,6 +5,7 @@ import time
 import traceback
 import logging
 from pathlib import Path
+from datetime import datetime
 
 # 인프라 및 도구 임포트
 from .load_data import DataLoader
@@ -449,6 +450,16 @@ class TradingBot:
 
         if old_value != new_value:
             await self._log_command_change(new_value)
+
+    async def get_snapshot(self) -> dict:
+        """
+        외부 API 조회용: 현재 상태 스냅샷을 반환 (Thread-Safe).
+        """
+        async with self._lock:
+            snapshot = self.state.copy()
+            snapshot['timestamp'] = datetime.utcnow().isoformat()
+            snapshot['strategy_name'] = self.strategy_name
+            return snapshot
 
     async def run(self):
         """
