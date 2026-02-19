@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { getAssets } from "../../Lib/assets.api";
 
 type Period = "30d" | "180d" | "1y" | "all";
 
@@ -62,6 +63,7 @@ export default function Performance() {
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // 1. 초기 데이터 로드 (기존 로직 유지)
   useEffect(() => {
     setErr(null);
     setLoading(true);
@@ -93,6 +95,56 @@ export default function Performance() {
       })
       .finally(() => setLoading(false));
   }, [period]);
+
+  // 2. 실시간 업데이트 (1초마다)
+  useEffect(() => {
+    // 1초마다 실행할 타이머
+    const timer = setInterval(() => {
+      getAssets().then((res) => {
+        setData((prev) => {
+          if (!prev) return prev;
+
+          // KPI 업데이트
+          const newSummary = {
+            ...prev.summary,
+            total_assets_krw: res.summary.total_assets_krw,
+            pnl_krw: res.summary.total_pnl_krw,
+            pnl_rate: res.summary.total_pnl_rate,
+          };
+
+          // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
+          const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
+          if (!todayStr) return prev; // 날짜 없으면 무시
+
+          const newPoint = {
+            date: todayStr,
+            assets_krw: res.summary.total_assets_krw,
+            pnl_krw: res.summary.total_pnl_krw,
+            pnl_rate: res.summary.total_pnl_rate,
+          };
+
+          const newChart = [...prev.chart];
+          const lastIdx = newChart.length - 1;
+          
+          if (lastIdx >= 0 && newChart[lastIdx]!.date === todayStr) {
+            // 오늘 데이터가 이미 있으면 갱신 (실시간 움직임 효과)
+            newChart[lastIdx] = newPoint;
+          } else {
+            // 없으면 추가
+            newChart.push(newPoint);
+          }
+
+          return {
+            ...prev,
+            summary: newSummary,
+            chart: newChart,
+          };
+        });
+      }).catch(console.error); // 에러 무시 (다음 틱에 재시도)
+    }, 1000); // 1초
+
+    return () => clearInterval(timer);
+  }, []);
 
   const summary = data?.summary;
   const chart = data?.chart ?? [];
