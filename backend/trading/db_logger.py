@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 import asyncio
+from datetime import datetime
 
 # 프로젝트 루트(backend/) 경로 설정
 # backend/ 폴더를 sys.path에 추가한다.
@@ -39,11 +40,27 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# 로컬 파일 백업 경로 (DB 장애 시 fallback)
+_BACKUP_LOG_PATH = os.path.join(current_dir, "backup.log")
+
+
+def _write_backup_log(level: str, category: str, event_name: str, message: str):
+    """DB 저장 완전 실패 시 로컬 파일에 Fallback 기록 (동기 함수, 스레드풀 아닌 직접 호출)"""
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = f"[{timestamp}] {level} | {category} | {event_name} | {message}\n"
+        with open(_BACKUP_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as backup_err:
+        # 파일 쓰기도 실패하면 콘솔만 남기고 더 이상 할 수 없음
+        print(f"[BACKUP_LOG_FAIL] 파일 백업도 실패: {backup_err}")
+
 
 async def save_log_to_db(level: str, category: str, event_name: str, message: str):
     """
     트레이딩 봇의 로그를 비동기 방식으로 db에 저장
     유효성 검사 및 네트워크 순단에 대비한 재시도 로직 포함
+    모든 재시도 실패 시 로컬 backup.log 파일에 Fallback 기록
     """
 
     # 입력받은 문자열을 Enum 타입으로 변환
@@ -66,7 +83,7 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
 
     for attempt in range(max_retries):
         try:
-            # 비동기 세션 생성 후 트랜젹션 시작
+            # 비동기 세션 생성 후 트랜젝션 시작
             async with AsyncSessionLocal() as session:
                 # log_event 호출하여 저장 위임
                 # commit=True로 즉시 커밋
@@ -89,11 +106,11 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                 )
                 await asyncio.sleep(wait_time)
             else:
-                # 모든 재시도 실패 시 최종 에러 및 백업 로그 출력
-                error_msg = f"[DB_LOG_FATAL] 모든 재시도 실패: {e}"
-                print(error_msg)
-                # 유실 방지를 위해 콘솔에 최종 백업 내용을 출력
+                # 모든 재시도 실패 시 최종 에러
                 display_event = e_event.value if hasattr(e_event, "value") else e_event
-                print(
-                    f"📌 [FINAL_BACKUP] {level} | {category} | {display_event} | {safe_message}"
-                )
+                error_msg = f"[DB_LOG_FATAL] 모든 재시도 실패: {e}"
+                # 1. 콘솔 출력 (기존 동작 유지)
+                print(error_msg)
+                print(f"📌 [FINAL_BACKUP] {level} | {category} | {display_event} | {safe_message}")
+                # 2. 로컬 파일 Fallback (신규 추가)
+                _write_backup_log(level, category, display_event, safe_message)
