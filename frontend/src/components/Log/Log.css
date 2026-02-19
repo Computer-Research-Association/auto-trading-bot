@@ -24,6 +24,24 @@
   gap: 10px;
 }
 
+.brandIcon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #cbd5e1; /* Default: Offline gray */
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.brandIcon.online {
+  background-color: #22c55e; /* Online green */
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.brandIcon.offline {
+  background-color: #cbd5e1;
+}
+
 .brandName {
   font-weight: 700;
 }
