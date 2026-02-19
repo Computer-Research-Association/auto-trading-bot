@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.domains.bot.schemas import BotStatusResponse
 from app.domains.bot.service import BotService
-from app.domains.bot.dependencies import get_bot
+from app.domains.bot.deps import get_bot
 from trading.bot import TradingBot
 
 router = APIRouter()
