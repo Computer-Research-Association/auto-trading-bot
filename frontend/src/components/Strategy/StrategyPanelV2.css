@@ -438,3 +438,7 @@
   color: #ef4444; /* Red */
   font-weight: 700;
 }
+
+.mb-2 {
+  margin-bottom: 8px;
+}

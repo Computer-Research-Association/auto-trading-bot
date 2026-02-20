@@ -64,16 +64,32 @@ const PositionCard = ({ items }: { items: AssetItem[] }) => {
             </div>
 
             <div className="pos-body">
+              {/* Row 1: Avg Price / Target */}
               <div className="pos-row">
-                <span className="pos-label">평균단가</span>
+                <span className="pos-label">평단가</span>
                 <span className="pos-label target">목표가</span>
               </div>
-              <div className="pos-row">
+              <div className="pos-row mb-2">
                 <span className="pos-val">
                   {Math.floor(coin.avg_buy_price).toLocaleString()}
                 </span>
                 <span className="pos-val target">
                   {Math.floor(targetPrice).toLocaleString()}
+                </span>
+              </div>
+
+              {/* Row 2: Current Price / PnL Rate */}
+              <div className="pos-row">
+                <span className="pos-label">현재가</span>
+                <span className="pos-label">수익률</span>
+              </div>
+              <div className="pos-row">
+                <span className={`pos-val ${coin.current_price >= coin.avg_buy_price ? "pos" : "neg"}`}>
+                  {Math.floor(coin.current_price).toLocaleString()}
+                </span>
+                <span className={`pos-val ${coin.current_price >= coin.avg_buy_price ? "pos" : "neg"}`}>
+                  {(coin.current_price >= coin.avg_buy_price ? "+" : "")}
+                  {((coin.current_price - coin.avg_buy_price) / coin.avg_buy_price * 100).toFixed(2)}%
                 </span>
               </div>
             </div>
