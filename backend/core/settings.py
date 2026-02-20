@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     DB_HOST: str = "db"
     DB_PORT: int = 5432
     DB_NAME: str
+    
+    # Snapshot 스케줄 설정
+    SNAPSHOT_CRON_HOUR: int = 10
+    SNAPSHOT_CRON_MINUTE: int = 40
+    SNAPSHOT_TIMEZONE: str = "Asia/Seoul"
 
     # 환경 변수 설정
     model_config = SettingsConfigDict(

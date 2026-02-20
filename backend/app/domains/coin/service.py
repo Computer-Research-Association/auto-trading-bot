@@ -5,7 +5,6 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.coin import schemas
-from app.domains.coin.models import Trade
 
 _PERIOD_TO_DAYS = {
     "7d": 7,
