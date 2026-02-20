@@ -26,3 +26,13 @@ backend/trading/trading.log
 
 # dependencies
 node_modules/
+
+# backup log
+backend/trading/backup.log
+
+# pyrefly
+pyrefly.toml
+
+# pyright
+pyrightconfig.json
+
