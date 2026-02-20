@@ -17,42 +17,56 @@ from core.event_bus import event_bus
 
 try:
     # 로그를 DB에 저장하는 함수(도메인 로거)
-    # logger.py에 정의된 log_event 사용
-    from app.domains.log.logger import log_event, LogLevel, LogCategory, LogEvent
-
+    # logger.py에 정의된 create_log 사용
+    from app.domains.log.logger import create_log
 except ImportError:
-    # Import 실패 시 fallback Enum 흉내
-    class LogCategory:
-        SYSTEM = "SYSTEM"
-        DATA = "DATA"
-        STRATEGY = "STRATEGY"
-        TRADE = "TRADE"
+    create_log = None
 
-        def __getitem__(self, k):
-            return getattr(self, k)
 
-    class LogLevel:
-        INFO = "INFO"
-        WARNING = "WARNING"
-        ERROR = "ERROR"
+# Import 실패 여부와 상관없이 항상 사용 가능한 Enum 정의
+class LogCategory:
+    SYSTEM = "SYSTEM"
+    DATA = "DATA"
+    STRATEGY = "STRATEGY"
+    TRADE = "TRADE"
 
-        def __getitem__(self, k):
-            return getattr(self, k)
+    @classmethod
+    def __class_getitem__(cls, k):
+        return getattr(cls, k)
 
-    class LogEvent:
-        ERROR = "ERROR"
-        FETCH_FAIL = "FETCH_FAIL"
-        DECISION = "DECISION"
 
-        def __getitem__(self, k):
-            return getattr(self, k)
+class LogLevel:
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
 
-    log_event = None
+    @classmethod
+    def __class_getitem__(cls, k):
+        return getattr(cls, k)
+
+
+class LogEvent:
+    ERROR = "ERROR"
+    FETCH_FAIL = "FETCH_FAIL"
+    VALID_FAIL = "VALID_FAIL"
+    DECISION = "DECISION"
+    SYNC = "SYNC"
+    BUY = "BUY"
+    SELL = "SELL"
+    STOPLOSS = "STOPLOSS"
+    HEARTBEAT = "HEARTBEAT"
+    COMMAND = "COMMAND"
+    ENGINE_START = "ENGINE_START"
+
+    @classmethod
+    def __class_getitem__(cls, k):
+        return getattr(cls, k)
 
 
 def _enum_value(x):
     """Enum이면 .value, 아니면 그대로 문자열로"""
     return x.value if hasattr(x, "value") else str(x)
+
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +94,9 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
     - 모든 재시도 실패 시 로컬 backup.log 파일에 Fallback 기록
     """
 
-    if log_event is None:
+    if create_log is None:
         # 도메인 로거 import가 안 된 경우: DB 저장 불가
-        logger.error("[DB_LOG] log_event(create_log) import 실패로 DB 저장 불가")
+        logger.error("[DB_LOG] create_log import 실패로 DB 저장 불가")
         return
 
     # 입력받은 문자열을 Enum 타입(혹은 fallback 상수)으로 변환
@@ -108,12 +122,12 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
         try:
             async with AsyncSessionLocal() as session:
                 # ✅ DB 저장
-                # logger.py 정의에 맞춰 event로 수정 (create_log 아님)
-                created = await log_event(
+                # logger.py 정의에 맞춰 event_name으로 수정 (create_log 시그니처)
+                created = await create_log(
                     db=session,
                     level=e_level,
                     category=e_category,
-                    event=e_event,  # 인자명: event
+                    event_name=e_event,  # 인자명: event -> event_name
                     message=safe_message,
                     commit=True,
                 )
