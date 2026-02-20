@@ -307,36 +307,44 @@ export default function Performance() {
         </ResponsiveContainer>
       </div>
 
-      {/* 👇 Daily Breakdown 테이블 */}
-      <div className="perf-section">
-        <h2>일일 손익 상세</h2>
+      {/* 일별 테이블 */}
+      <div className="perf-card">
+        <div className="perf-card-head">
+          <div className="perf-card-title">일별 손익</div>
+        </div>
+
         {daily.length === 0 ? (
-          <div className="perf-empty">데이터가 없습니다.</div>
+          <div className="perf-empty">표시할 데이터가 없습니다.</div>
         ) : (
-          <table className="perf-table">
-            <thead>
-              <tr>
-                <th>날짜</th>
-                <th>손익</th>
-                <th>수익률</th>
-                <th>자산가치</th>
-              </tr>
-            </thead>
-            <tbody>
-              {daily.map((r) => (
-                <tr key={r.date}>
-                  <td>{r.date}</td>
-                  <td className={r.pnl_krw >= 0 ? "pos" : "neg"}>
-                    {formatKRW(r.pnl_krw)}
-                  </td>
-                  <td className={r.pnl_rate >= 0 ? "pos" : "neg"}>
-                    {formatPercent(r.pnl_rate)}
-                  </td>
-                  <td>{formatKRW(r.assets_krw)}</td>
+          <div className="perf-table-wrap">
+            <table className="perf-table">
+              <thead>
+                <tr>
+                  <th className="left">날짜</th>
+                  <th className="right">손익</th>
+                  <th className="right">수익률</th>
+                  <th className="right">자산가치</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {daily.map((r) => {
+                  const pos = r.pnl_krw >= 0;
+                  return (
+                    <tr key={r.date}>
+                      <td className="left">{r.date}</td>
+                      <td className={`left ${pos ? "pos" : "neg"}`}>
+                        {formatKRW(r.pnl_krw)}
+                      </td>
+                      <td className={`left ${pos ? "pos" : "neg"}`}>
+                        {formatPercent(r.pnl_rate)}
+                      </td>
+                      <td className="left">{formatKRW(r.assets_krw)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
