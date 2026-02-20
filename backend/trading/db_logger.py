@@ -4,6 +4,8 @@ import logging
 import asyncio
 from datetime import datetime
 
+from app.core.event_bus import event_bus
+
 # 프로젝트 루트(backend/) 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, ".."))
@@ -22,6 +24,42 @@ try:
     from app.domains.log.logger import log_event, LogLevel, LogCategory, LogEvent
 
 except ImportError:
+    # Import 실패 시 fallback Enum 흉내
+    class LogCategory:
+        SYSTEM = "SYSTEM"
+        DATA = "DATA"
+        STRATEGY = "STRATEGY"
+        TRADE = "TRADE"
+
+        def __getitem__(self, k):
+            return getattr(self, k)
+
+    class LogLevel:
+        INFO = "INFO"
+        WARNING = "WARNING"
+        ERROR = "ERROR"
+
+        def __getitem__(self, k):
+            return getattr(self, k)
+
+    class LogEvent:
+        ERROR = "ERROR"
+        FETCH_FAIL = "FETCH_FAIL"
+        DECISION = "DECISION"
+
+        def __getitem__(self, k):
+            return getattr(self, k)
+
+
+try:
+    # 로그를 DB에 저장하는 함수(도메인 로거)
+    # 보통 create_log가 "생성된 log 객체"를 리턴해주면 SSE에 id/timestamp까지 같이 실어줄 수 있음
+    from app.domains.log.logger import create_log as log_event
+
+    # (있을 수도, 없을 수도 있어서 try)
+    from app.domains.log.schema import LogLevel, LogCategory, LogEvent  # type: ignore
+
+except Exception:
     # Import 실패 시 fallback Enum 흉내
     class LogCategory:
         SYSTEM = "SYSTEM"
@@ -73,6 +111,11 @@ def _write_backup_log(level: str, category: str, event_name: str, message: str):
         print(f"[BACKUP_LOG_FAIL] 파일 백업도 실패: {backup_err}")
 
 
+def _enum_value(x):
+    """Enum이면 .value, 아니면 그대로 문자열로"""
+    return x.value if hasattr(x, "value") else str(x)
+
+
 async def save_log_to_db(level: str, category: str, event_name: str, message: str):
     """
     트레이딩 봇의 로그를 비동기 방식으로 DB에 저장
@@ -111,11 +154,13 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                 # ✅ DB 저장
                 # logger.py (Step 20) 확인 결과 log_event 함수 사용이 맞음
                 # logger.py (Step 20) 확인 결과 인자 이름이 'event' 임 (team원은 'event_name' 사용했음 -> 오류 유발)
+                # ✅ DB 저장 (create_log가 생성된 로그 객체를 반환하는지 확인해야 함)
                 created = await log_event(
                     db=session,
                     level=e_level,
                     category=e_category,
                     event=e_event, # 중요: logger.py 정의에 맞춰 event로 수정
+                    event_name=e_event,
                     message=safe_message,
                     commit=True,
                 )
@@ -130,6 +175,8 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                     "timestamp": (
                         created.timestamp.strftime("%Y-%m-%d %H:%M:%S")
                         if created and getattr(created, "timestamp", None)
+                        getattr(created, "timestamp", None).strftime("%Y-%m-%d %H:%M:%S")
+                        if getattr(created, "timestamp", None) is not None
                         else now_str
                     ),
                     "category": _enum_value(e_category),
@@ -163,4 +210,7 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                 
                 # ✅ 로컬 파일 Fallback (내 브랜치 기능 유지)
                 _write_backup_log(level, category, display_event, safe_message)
+                display_event = _enum_value(e_event)
+                print(error_msg)
+                print(f"📌 [FINAL_BACKUP] {level} | {category} | {display_event} | {safe_message}")
                 return
