@@ -19,7 +19,7 @@ import {
 } from "recharts";
 import { getAssets } from "../../Lib/assets.api";
 
-type Period = "30d" | "90d" | "1y" | "all";
+type Period = "30d" | "180d" | "1y" | "all";
 
 function formatKRW(v: number) {
   return new Intl.NumberFormat("ko-KR", {
@@ -74,7 +74,7 @@ export default function Performance() {
     const getStartDate = (p: string) => {
       const d = new Date();
       if (p === "30d") d.setDate(d.getDate() - 30);
-      else if (p === "90d") d.setMonth(d.getMonth() - 6);
+      else if (p === "180d") d.setMonth(d.getMonth() - 6);
       else if (p === "1y") d.setFullYear(d.getFullYear() - 1);
       else return "2020-01-01";
       return d.toISOString().split("T")[0];
@@ -168,7 +168,7 @@ export default function Performance() {
 
   const periodButtons: { key: Period; label: string }[] = [
     { key: "30d", label: "30일" },
-    { key: "90d", label: "3개월" },
+    { key: "180d", label: "6개월" },
     { key: "1y", label: "1년" },
     { key: "all", label: "전체" },
   ];
