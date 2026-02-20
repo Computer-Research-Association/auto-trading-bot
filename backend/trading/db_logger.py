@@ -4,10 +4,7 @@ import logging
 import asyncio
 from datetime import datetime
 
-from app.core.event_bus import event_bus
-
 # 프로젝트 루트(backend/) 경로 설정
-# backend/ 폴더를 sys.path에 추가한다.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, ".."))
 
@@ -16,16 +13,14 @@ if project_root not in sys.path:
 
 # 비동기 DB 세션 임포트
 from core.database import AsyncSessionLocal
+from core.event_bus import event_bus
 
 try:
     # 로그를 DB에 저장하는 함수(도메인 로거)
-    # 보통 create_log가 "생성된 log 객체"를 리턴해주면 SSE에 id/timestamp까지 같이 실어줄 수 있음
-    from app.domains.log.logger import create_log as log_event
+    # logger.py에 정의된 log_event 사용
+    from app.domains.log.logger import log_event, LogLevel, LogCategory, LogEvent
 
-    # (있을 수도, 없을 수도 있어서 try)
-    from app.domains.log.schema import LogLevel, LogCategory, LogEvent  # type: ignore
-
-except Exception:
+except ImportError:
     # Import 실패 시 fallback Enum 흉내
     class LogCategory:
         SYSTEM = "SYSTEM"
@@ -54,12 +49,27 @@ except Exception:
 
     log_event = None
 
-logger = logging.getLogger(__name__)
-
 
 def _enum_value(x):
     """Enum이면 .value, 아니면 그대로 문자열로"""
     return x.value if hasattr(x, "value") else str(x)
+
+logger = logging.getLogger(__name__)
+
+# 로컬 파일 백업 경로 (DB 장애 시 fallback)
+_BACKUP_LOG_PATH = os.path.join(current_dir, "backup.log")
+
+
+def _write_backup_log(level: str, category: str, event_name: str, message: str):
+    """DB 저장 완전 실패 시 로컬 파일에 Fallback 기록 (동기 함수, 스레드풀 아닌 직접 호출)"""
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        line = f"[{timestamp}] {level} | {category} | {event_name} | {message}\n"
+        with open(_BACKUP_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as backup_err:
+        # 파일 쓰기도 실패하면 콘솔만 남기고 더 이상 할 수 없음
+        print(f"[BACKUP_LOG_FAIL] 파일 백업도 실패: {backup_err}")
 
 
 async def save_log_to_db(level: str, category: str, event_name: str, message: str):
@@ -67,6 +77,7 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
     트레이딩 봇의 로그를 비동기 방식으로 DB에 저장
     - 유효성 검사 및 네트워크/DB 일시 장애 대비 재시도 로직 포함
     - 저장 성공 시 SSE(EventBus)로 즉시 publish 해서 프론트가 실시간 수신 가능하게 함
+    - 모든 재시도 실패 시 로컬 backup.log 파일에 Fallback 기록
     """
 
     if log_event is None:
@@ -96,26 +107,25 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
     for attempt in range(max_retries):
         try:
             async with AsyncSessionLocal() as session:
-                # ✅ DB 저장 (create_log가 생성된 로그 객체를 반환하는지 확인해야 함)
+                # ✅ DB 저장
+                # logger.py 정의에 맞춰 event로 수정 (create_log 아님)
                 created = await log_event(
                     db=session,
                     level=e_level,
                     category=e_category,
-                    event_name=e_event,
+                    event=e_event,  # 인자명: event
                     message=safe_message,
                     commit=True,
                 )
 
                 # ✅ SSE 실시간 전송 (DB 저장 성공 직후 publish)
-                # created가 None일 수도 있으니 안전하게 처리
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 payload = {
-                    # id/timestamp가 있으면 더 좋음(프론트에서 정렬/중복 방지)
                     "id": getattr(created, "id", None),
                     "timestamp": (
-                        getattr(created, "timestamp", None).strftime("%Y-%m-%d %H:%M:%S")
-                        if getattr(created, "timestamp", None) is not None
+                        created.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                        if created and getattr(created, "timestamp", None)
                         else now_str
                     ),
                     "category": _enum_value(e_category),
@@ -139,11 +149,14 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                 await asyncio.sleep(wait_time)
             else:
                 # 모든 재시도 실패 시 최종 에러 및 백업 로그 출력
+                display_event = _enum_value(e_event)
                 error_msg = f"[DB_LOG_FATAL] 모든 재시도 실패: {e}"
                 logger.error(error_msg)
 
                 # 유실 방지를 위해 콘솔에 최종 백업 내용을 출력
-                display_event = _enum_value(e_event)
                 print(error_msg)
                 print(f"📌 [FINAL_BACKUP] {level} | {category} | {display_event} | {safe_message}")
+                
+                # ✅ 로컬 파일 Fallback (복구됨)
+                _write_backup_log(level, category, display_event, safe_message)
                 return
