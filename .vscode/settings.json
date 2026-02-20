@@ -33,5 +33,10 @@
   "files.associations": {
     "*.json": "jsonc",      // 모든 JSON 파일을 주석 허용 모드로 인식
     "settings.json": "jsonc"
-  }
+  },
+
+  // 6. 임포트 경로 설정 (Pyright, Jedi 공용)
+  // backend/ 하위의 app, core, trading 패키지들을 인식
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "python.autoComplete.extraPaths": ["${workspaceFolder}/backend"]
 }
