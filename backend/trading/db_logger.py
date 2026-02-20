@@ -14,6 +14,7 @@ if project_root not in sys.path:
 
 # 비동기 db 세션 및 모델 임포트
 from core.database import AsyncSessionLocal
+from core.event_bus import event_bus
 
 try:
     from app.domains.log.logger import log_event, LogCategory, LogLevel, LogEvent
@@ -37,6 +38,10 @@ except ImportError:
         DECISION = "DECISION"
 
     log_event = None
+
+def _enum_value(x):
+    """Enum이면 .value, 아니면 그대로 문자열로"""
+    return x.value if hasattr(x, "value") else str(x)
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +92,7 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
             async with AsyncSessionLocal() as session:
                 # log_event 호출하여 저장 위임
                 # commit=True로 즉시 커밋
-                await log_event(
+                created = await log_event(
                     db=session,
                     level=e_level,
                     category=e_category,
@@ -95,6 +100,32 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
                     message=safe_message,
                     commit=True,
                 )
+
+                # ✅ SSE 실시간 전송 (DB 저장 성공 직후 publish)
+                # created가 None일 수도 있으니 안전하게 처리
+                # (log_event가 반환하는 객체 구조에 따라 다를 수 있음. OperatingLog 객체라고 가정)
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+                # 만들어진 객체에서 id/timestamp 추출 시도
+                # log_event가 ORM 객체를 리턴한다면 id, timestamp 속성이 있을 것임
+                # 만약 리턴값이 없다면(None), 임의로 채워넣음
+                # 여기서는 반환값이 있다고 가정하고 getattr로 안전하게 접근
+                
+                payload = {
+                    "id": getattr(created, "id", None),
+                    "timestamp": (
+                        created.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                        if created and getattr(created, "timestamp", None)
+                        else now_str
+                    ),
+                    "category": _enum_value(e_category),
+                    "eventname": _enum_value(e_event),
+                    "level": _enum_value(e_level),
+                    "message": safe_message,
+                }
+
+                # event_bus는 메모리 기반이므로 "같은 프로세스" 안의 SSE 연결에 즉시 전달됨
+                await event_bus.publish(payload)
                 return
 
         except Exception as e:
