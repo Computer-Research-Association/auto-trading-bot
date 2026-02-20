@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import asyncio
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -8,6 +9,7 @@ from sqlalchemy import text
 import core.cors as cors_config
 from app.api.router import api_router
 from core.deps import get_database
+from core.database import AsyncSessionLocal
 from core.logger import logger, setup_logging
 from app.domains.portfolio.scheduler import start_snapshot_scheduler, stop_snapshot_scheduler
 from trading.bot import TradingBot

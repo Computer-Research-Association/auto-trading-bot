@@ -93,6 +93,60 @@ const Log: React.FC = () => {
       });
   }, []);
 
+  // SSE 실시간 로그 업데이트 (EventSource 연결)
+  useEffect(() => {
+    // 📌 SSE 엔드포인트 URL (백엔드에서 구현 필요)
+    const SSE_URL = 'http://localhost:8000/api/v1/logs/stream';
+    
+    let eventSource: EventSource | null = null;
+
+    // 로딩이 완료된 후에만 SSE 연결 시작
+    if (!loading) {
+      try {
+        // EventSource 객체 생성 - 서버와 지속적인 연결 시작
+        eventSource = new EventSource(SSE_URL);
+
+        // 🔗 연결 성공 시
+        eventSource.onopen = () => {
+          console.log('✅ [SSE] 실시간 로그 연결 성공');
+        };
+
+        // 📨 새로운 메시지(로그) 수신 시
+        // 📨 새로운 메시지(로그) 수신 시
+        eventSource.onmessage = (event) => {
+          try {
+            // 1. 서버에서 보낸 JSON 데이터를 객체로 변환
+            const newLog: LogItem = JSON.parse(event.data);
+            
+            console.log('📩 [SSE] 새 로그 수신:', newLog);
+            
+            // 2. 상태 업데이트 (기존 로그 맨 위에 추가)
+            setLogs((prevLogs) => [newLog, ...prevLogs]);
+            
+          } catch (error) {
+            console.error('❌ [SSE] 데이터 파싱 에러:', error);
+          }
+        };
+
+        // ⚠️ 에러 발생 시
+        eventSource.onerror = (error) => {
+          console.error('⚠️ [SSE] 연결 에러:', error);
+          // EventSource는 자동으로 재연결을 시도합니다 (브라우저 기본 동작)
+        };
+      } catch (error) {
+        console.error('❌ [SSE] EventSource 생성 실패:', error);
+      }
+    }
+
+    // 🔌 컴포넌트 언마운트 시 연결 종료 (cleanup 함수)
+    return () => {
+      if (eventSource) {
+        console.log('🔌 [SSE] 연결 종료');
+        eventSource.close();
+      }
+    };
+  }, [loading]); // loading이 false가 되면 실행
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
