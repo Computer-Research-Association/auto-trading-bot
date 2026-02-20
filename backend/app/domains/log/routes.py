@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from core.deps import get_database
-from app.core.event_bus import event_bus
+from core.event_bus import event_bus
 from app.domains.log import service, schema
 
 router = APIRouter(prefix="/v1/logs", tags=["logs"])
