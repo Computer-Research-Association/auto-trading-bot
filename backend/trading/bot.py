@@ -467,32 +467,19 @@ class TradingBot:
         1. 초기 API 동기화 (최대 3회 재시도)
         2. 성공 시에만 루프 시작
         """
-        # Startup Policy: 초기 동기화 실패 시 루프 진입 차단
-        max_retries = 3
-        retry_delay = 5.0
-
-        for attempt in range(max_retries):
+        # Startup Policy: 네트워크 오류 등에도 백그라운드 태스크가 종료되지 않도록 무한 재시도 (10초 대기)
+        retry_delay = 10.0
+        attempt = 1
+        
+        while True:
             try:
                 await self.sync_state_with_api()
-                logger.info(f"{self.log_prefix} 초기 API 동기화 성공 (시도 {attempt + 1})")
+                logger.info(f"{self.log_prefix} 초기 API 동기화 성공 (시도 {attempt})")
                 break
             except Exception as e:
-                logger.warning(
-                    f"{self.log_prefix} 초기 동기화 실패 (시도 {attempt + 1}/{max_retries}): {e}"
-                )
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay)
-                else:
-                    logger.critical(
-                        f"{self.log_prefix} 초기 동기화 {max_retries}회 모두 실패. 봇 가동 중단."
-                    )
-                    await save_log_to_db(
-                        level="ERROR",
-                        category="SYSTEM",
-                        event_name="ERROR",
-                        message=f"{self.log_prefix} 초기 동기화 실패로 엔진 가동 중단",
-                    )
-                    return  # 불완전 상태로 루프 진입 방지
+                logger.warning(f"{self.log_prefix} 초기 동기화 실패 (시도 {attempt}): {e}. {retry_delay}초 후 재시도...")
+                await asyncio.sleep(retry_delay)
+                attempt += 1
 
         await save_log_to_db(
             level="INFO",
@@ -500,7 +487,23 @@ class TradingBot:
             event_name="ENGINE_START",
             message=f"{self.log_prefix} 비동기 엔진 가동 시작",
         )
-        await asyncio.gather(self.monitor_market_loop(), self.perform_analysis_loop())
+        
+        try:
+            await asyncio.gather(self.monitor_market_loop(), self.perform_analysis_loop())
+        except asyncio.CancelledError:
+            logger.info(f"{self.log_prefix} 봇 작업이 취소되었습니다 (Graceful Shutdown).")
+            raise
+        except Exception as e:
+            logger.error(f"{self.log_prefix} 봇 메인 루프 예외 발생: {e}", exc_info=True)
+            await save_log_to_db(
+                level="ERROR",
+                category="SYSTEM",
+                event_name="ERROR",
+                message=f"{self.log_prefix} 봇 메인 루프 크래시: {e}",
+            )
+            # 봇이 프로세스 내내 죽지 않게 하려면 여기서 `await asyncio.sleep(10)` 후 메인 루프 자체를 재귀적으로 다시 호출하거나 루프로 감싸는 방법도 있습니다.
+            # 지금은 에러 로그만 제대로 남기는 것에 집중합니다.
+            raise
 
 
 if __name__ == "__main__":

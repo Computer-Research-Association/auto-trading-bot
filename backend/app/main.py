@@ -25,6 +25,16 @@ async def lifespan(app: FastAPI):
     # 봇 인스턴스 생성 및 백그라운드 태스크 시작
     bot = TradingBot()
     bot_task = asyncio.create_task(bot.run())
+    
+    def on_bot_task_done(task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"봇 태스크 비정상 종료 (루프 탈출): {e}", exc_info=True)
+
+    bot_task.add_done_callback(on_bot_task_done)
     app.state.bot = bot  # API 엔드포인트에서 bot 접근을 위해 저장
 
     yield
