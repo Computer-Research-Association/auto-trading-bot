@@ -1,10 +1,14 @@
 import { api } from './api';
 
 export interface PerfSummary {
+    period_label: string;
+    start_assets_krw: number;
+    end_assets_krw: number;
     pnl_krw: number;
     pnl_rate: number;
-    today_change_krw?: number; // Optional - 백엔드가 제공하지 않을 수 있음
-    today_change_rate?: number; // Optional - 백엔드가 제공하지 않을 수 있음
+    // today_change는 백엔드에서 제공하지 않으므로 프론트에서 계산
+    today_change_krw?: number;
+    today_change_rate?: number;
 }
 
 export interface PerfChartPoint {
