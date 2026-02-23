@@ -26,3 +26,7 @@ backend/trading/trading.log
 
 # dependencies
 node_modules/
+
+# IDE & environment
+pyrefly.toml
+pyrightconfig.json
