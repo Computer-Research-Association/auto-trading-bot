@@ -233,7 +233,6 @@ export default function Assets() {
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
-
               {/* 도넛 중앙 텍스트 삭제됨 (요청 반영) */}
             </div>
 
