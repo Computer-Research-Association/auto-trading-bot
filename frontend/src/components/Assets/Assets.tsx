@@ -110,11 +110,17 @@ export default function Assets() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    apiFetch<PortfolioAssetsResponse>("/portfolio/assets")
-      .then((res: PortfolioAssetsResponse) => setData(res))
-      .catch((e: unknown) => {
-        setErr(e instanceof Error ? e.message : String(e));
-      });
+    const fetchAssets = () => {
+      apiFetch<PortfolioAssetsResponse>("/portfolio/assets")
+        .then((res: PortfolioAssetsResponse) => setData(res))
+        .catch((e: unknown) => {
+          setErr(e instanceof Error ? e.message : String(e));
+        });
+    };
+
+    fetchAssets(); // 초기 실행
+    const interval = setInterval(fetchAssets, 1000); // 1초마다 갱신 (Polling)
+    return () => clearInterval(interval);
   }, []);
 
   if (err) return <div className="main-panel">에러: {err}</div>;
@@ -227,7 +233,6 @@ export default function Assets() {
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
-
               {/* 도넛 중앙 텍스트 삭제됨 (요청 반영) */}
             </div>
 

@@ -23,6 +23,7 @@ alembic/versions/env.py
 
 # trading
 backend/trading/trading.log
+backend/trading/bot_state.json
 
 # IDE 타입 체커 설정 (개인 환경별 상이)
 pyrefly.toml

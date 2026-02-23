@@ -303,39 +303,6 @@
   color: #334155;
 }
 
-/* Config Preview */
-.config-preview {
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.config-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.mock-input-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: #475569;
-}
-
-.mock-input-row input {
-  width: 60px;
-  padding: 4px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  text-align: right;
-  font-size: 12px;
-}
-
 /* Helpers */
 .pos { color: #ef4444 !important; }
 .neg { color: #3b82f6 !important; }
@@ -362,4 +329,117 @@
 
 .stop-all-btn:hover {
   background-color: #dc2626;
+}
+
+/* 🟢 Position Card Styles (New) */
+.position-section {
+  margin-top: 12px;
+}
+
+.pos-card-empty {
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.pos-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  transition: all 0.2s;
+}
+
+.pos-card:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  transform: translateY(-1px);
+}
+
+.pos-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #f1f5f9;
+}
+
+.coin-icon-circle {
+  width: 32px;
+  height: 32px;
+  background: #f97316; /* Orange */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+}
+
+.pos-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pos-symbol {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.pos-status {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.pos-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pos-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  align-items: center;
+}
+
+.pos-label {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.pos-label.target {
+  color: #fca5a5; /* Light Red */
+}
+
+.pos-val {
+  color: #334155;
+  font-weight: 600;
+  font-family: 'Roboto Mono', ui-monospace, monospace; /* 숫자 가독성 */
+  font-size: 13px;
+}
+
+.pos-val.target {
+  color: #ef4444; /* Red */
+  font-weight: 700;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
 }
