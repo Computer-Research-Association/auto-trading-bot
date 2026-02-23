@@ -23,8 +23,6 @@ async def save_portfolio_snapshot_job():
     
     try:
         # 1. 자산 데이터 조회 (sync service logic)
-        # TODO: I/O가 오래 걸릴 경우 run_in_executor 고려 가능하나, 
-        # 현재는 pyupbit를 직접 사용하는 service logic을 그대로 활용.
         loop = asyncio.get_event_loop()
         resp = await loop.run_in_executor(None, get_assets)
         s = resp.summary
@@ -80,8 +78,34 @@ async def save_portfolio_snapshot_job():
             await session.commit()
             logger.info(f"[Scheduler] Portfolio snapshot saved successfully for {base_date}.")
 
+            # SNAPSHOT_SAVED 로그 추가 (Best-effort, 기존 세션 재사용)
+            try:
+                from app.domains.log.logger import create_log
+                await create_log(
+                    db=session,
+                    level="INFO",
+                    category="SYSTEM",
+                    event_name="SNAPSHOT_SAVED",
+                    message=f"{base_date} 포트폴리오 스냅샷이 성공적으로 저장되었습니다."
+                )
+            except Exception:
+                logger.warning(f"[Log] Failed to record SNAPSHOT_SAVED log for {base_date}.")
+
     except Exception as e:
         logger.error(f"[Scheduler] Error during portfolio snapshot job: {str(e)}", exc_info=True)
+        # SNAPSHOT_FAILED 로그 추가 (Best-effort, 새 세션 사용)
+        try:
+            from app.domains.log.logger import create_log
+            async with AsyncSessionLocal() as db_err:
+                await create_log(
+                    db=db_err,
+                    level="ERROR",
+                    category="SYSTEM",
+                    event_name="SNAPSHOT_FAILED",
+                    message=f"스냅샷 저장 중 오류 발생: {str(e)}"
+                )
+        except Exception:
+            logger.exception("[DB_LOG_FAIL] SNAPSHOT_FAILED")
 
 def start_snapshot_scheduler():
     """

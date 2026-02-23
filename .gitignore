@@ -24,5 +24,19 @@ alembic/versions/env.py
 # trading
 backend/trading/trading.log
 
+# IDE 타입 체커 설정 (개인 환경별 상이)
+pyrefly.toml
+pyrightconfig.json
+
 # dependencies
 node_modules/
+
+# backup log
+backend/trading/backup.log
+
+# pyrefly
+pyrefly.toml
+
+# pyright
+pyrightconfig.json
+

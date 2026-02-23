@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Iterable
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.utills.upbit_client import client
@@ -117,6 +118,63 @@ def take_portfolio_snapshot(session: Session, base_date: date) -> PortfolioSnaps
     session.commit()
     session.refresh(snap)
     return snap
+
+
+# -------------------------
+# 3) 스케줄러용 비동기 스냅샷 저장
+# -------------------------
+async def take_portfolio_snapshot_async(session: AsyncSession, base_date: date) -> PortfolioSnapshot | None:
+    """APScheduler에서 호출하는 비동기 버전 스냅샷 저장 함수.
+    같은 날짜 스냅샷이 이미 있으면 건너뜁니다.
+    """
+    # 중복 체크
+    existing = (await session.execute(
+        select(PortfolioSnapshot).where(PortfolioSnapshot.base_date == base_date)
+    )).scalars().first()
+    if existing:
+        return existing
+
+    resp = get_assets()
+    s = resp.summary
+
+    invested_krw = float(s.total_buy_krw)
+    equity_krw = float(s.total_assets_krw)
+    pnl_krw = equity_krw - invested_krw
+    pnl_rate = (pnl_krw / invested_krw * 100.0) if invested_krw > 0 else 0.0
+
+    assets_payload = {
+        "krw_total": float(s.krw_total),
+        "krw_available": float(s.krw_available),
+        "items": [
+            {
+                "symbol": it.symbol,
+                "quantity": float(it.quantity),
+                "avg_buy_price": float(it.avg_buy_price),
+                "current_price": float(it.current_price),
+                "evaluation_krw": float(it.evaluation_krw),
+            }
+            for it in resp.items
+        ],
+    }
+
+    now = datetime.now(timezone.utc)
+
+    snap = PortfolioSnapshot(
+        base_date=base_date,
+        invested_krw=invested_krw,
+        equity_krw=equity_krw,
+        pnl_krw=pnl_krw,
+        pnl_rate=pnl_rate,
+        assets=assets_payload,
+        created_at=now,
+        updated_at=now,
+    )
+
+    session.add(snap)
+    await session.commit()
+    await session.refresh(snap)
+    return snap
+
 
 
 # -------------------------

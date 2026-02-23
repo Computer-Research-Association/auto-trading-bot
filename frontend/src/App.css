@@ -71,6 +71,26 @@
   padding-top: 0;
 }
 
+/* Remove outline on focus (clicked) - AGGRESSIVE */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-responsive-container,
+.recharts-responsive-container *,
+.recharts-surface,
+svg {
+  outline: none !important;
+}
+
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-responsive-container:focus,
+.recharts-responsive-container *:focus,
+.recharts-surface:focus,
+svg:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* 탭바 스타일 */
 .sub-tab-bar {
   width: 100%;
