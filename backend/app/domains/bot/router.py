@@ -20,3 +20,8 @@ async def stop_bot(bot: TradingBot = Depends(get_bot)):
 async def get_bot_status(bot: TradingBot = Depends(get_bot)):
     service = BotService(bot)
     return await service.get_status()
+
+@router.post("/dry-run")
+async def toggle_dry_run(enable: bool, bot: TradingBot = Depends(get_bot)):
+    service = BotService(bot)
+    return await service.toggle_dry_run(enable)
