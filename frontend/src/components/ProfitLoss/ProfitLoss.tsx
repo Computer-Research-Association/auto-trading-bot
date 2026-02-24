@@ -32,30 +32,6 @@ function formatPercent(v: number) {
   return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
 }
 
-// 아주 단순한 SVG 라인 차트 (나중에 recharts로 교체 가능)
-// function LineChart({
-//   points,
-//   mode,
-// }: {
-//   points: PerfChartPoint[];
-//   mode: "pnl" | "assets";
-// }) {
-//   const w = 800;
-//   const h = 300;
-//   const pad = 18;
-
-//   const ys = points.map((p) => (mode === "pnl" ? p.pnl_krw : p.assets_krw));
-//   const minY = Math.min(...ys, 0);
-//   const maxY = Math.max(...ys, 0);
-
-//   const xStep = points.length <= 1 ? 0 : (w - pad * 2) / (points.length - 1);
-//   const yScale = (val: number) => {
-//     if (maxY === minY) return h / 2;
-//     const t = (val - minY) / (maxY - minY);
-//     return h - pad - t * (h - pad * 2);
-//   };
-// }
-
 export default function Performance() {
   const [period, setPeriod] = useState<Period>("30d");
   // const [mode, setMode] = useState<"pnl" | "assets">("pnl");
@@ -105,12 +81,16 @@ export default function Performance() {
           setData((prev) => {
             if (!prev) return prev;
 
+            const baseAssets = prev.summary.start_assets_krw || 1.0;
+            const newPnlKrw = res.summary.total_assets_krw - prev.summary.start_assets_krw;
+            const newPnlRate = (newPnlKrw / baseAssets) * 100;
+
             // KPI 업데이트
             const newSummary = {
               ...prev.summary,
-              total_assets_krw: res.summary.total_assets_krw,
-              pnl_krw: res.summary.total_pnl_krw,
-              pnl_rate: res.summary.total_pnl_rate,
+              end_assets_krw: res.summary.total_assets_krw,
+              pnl_krw: newPnlKrw,
+              pnl_rate: newPnlRate,
             };
 
             // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
@@ -120,8 +100,8 @@ export default function Performance() {
             const newPoint = {
               date: todayStr,
               assets_krw: res.summary.total_assets_krw,
-              pnl_krw: res.summary.total_pnl_krw,
-              pnl_rate: res.summary.total_pnl_rate,
+              pnl_krw: newPnlKrw,
+              pnl_rate: newPnlRate,
             };
 
             const newChart = [...prev.chart];
@@ -135,10 +115,30 @@ export default function Performance() {
               newChart.push(newPoint);
             }
 
+            // 일별 데이터(daily) 마지막 행 갱신 (금일 변동 및 일별 목록 반영용)
+            const newDaily = [...prev.daily];
+            const lastDailyIdx = newDaily.length - 1;
+            if (lastDailyIdx >= 0 && newDaily[lastDailyIdx]!.date === todayStr) {
+              newDaily[lastDailyIdx] = {
+                date: todayStr,
+                assets_krw: res.summary.total_assets_krw,
+                pnl_krw: newPnlKrw,
+                pnl_rate: newPnlRate,
+              };
+            } else {
+              newDaily.push({
+                date: todayStr,
+                assets_krw: res.summary.total_assets_krw,
+                pnl_krw: newPnlKrw,
+                pnl_rate: newPnlRate,
+              });
+            }
+
             return {
               ...prev,
               summary: newSummary,
               chart: newChart,
+              daily: newDaily,
             };
           });
         })
@@ -310,6 +310,7 @@ export default function Performance() {
               strokeWidth={2}
               fill="url(#splitColor)"
               isAnimationActive={true}
+              animationDuration={0.0001}
             />
           </AreaChart>
         </ResponsiveContainer>
