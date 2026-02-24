@@ -26,10 +26,11 @@ class UpbitClient:
             raise ValueError("UPBIT_ACCESS_KEY 또는 UPBIT_SECRET_KEY가 .env에 없습니다.")
         self.upbit = pyupbit.Upbit(access_key, secret_key)
         
-        # 0.2초 초고속 매매 환경을 위한 HTTP Request Timeout 설정 (1.0초)
+        # 초고속 매매 환경을 빙자하되, 라이브러리(pyupbit)의 동기 통신에서 
+        # 발생하는 간혈적 렉을 방어하는 HTTP Request Timeout 설정 (3.0초)
         # 이 객체의 메서드(get_krw_balance 등)는 bot.py에서 asyncio.wait_for()와 
         # 함께 호출될 것이므로 여기서 내부 timeout 변수를 제공.
-        self.timeout = 1.0
+        self.timeout = 3.0
 
 
 
