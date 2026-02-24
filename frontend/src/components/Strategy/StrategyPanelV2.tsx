@@ -102,27 +102,29 @@ const PositionCard = ({ items }: { items: AssetItem[] }) => {
 
 export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
-  const [runningIds, setRunningIds] = useState<Set<string>>(new Set(["rsi_rebound"]));
+  const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"return" | "winRate">("return");
   
   // 🟢 자산 데이터 상태
   const [assets, setAssets] = useState<AssetItem[]>([]);
+  const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
 
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
 
-  // 🟢 봇 초기 상태 풀링 (시작 시 1회)
+  // 🟢 봇 상태 1초 폴링 (진행 상태 실시간 갱신용)
   useEffect(() => {
     const fetchStatus = async () => {
       try {
         const res = await apiFetch<any>("/bot/status");
-        if (res.is_active) {
-          setRunningIds(new Set(["rsi_bb_core"])); // 백엔드가 켜져있으면 패널도 켜짐 상태로 동기화
+        setBotLog(res); // 전체 상태 보존
+        if (res && res.is_active) {
+          setRunningIds(new Set(["rsi_bb_core"])); // 본 봇 활성화 동기화
         } else {
           setRunningIds(new Set());
         }
         
-        if (res.is_dry_run !== undefined) {
+        if (res && res.is_dry_run !== undefined) {
           setIsDryRun(res.is_dry_run);
         }
       } catch (e) {
@@ -130,6 +132,8 @@ export default function StrategyPanelV2() {
       }
     };
     fetchStatus();
+    const interval = setInterval(fetchStatus, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // 🟢 자산 데이터 폴링 (1초)
@@ -253,14 +257,35 @@ export default function StrategyPanelV2() {
 
       <div className="strategy-list-v2">
         {sortedStrategies.map((s) => {
-          const isRunning = runningIds.has(s.id);
+          let isRunning = runningIds.has(s.id);
           const isExpanded = expandedId === s.id;
-          const isPositive = s.rateOfReturn >= 0;
+          
+          // 🔥 진짜 백엔드 데이터 연동 (RSI BB 코어 한정)
+          let displayPnl = s.rateOfReturn;
+          if (s.id === "rsi_bb_core") {
+            // 백엔드가 살아있다면 백엔드의 실행 상태와 서비스단의 수익률을 최우선으로 사용
+            if (botLog) {
+              isRunning = botLog.is_active;
+              // 백엔드의 profit_rate (미보유 시 0.0)
+              displayPnl = Number(botLog.profit_rate?.toFixed(2) || 0);
+            } else {
+              // fallback: 에셋 기반 계산
+              const holdingCoin = assets.find(i => i.symbol !== "KRW" && Number(i.quantity) > 0);
+              if (holdingCoin) {
+                displayPnl = Number(((holdingCoin.current_price - holdingCoin.avg_buy_price) / holdingCoin.avg_buy_price * 100).toFixed(2));
+              } else {
+                displayPnl = 0.00;
+              }
+            }
+          }
+          const isPositive = displayPnl >= 0;
+          const isDisabled = s.id !== "rsi_bb_core";
 
           return (
             <div 
               key={s.id} 
-              className={`strategy-card ${isRunning ? "active-border" : ""} ${isExpanded ? "expanded" : ""}`}
+              className={`strategy-card ${isRunning ? "active-border" : ""} ${isExpanded ? "expanded" : ""} ${isDisabled ? "disabled-card" : ""}`}
+              style={isDisabled ? { opacity: 0.6 } : {}}
               onClick={() => toggleExpand(s.id)}
             >
               {/* Card Top: Always Visible */}
@@ -279,19 +304,25 @@ export default function StrategyPanelV2() {
 
                 <div className="pnl-col">
                    <div className={`pnl-value ${isPositive ? "pos" : "neg"}`}>
-                     {isPositive ? "+" : ""}{s.rateOfReturn}%
+                     {isPositive ? "+" : ""}{displayPnl}%
                    </div>
                    <div className="pnl-label">수익률</div>
                 </div>
 
                 <div className="action-col">
                   {/* Custom Toggle Switch */}
-                  <div 
-                    className={`toggle-switch ${isRunning ? "on" : "off"}`}
-                    onClick={(e) => toggleStrategy(s.id, e)}
-                  >
-                    <div className="toggle-handle"></div>
-                  </div>
+                  {!isDisabled ? (
+                    <div 
+                      className={`toggle-switch ${isRunning ? "on" : "off"}`}
+                      onClick={(e) => toggleStrategy(s.id, e)}
+                    >
+                      <div className="toggle-handle"></div>
+                    </div>
+                  ) : (
+                    <div style={{fontSize: "1.2rem", opacity: 0.5, cursor: "not-allowed"}} title="준비 중인 전략입니다." onClick={(e) => e.stopPropagation()}>
+                      🔒
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -323,27 +354,62 @@ export default function StrategyPanelV2() {
               {/* Expanded Details (Accordion) */}
               {isExpanded && (
                 <div className="card-details">
-                  <p className="description">{s.descriptionDetail}</p>
-                  
-                  <div className="detail-metrics">
-                    <div className="d-metric">
-                      <span className="label">승률</span>
-                      <span className="value">{s.winRate}%</span>
+                  {!isDisabled ? (
+                    <>
+                      <div className="bot-log-section">
+                        <div className="section-title">📟 봇 시스템 로그</div>
+                        <div className="log-text">
+                          {botLog?.last_reason ? `> ${botLog.last_reason}` : "> 상태 기록 대기 중..."}
+                        </div>
+                      </div>
+
+                      <div className="bot-target-section">
+                        <div className="section-title">🎯 작전 목표 (Target)</div>
+                        
+                        <div className="target-row target-box mb-2">
+                          <span className="target-label">다음 진입 목표가:</span>
+                          <span className="target-val buy">
+                            {botLog?.target_buy_price && botLog.target_buy_price > 0 
+                              ? `${Math.floor(botLog.target_buy_price).toLocaleString()}원` 
+                              : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - RSI 미충족)</span>}
+                          </span>
+                        </div>
+                        <div className="target-flex-box">
+                          <div className="target-row">
+                            <span className="target-label">목표 익절가:</span>
+                            <span className="target-val sell">
+                              {botLog?.target_sell_price && botLog.target_sell_price > 0 
+                                ? `${Math.floor(botLog.target_sell_price).toLocaleString()}` 
+                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
+                            </span>
+                          </div>
+                          <div className="target-divider"></div>
+                          <div className="target-row">
+                            <span className="target-label">목표 손절가:</span>
+                            <span className="target-val stop">
+                              {botLog?.target_stop_loss && botLog.target_stop_loss > 0 
+                                ? `${Math.floor(botLog.target_stop_loss).toLocaleString()}` 
+                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="position-section">
+                        <div className="section-title">💰 실시간 자산 현황</div>
+                        <PositionCard items={assets} />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="dummy-details">
+                      <div className="dummy-icon">🚧</div>
+                      <div className="dummy-title">
+                        이 전략 모듈은 현재 백엔드(서버)에 플러그인되지 않아 <br/>
+                        <span style={{color: "#ef4444"}}>준비 중</span>입니다.
+                      </div>
+                      <div className="dummy-desc">{s.descriptionDetail}</div>
                     </div>
-
-                    <div className="d-metric">
-                      <span className="label">일일 손익</span>
-                      <span className={`value ${s.dailyPnl >= 0 ? "pos" : "neg"}`}>
-                        {s.dailyPnl.toLocaleString()}원
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 🟢 Position Card (New) - assets props 전달 */}
-                  <div className="position-section">
-                    <PositionCard items={assets} />
-                  </div>
-
+                  )}
                 </div>
               )}
             </div>
