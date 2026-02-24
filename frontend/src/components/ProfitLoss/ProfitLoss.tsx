@@ -32,30 +32,6 @@ function formatPercent(v: number) {
   return `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`;
 }
 
-// 아주 단순한 SVG 라인 차트 (나중에 recharts로 교체 가능)
-// function LineChart({
-//   points,
-//   mode,
-// }: {
-//   points: PerfChartPoint[];
-//   mode: "pnl" | "assets";
-// }) {
-//   const w = 800;
-//   const h = 300;
-//   const pad = 18;
-
-//   const ys = points.map((p) => (mode === "pnl" ? p.pnl_krw : p.assets_krw));
-//   const minY = Math.min(...ys, 0);
-//   const maxY = Math.max(...ys, 0);
-
-//   const xStep = points.length <= 1 ? 0 : (w - pad * 2) / (points.length - 1);
-//   const yScale = (val: number) => {
-//     if (maxY === minY) return h / 2;
-//     const t = (val - minY) / (maxY - minY);
-//     return h - pad - t * (h - pad * 2);
-//   };
-// }
-
 export default function Performance() {
   const [period, setPeriod] = useState<Period>("30d");
   // const [mode, setMode] = useState<"pnl" | "assets">("pnl");
