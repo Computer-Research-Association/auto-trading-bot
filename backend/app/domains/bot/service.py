@@ -21,14 +21,8 @@ class BotService:
         # Use cached snapshot to avoid Rate Limit
         snapshot = await self.bot.get_snapshot()
         
-        # 서비스 계층에서 수익률 계산
-        current_price = await self.bot.loader.get_current_price() or 0
-        avg_price = snapshot.get("avg_buy_price", 0)
-        
-        if snapshot.get("is_holding") and avg_price > 0 and current_price > 0:
-            profit_rate = ((current_price - avg_price) / avg_price) * 100
-        else:
-            profit_rate = 0.0
+        # 봇의 메모리에서 직접 수익률을 꺼냄 (API 호출 없이 0.2초마다 자동 갱신됨)
+        profit_rate = snapshot.get("profit_rate", 0.0)
 
         # API 응답 포맷 매핑
         return {
@@ -37,7 +31,7 @@ class BotService:
             "strategy_name": snapshot.get("strategy_name", "Unknown"),
             "balance": snapshot.get("balance", 0),
             "is_holding": snapshot.get("is_holding", False),
-            "avg_buy_price": avg_price,
+            "avg_buy_price": snapshot.get("avg_buy_price", 0),
             "target_price": snapshot.get("target_price", 0), # Deprecated 방어
             "stop_loss": snapshot.get("stop_loss", 0),       # Deprecated 방어
             "target_buy_price": snapshot.get("target_buy_price", 0.0),

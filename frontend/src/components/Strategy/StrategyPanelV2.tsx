@@ -4,18 +4,6 @@ import { mockStrategiesV2, type StrategyV2 } from "../../mocks/mockStrategyV2";
 import { AreaChart, Area, ResponsiveContainer, YAxis } from "recharts";
 import { apiFetch, apiPost } from "../../Lib/api";
 // 필요한 타입만 부분적으로 정의 (전체 import 대신)
-interface AssetItem {
-  currency: string;
-  symbol: string;
-  quantity: number;
-  avg_buy_price: number;
-  current_price: number;
-  evaluation_krw: number;
-}
-interface PortfolioAssetsResponse {
-  items: AssetItem[];
-  summary: any;
-}
 
 const CustomDot = (props: any) => {
   const { cx, cy, index, payload, isPositive } = props;
@@ -32,126 +20,54 @@ const CustomDot = (props: any) => {
   return null;
 };
 
-// 🟢 Position Card Component
-const PositionCard = ({ items }: { items: AssetItem[] }) => {
-  // KRW 제외하고 보유수량 있는 코인만 필터링
-  const coins = items.filter(i => i.symbol !== "KRW" && Number(i.quantity) > 0);
-
-  if (coins.length === 0) {
-    return (
-      <div className="pos-card-empty">
-        <span className="empty-text">보유 포지션 없음</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="pos-card-list">
-      {coins.map(coin => {
-        // 목표가 (가상: 평단가 + 5%)
-        const targetPrice = coin.avg_buy_price * 1.05; 
-        
-        return (
-          <div key={coin.symbol} className="pos-card">
-            <div className="pos-header">
-              <div className="coin-icon-circle">
-                {coin.symbol[0]}
-              </div>
-              <div className="pos-title">
-                <span className="pos-symbol">{coin.symbol}</span>
-                <span className="pos-status">(보유 중)</span>
-              </div>
-            </div>
-
-            <div className="pos-body">
-              {/* Row 1: Avg Price / Target */}
-              <div className="pos-row">
-                <span className="pos-label">평단가</span>
-                <span className="pos-label target">목표가</span>
-              </div>
-              <div className="pos-row mb-2">
-                <span className="pos-val">
-                  {Math.floor(coin.avg_buy_price).toLocaleString()}
-                </span>
-                <span className="pos-val target">
-                  {Math.floor(targetPrice).toLocaleString()}
-                </span>
-              </div>
-
-              {/* Row 2: Current Price / PnL Rate */}
-              <div className="pos-row">
-                <span className="pos-label">현재가</span>
-                <span className="pos-label">수익률</span>
-              </div>
-              <div className="pos-row">
-                <span className={`pos-val ${coin.current_price >= coin.avg_buy_price ? "pos" : "neg"}`}>
-                  {Math.floor(coin.current_price).toLocaleString()}
-                </span>
-                <span className={`pos-val ${coin.current_price >= coin.avg_buy_price ? "pos" : "neg"}`}>
-                  {(coin.current_price >= coin.avg_buy_price ? "+" : "")}
-                  {((coin.current_price - coin.avg_buy_price) / coin.avg_buy_price * 100).toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
 export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"return" | "winRate">("return");
   
-  // 🟢 자산 데이터 상태
-  const [assets, setAssets] = useState<AssetItem[]>([]);
   const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
-
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
 
-  // 🟢 봇 상태 1초 폴링 (진행 상태 실시간 갱신용)
+  // 🟢 봇 상태 SSE (Server-Sent Events) 최적화로 대체
   useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const res = await apiFetch<any>("/bot/status");
-        setBotLog(res); // 전체 상태 보존
-        if (res && res.is_active) {
-          setRunningIds(new Set(["rsi_bb_core"])); // 본 봇 활성화 동기화
-        } else {
-          setRunningIds(new Set());
+    let eventSource: EventSource | null = null;
+    
+    const connectSSE = () => {
+      // 프록시 환경 혹은 백엔드 주소로 연결
+      eventSource = new EventSource("http://localhost:8000/api/bot/stream");
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const res = JSON.parse(event.data);
+          setBotLog(res); // 전체 상태 보존
+          if (res && res.is_active) {
+            setRunningIds(new Set(["rsi_bb_core"])); // 본 봇 활성화 동기화
+          } else {
+            setRunningIds(new Set());
+          }
+          
+          if (res && res.is_dry_run !== undefined) {
+            setIsDryRun(res.is_dry_run);
+          }
+        } catch (e) {
+          console.error("SSE 데이터 파싱 실패", e);
         }
-        
-        if (res && res.is_dry_run !== undefined) {
-          setIsDryRun(res.is_dry_run);
-        }
-      } catch (e) {
-        console.error("Failed to fetch bot status on load", e);
-      }
-    };
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 1000);
-    return () => clearInterval(interval);
-  }, []);
+      };
 
-  // 🟢 자산 데이터 폴링 (1초)
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        const res = await apiFetch<PortfolioAssetsResponse>("/portfolio/assets");
-        if (res && res.items) {
-          setAssets(res.items);
-        }
-      } catch (err) {
-        console.error("Failed to fetch assets for sidebar:", err);
-      }
+      eventSource.onerror = (error) => {
+        console.error("❌ 봇 상태 SSE 스트림 오류:", error);
+        eventSource?.close();
+      };
     };
 
-    fetchAssets(); // 즉시 실행
-    const interval = setInterval(fetchAssets, 1000);
-    return () => clearInterval(interval);
+    connectSSE();
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
   }, []);
 
   const toggleDryRun = async () => {
@@ -269,13 +185,7 @@ export default function StrategyPanelV2() {
               // 백엔드의 profit_rate (미보유 시 0.0)
               displayPnl = Number(botLog.profit_rate?.toFixed(2) || 0);
             } else {
-              // fallback: 에셋 기반 계산
-              const holdingCoin = assets.find(i => i.symbol !== "KRW" && Number(i.quantity) > 0);
-              if (holdingCoin) {
-                displayPnl = Number(((holdingCoin.current_price - holdingCoin.avg_buy_price) / holdingCoin.avg_buy_price * 100).toFixed(2));
-              } else {
-                displayPnl = 0.00;
-              }
+              displayPnl = 0.00;
             }
           }
           const isPositive = displayPnl >= 0;
@@ -395,10 +305,7 @@ export default function StrategyPanelV2() {
                         </div>
                       </div>
 
-                      <div className="position-section">
-                        <div className="section-title">💰 실시간 자산 현황</div>
-                        <PositionCard items={assets} />
-                      </div>
+
                     </>
                   ) : (
                     <div className="dummy-details">

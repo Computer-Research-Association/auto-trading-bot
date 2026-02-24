@@ -443,7 +443,7 @@ class TradingBot:
                         )
 
                 await self._process_strategy_analysis()
-                await asyncio.sleep(10)  # 지휘관 분석 및 작전 하달은 10초 주기
+                await asyncio.sleep(3)  # 지휘관 분석 및 작전 하달은 3초 주기 (오버헤드 방지 + 실시간성 확보)
             except Exception:
                 await self._log_loop_error("분석 루프", traceback.format_exc())
 
@@ -480,6 +480,13 @@ class TradingBot:
         current_price = await self.loader.get_current_price()
         if not current_price:
             return  # 시세 조회 실패 시 중단
+
+        # 메모리에 수익률(profit_rate) 실시간 갱신 (서비스 계층의 API 호출 억제 목적)
+        avg_price = self.state.get("avg_buy_price", 0.0)
+        if self.is_holding and avg_price > 0:
+            self.state["profit_rate"] = ((current_price - avg_price) / avg_price) * 100
+        else:
+            self.state["profit_rate"] = 0.0
 
         if self.is_holding:
             # 매도 감시 (보유 중)
@@ -519,11 +526,15 @@ class TradingBot:
         new_stop = trade_params.get("target_stop_loss", 0)
         reason = trade_params.get("reason", "")
         
+        targets_changed = (
+            new_buy != self.state.get("target_buy_price") or 
+            new_sell != self.state.get("target_sell_price") or 
+            new_stop != self.state.get("target_stop_loss")
+        )
+        reason_changed = (reason != self.state.get("last_reason"))
+        
         # 이전 값과 하나라도 다르거나, 상태 메시지(reason)가 다르면 업데이트 대상
-        if (new_buy == self.state.get("target_buy_price") and 
-            new_sell == self.state.get("target_sell_price") and 
-            new_stop == self.state.get("target_stop_loss") and
-            reason == self.state.get("last_reason")):
+        if not targets_changed and not reason_changed:
             return
 
         async with self._lock:
@@ -538,18 +549,20 @@ class TradingBot:
                 await self.save_state()
                 self.last_target_save_time = now
 
-        msg = ""
-        if self.is_holding:
-            msg = f"익절: {new_sell:,.0f} / 손절: {new_stop:,.0f}" if new_sell else "대기"
-        else:
-            msg = f"진입: {new_buy:,.0f}" if new_buy else "대기"
+        # 목표 가격이 실제로 변했을 때만 로그(히스토리)를 DB에 남깁니다. (로그 과부하 방지)
+        if targets_changed:
+            msg = ""
+            if self.is_holding:
+                msg = f"익절: {new_sell:,.0f} / 손절: {new_stop:,.0f}" if new_sell else "대기"
+            else:
+                msg = f"진입: {new_buy:,.0f}" if new_buy else "대기"
 
-        await save_log_to_db(
-            level="INFO",
-            category="STRATEGY",
-            event_name="DECISION",
-            message=f"{self.log_prefix} [모드:{'보유' if self.is_holding else '현금'}] 목표가 갱신 → {msg}",
-        )
+            await save_log_to_db(
+                level="INFO",
+                category="STRATEGY",
+                event_name="DECISION",
+                message=f"{self.log_prefix} [모드:{'보유' if self.is_holding else '현금'}] 목표가 갱신 → {msg}",
+            )
 
     async def _log_command_change(self, new_active):
         msg = "가동 시작" if new_active else "정지 명령 수신"
