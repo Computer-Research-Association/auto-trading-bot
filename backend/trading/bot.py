@@ -46,12 +46,14 @@ class TradingBot:
 
         # 동시성 및 파일 I/O 제어
         self._lock = asyncio.Lock()  # 메모리 속기 시 Race Condition 방지
+        self._api_lock = asyncio.Lock() # API Rate Limit 동시성 방지
         self._state_queue = asyncio.Queue()  # 상태 쓰기 직렬화 큐
         self._state_worker_task = None  # 워커 태스크 참조
 
         # 타이머 및 하트비트
         self.last_sync_time = 0.0  # 마지막 API 동기화 시간
         self.last_api_call_time = 0.0  # Rate Limit 추적용
+        self.last_trade_time = 0.0     # 마지막 체결 시간 (TOCTOU 방지)
         self.last_target_save_time = 0.0  # target_price 저장 스로틀 추적
         self.heartbeat_interval = 600  # heartbeat 간격 (초)
         self.last_heartbeat_time = 0  # 마지막 하트비트 시간
@@ -160,10 +162,11 @@ class TradingBot:
     # -----------------------------------------------------------
     async def _wait_for_rate_limit(self):
         """업비트 API 과부하 방지: 최소 호출 간격 보장"""
-        elapsed = time.time() - self.last_api_call_time
-        if elapsed < _MIN_API_INTERVAL:
-            await asyncio.sleep(_MIN_API_INTERVAL - elapsed)
-        self.last_api_call_time = time.time()
+        async with self._api_lock:
+            elapsed = time.time() - self.last_api_call_time
+            if elapsed < _MIN_API_INTERVAL:
+                await asyncio.sleep(_MIN_API_INTERVAL - elapsed)
+            self.last_api_call_time = time.time()
 
     async def sync_state_with_api(self):
         """
@@ -212,6 +215,10 @@ class TradingBot:
         # 모의 투자인 경우, 기존 가상 자산을 API 팩트에 덮어씌워지지 않도록 방지
         # 실제 매매(운영) 환경에서만 API 잔고를 메모리에 그대로 덮어씀
         async with self._lock:
+            if time.time() - self.last_trade_time < 3.0:
+                logger.debug(f"{self.log_prefix} 최근 매매 발생으로 인해 오래된 API 데이터 무시 (TOCTOU 방어)")
+                return
+
             if self.state.get("is_dry_run", False):
                 # Dry run 시 초기 1회만 잔고를 반영하고, 그 뒤엔 로컬 Shadow를 신뢰
                 if self.state.get("balance", 0) == 0 and actual_krw > 0:
@@ -270,6 +277,7 @@ class TradingBot:
 
             # Phase 2: Shadow Balance 즉시 갱신(메모리 선반영)
             async with self._lock:
+                self.last_trade_time = time.time()
                 fee_rate = 0.0005 # 업비트 기본 수수료 0.05%
                 deducted_krw = buy_amount
                 acquired_coin = (buy_amount * (1 - fee_rate)) / price
@@ -339,6 +347,7 @@ class TradingBot:
 
             # Phase 2: Shadow Balance 즉시 갱신
             async with self._lock:
+                self.last_trade_time = time.time()
                 fee_rate = 0.0005
                 acquired_krw = (coin_balance * price) * (1 - fee_rate)
 
@@ -393,19 +402,28 @@ class TradingBot:
         )
     async def monitor_market_loop(self):
         """[집행관] 0.2초 주기: 즉각적인 매수/매도(익절/손절) 감시. 파일 폴링 없음."""
+        loop_interval = 0.2
         while True:
+            start_time = time.time()
             try:
                 await self.check_heartbeat()  # 하트비트 로그
 
                 # 가드 클로즈: 비활성 시 완전히 스킵
                 if not self.is_active:
-                    await asyncio.sleep(0.2)
+                    await asyncio.sleep(loop_interval)
                     continue
 
                 await self._check_market_conditions()  # 현재가 vs 목표가 감시
-                await asyncio.sleep(0.2)
+                
+                # 처리 시간을 뺀 나머지 시간만큼만 대기하여 정확한 주기 보장 (Lag 방지)
+                elapsed = time.time() - start_time
+                if elapsed < loop_interval:
+                    await asyncio.sleep(loop_interval - elapsed)
+                else:
+                    await asyncio.sleep(0.01) # 처리가 길어져도 최소한의 context switch 허용
             except Exception:
                 await self._log_loop_error("감시 루프", traceback.format_exc())
+                await asyncio.sleep(loop_interval)
 
     async def perform_analysis_loop(self):
         """[지휘부] 10초 주기(비활성 시 1초): 데이터 분석 및 주기적 동기화. 파일 폴링 없음."""
@@ -514,10 +532,10 @@ class TradingBot:
             if reason:
                 self.state["last_reason"] = reason
 
-        now = time.time()
-        if now - self.last_target_save_time >= _TARGET_PRICE_SAVE_THROTTLE:
-            await self.save_state()
-            self.last_target_save_time = now
+            now = time.time()
+            if now - self.last_target_save_time >= _TARGET_PRICE_SAVE_THROTTLE:
+                await self.save_state()
+                self.last_target_save_time = now
 
         msg = ""
         if self.is_holding:
