@@ -68,7 +68,16 @@ async def stream_logs(request: Request):
                     break
 
                 # 새 이벤트를 기다림(완전 실시간)
-                message = await queue.get()
+                # message = await queue.get()
+
+                # 수정해야 할 방향:
+                try:
+                    message = await asyncio.wait_for(queue.get(), timeout=15.0)  # 15초까지만 기다림
+                except asyncio.TimeoutError:
+                    # 15초 동안 아무 로그도 없었다면 살려두기 위한 빈 데이터 전송
+                    yield {"event": "ping", "data": "keep-alive"}
+                    continue 
+
 
                 # keep-alive 용도로 가끔 ping을 보내고 싶으면 이 구조로 확장 가능
                 # (현재는 publish가 들어올 때만 이벤트가 나감)
@@ -85,9 +94,10 @@ async def stream_logs(request: Request):
 
                 yield {
                     "id": str(event_id) if event_id is not None else None,
-                    "event": str(event_name) if event_name else None,
+                    "event": "message",
                     "data": json.dumps(message, ensure_ascii=False),
                 }
+
 
         except asyncio.CancelledError:
             logger.info("SSE connection cancelled by client")
