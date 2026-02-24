@@ -37,7 +37,11 @@ class RSIBBStrategy(BaseStrategy):
     def decide(self, ohlcv_df: pd.DataFrame, account_info: dict, context: dict) -> dict:
         """
         RSI와 볼린저 밴드 지표를 바탕으로 매매 결정을 내립니다.
+        반환값의 trade_params 객체 안에 목표 매수, 익절, 손절가를 할당하여 
+        bot.py의 모니터링 루프로 전파합니다.
         """
+        if len(ohlcv_df) < 3:
+            return {"decision": "HOLD", "percentage": 0.0, "reason": "데이터 부족", "trade_params": {}}
 
         # 최신 데이터 행 추출
         last = ohlcv_df.iloc[-1]
@@ -47,39 +51,61 @@ class RSIBBStrategy(BaseStrategy):
         rsi = last["rsi"]
         bb_upper = last["bb_bb_upper"]
         bb_lower = last["bb_bb_lower"]
+        bb_mid = last["bb_bb_mavg"]
         current_price = last["close"]
+
+        # 폭포수(Waterfall) 방어: 최근 3캔들 동안의 하단 밴드 급락률(Slope) 검사
+        bb_lower_series = ohlcv_df["bb_bb_lower"]
+        drop_rate = (bb_lower_series.iloc[-1] - bb_lower_series.iloc[-3]) / bb_lower_series.iloc[-3]
+        is_waterfall = drop_rate < -0.02  # 3캔들 내 하단 밴드가 2% 이상 하락 중이면 급락으로 간주
 
         decision = "HOLD"
         percentage = 0.0
-        # 기본 reason에 현재 지표 상태 요약 포함
-        reason = f"관망: 조건 미충족 (RSI {rsi:.2f}, 가격: {current_price:,.0f})"
-        trade_params = {}
+        reason = f"관망: 조건 미충족 (RSI {rsi:.2f})"
+        
+        # trade_params에 목표 타겟들을 기본 할당 (0이면 미지정)
+        trade_params = {
+            "target_buy_price": 0.0,
+            "target_sell_price": 0.0,
+            "target_stop_loss": 0.0,
+            "reason": reason
+        }
 
-        # 매수 로직 (미보유 시)
-        # 조건: SI 30 이하(과매도) AND 현재가가 볼린저 밴드 하단선 터치 이하
+        # [1] 매수 시그널 및 전략 타겟 수립 (미보유 시)
         if not is_holding:
-            if rsi <= 30 and current_price <= bb_lower:
-                decision = "BUY"
-                percentage = 1.0
-                reason = f"매수: 과매도(RSI: {rsi:.2f}) 및 BB 하단({bb_lower:,.0f})"
-                # 권장 손절가
-                trade_params = {"stop_loss": current_price * 0.97, "target_price": bb_upper * 0.997}
+            if rsi <= 30:
+                if is_waterfall:
+                    reason = f"[방어] 폭포수 감지 (하락률: {drop_rate*100:.2f}%) - 매수 대기"
+                    trade_params["reason"] = reason
+                else:
+                    decision = "BUY"
+                    percentage = 1.0
+                    reason = f"매수 대기: 과매도(RSI: {rsi:.2f}) 통과"
+                    
+                    # 봇의 집행관(monitor loop)이 바라볼 절대 가격 세팅
+                    # BB 하단에 닿거나 더 떨어지면 즉각 매수, 매수 후 익절은 BB 상단, 손절은 -3%
+                    trade_params["target_buy_price"] = bb_lower
+                    trade_params["target_sell_price"] = bb_upper * 0.997
+                    trade_params["target_stop_loss"] = bb_lower * 0.97
+                    trade_params["reason"] = reason
 
-        # 매도 로직
-        # 조건: RSI 70 이상(과매수) OR 현재가가 볼린저 밴드 상단선 돌파 이상
+        # [2] 매도 시그널 및 전략 타겟 갱신 (보유 시)
         elif is_holding:
-            if rsi >= 70 or current_price >= bb_upper:
+            if rsi >= 70:
                 decision = "SELL"
                 percentage = 1.0
-                reason = f"매도: 과매수(RSI:{rsi:.2f}) 또는 BB 상단({bb_upper:,.0f}) 도달"
+                reason = f"매도 대기: 과매수(RSI:{rsi:.2f}) 도달"
+                # 목표 매도가는 보수적으로 설정
+                trade_params["target_sell_price"] = current_price
+                trade_params["reason"] = reason
             else:
-                # 아직 매도 조건은 아니지만, 실시간으로 변하는 BB 상단선을 
-                # 봇의 target_price에 계속 동기화하고 싶을 경우
+                # 홀딩 중: 실시간으로 변하는 BB 상단/하단을 익/손절 라인으로 지속 추적.
+                # 전략 지휘관 함수로서 봇의 메모리를 갱신함
                 decision = "HOLD"
-                trade_params = {
-                    "target_price": bb_upper * 0.997 # <--- 매번 업데이트되도록 추가
-                }
-                reason = f"보유 중: 목표가 업데이트 (BB 상단: {bb_upper:,.0f})"
+                reason = f"보유 중: 목표가 추적 갱신 (RSI: {rsi:.2f})"
+                trade_params["target_sell_price"] = bb_upper * 0.997
+                trade_params["target_stop_loss"] = (bb_mid - ((bb_upper - bb_mid) * 1.5)) # 유동적 손절선
+                trade_params["reason"] = reason
 
         return {
             "decision": decision,
