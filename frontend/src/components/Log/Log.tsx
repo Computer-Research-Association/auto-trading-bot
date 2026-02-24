@@ -97,7 +97,22 @@ const Log: React.FC = () => {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [totalCount, setTotalCount] = useState(0); // 전체 로그 개수 (서버에서 받음)
   const [query, setQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [levelFilter, setLevelFilter] = useState<'ALL' | LogLevel>('ALL');
+
+  // 검색어 디바운스 처리
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery((prev) => {
+        if (prev !== searchInput) {
+          setPage(1); // 검색어가 실제로 변경되었을 때만 1페이지로
+          return searchInput;
+        }
+        return prev;
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const pageSize = 5;
   const [page, setPage] = useState(1);
@@ -209,11 +224,11 @@ const Log: React.FC = () => {
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setQuery(e.target.value);
-      setPage(1); // 검색어 바뀌면 1페이지로
+      setSearchInput(e.target.value);
   };
 
   const onClearView = () => {
+    setSearchInput('');
     setQuery('');
     setLevelFilter('ALL');
     setPage(1);
@@ -223,12 +238,6 @@ const Log: React.FC = () => {
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
   const startIndex = (page - 1) * pageSize + 1;
   const endIndex = Math.min(page * pageSize, totalCount);
-
-  // 로딩 중이어도 기존 데이터 보여주면서 로딩 인디케이터(옵션)
-  // 여기서는 로딩 중엔 Loading 컴포넌트 보여줌 (기존 유지)
-  if (loading && logs.length === 0) {
-     return <Loading message="로그 데이터를 불러오는 중입니다..." />;
-  }
 
   return (
     <div className="logPage">
@@ -242,9 +251,9 @@ const Log: React.FC = () => {
           <span className="searchIcon" aria-hidden>🔎</span>
           <input
             className="searchInput"
-            value={query}
+            value={searchInput}
             onChange={handleSearch}
-            placeholder="등급/메시지 검색..." // 서버 검색이므로 좀 더 범용적
+            placeholder="이벤트명/등급/상세내용 검색..."
           />
         </div>
         <div className="actions">
@@ -286,7 +295,11 @@ const Log: React.FC = () => {
         </div>
 
         <div className="tableBody">
-          {logs.map((l) => (
+          {loading && logs.length === 0 ? (
+            <div style={{ padding: '40px 0', display: 'flex', justifyContent: 'center' }}>
+              <Loading message="로그 데이터를 불러오는 중입니다..." />
+            </div>
+          ) : logs.map((l) => (
             <div className="row" key={l.id}>
               <div className="cell mono">{formatDateKST(l.timestamp)}</div>
               <div className="cell">{l.category}</div>

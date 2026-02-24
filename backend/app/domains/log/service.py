@@ -26,7 +26,13 @@ async def list_logs(
     if category:
         filters.append(Log.category == category)
     if search:
-        filters.append(Log.message.ilike(f"%{search}%"))
+        filters.append(
+            or_(
+                Log.message.ilike(f"%{search}%"),
+                Log.event_name.ilike(f"%{search}%"),
+                Log.level.ilike(f"%{search}%")
+            )
+        )
     
     # 날짜 범위 처리: date 객체로 직접 받아 안전하게 처리
     if start_date:

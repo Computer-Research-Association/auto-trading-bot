@@ -38,3 +38,6 @@ backend/trading/backup.log
 # IDE & environment
 pyrefly.toml
 pyrightconfig.json
+
+# backup log
+backend/trading/backup.log
