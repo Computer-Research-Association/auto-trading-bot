@@ -8,16 +8,16 @@ export interface StrategyV2 extends Strategy {
 
 export const mockStrategiesV2: StrategyV2[] = [
   {
-    id: "ma_cross",
-    name: "이동평균선 골든크로스",
-    subtitle: "Trend Following",
-    desc: "단기 이평선이 장기 이평선을 상향 돌파할 때 진입",
-    descriptionDetail: "5분봉/15분봉 기준으로 단기(5) 이동평균선이 장기(20) 이동평균선을 상향 돌파(Golden Cross)할 때 매수하고, 하향 돌파(Dead Cross)할 때 매도하는 전형적인 추세 추종 전략입니다.",
-    tags: ["추세", "중간 리스크", "5m·15m"],
+    id: "rsi_bb_core",
+    name: "RSI BB 매매 전략",
+    subtitle: "Core Trading Engine",
+    desc: "RSI 과매도/과매수 및 볼린저 밴드 융합 전략",
+    descriptionDetail: "현재 봇에 유일하게 탑재되어 실가동 중인 핵심 엔진입니다. RSI(14) 지표의 과매도 상태와 볼린저 밴드 하단 터치를 결합하여 안정적인 진입 타점을 잡고, 2-Loop 시스템을 통해 즉각적인 손오절을 집행합니다.",
+    tags: ["핵심", "중간 리스크", "안정성"],
     rateOfReturn: 12.5,
     winRate: 64,
     mdd: 4.2,
-    performanceScore: 62.2,
+    performanceScore: 82.2,
     dailyPnl: 125000,
     sparklineData: Array.from({ length: 20 }, () => ({ value: 10 + Math.random() * 5 })),
   },
