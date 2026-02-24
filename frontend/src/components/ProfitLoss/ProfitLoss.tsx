@@ -105,12 +105,16 @@ export default function Performance() {
           setData((prev) => {
             if (!prev) return prev;
 
+            const baseAssets = prev.summary.start_assets_krw || 1.0;
+            const newPnlKrw = res.summary.total_assets_krw - prev.summary.start_assets_krw;
+            const newPnlRate = (newPnlKrw / baseAssets) * 100;
+
             // KPI 업데이트
             const newSummary = {
               ...prev.summary,
-              total_assets_krw: res.summary.total_assets_krw,
-              pnl_krw: res.summary.total_pnl_krw,
-              pnl_rate: res.summary.total_pnl_rate,
+              end_assets_krw: res.summary.total_assets_krw,
+              pnl_krw: newPnlKrw,
+              pnl_rate: newPnlRate,
             };
 
             // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
@@ -120,8 +124,8 @@ export default function Performance() {
             const newPoint = {
               date: todayStr,
               assets_krw: res.summary.total_assets_krw,
-              pnl_krw: res.summary.total_pnl_krw,
-              pnl_rate: res.summary.total_pnl_rate,
+              pnl_krw: newPnlKrw,
+              pnl_rate: newPnlRate,
             };
 
             const newChart = [...prev.chart];
@@ -135,10 +139,30 @@ export default function Performance() {
               newChart.push(newPoint);
             }
 
+            // 일별 데이터(daily) 마지막 행 갱신 (금일 변동 및 일별 목록 반영용)
+            const newDaily = [...prev.daily];
+            const lastDailyIdx = newDaily.length - 1;
+            if (lastDailyIdx >= 0 && newDaily[lastDailyIdx]!.date === todayStr) {
+              newDaily[lastDailyIdx] = {
+                date: todayStr,
+                assets_krw: res.summary.total_assets_krw,
+                pnl_krw: newPnlKrw,
+                pnl_rate: newPnlRate,
+              };
+            } else {
+              newDaily.push({
+                date: todayStr,
+                assets_krw: res.summary.total_assets_krw,
+                pnl_krw: newPnlKrw,
+                pnl_rate: newPnlRate,
+              });
+            }
+
             return {
               ...prev,
               summary: newSummary,
               chart: newChart,
+              daily: newDaily,
             };
           });
         })
@@ -310,6 +334,7 @@ export default function Performance() {
               strokeWidth={2}
               fill="url(#splitColor)"
               isAnimationActive={true}
+              animationDuration={0.0001}
             />
           </AreaChart>
         </ResponsiveContainer>
