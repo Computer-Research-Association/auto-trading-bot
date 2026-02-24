@@ -19,8 +19,6 @@ class DataLoader:
         업비트로부터 데이터를 가져오고, 최소 요구 개수를 충족하는지 검증
         """
         max_retries = 3
-        # 업비트 호출 직전 짧은 대기
-        await asyncio.sleep(0.1)
 
         for attempt in range(max_retries):
             try:
@@ -33,8 +31,8 @@ class DataLoader:
                     ),
                     timeout=5.0
                 )
-                # 데이터 존재 여부 체크
-                if df is None or df.empty:
+                # 데이터 존재 여부 및 정합성 체크 (DataFrame 타입 가드)
+                if df is None or not isinstance(df, pd.DataFrame) or df.empty:
                     await save_log_to_db(
                         level="WARNING",
                         category="DATA",
@@ -94,10 +92,8 @@ class DataLoader:
 
     async def get_current_price(self) -> Optional[float]:  # async def 전환
         """
-        현재가 조회 (매우 빈번하게 후출될 것을 대비해 0.05초 대기)
-        api 허용 횟수 초과 시 id 밴 당할 위험 있음
+        현재가 조회
         """
-        await asyncio.sleep(0.05)
         try:
             # asyncio.to_thread 및 타임아웃 적용
             price = await asyncio.wait_for(
@@ -116,7 +112,17 @@ class DataLoader:
 
                 return None
 
-            return float(price)
+            # 타입 방어 (에러 dict 등이 넘어올 경우)
+            try:
+                return float(price)
+            except (ValueError, TypeError):
+                await save_log_to_db(
+                    level="ERROR",
+                    category="DATA",
+                    event_name="TYPE_ERROR",
+                    message=f"{self.log_prefix} 현재가 조회 타입 에러 (수신값: {price})"
+                )
+                return None
 
         except Exception as e:
             # 예외 발생 로그 기록

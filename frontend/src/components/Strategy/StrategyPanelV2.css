@@ -61,6 +61,30 @@
   border-color: #0f172a;
 }
 
+.dry-run-pill {
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dry-run-pill:hover {
+  background: #f8fafc;
+}
+
+.dry-run-pill.active {
+  background: #ef4444; /* 경고 느낌의 빨간색 */
+  color: white;
+  border-color: #ef4444;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+}
+
 .strategy-list-v2 {
   flex: 1;
   overflow-y: auto;
@@ -442,4 +466,132 @@
 
 .mb-2 {
   margin-bottom: 8px;
+}
+
+/* 🟢 상세 (Accordion) 내부 패널 디자인 (라이트 테마 / 모던 미니멀리즘) */
+.bot-log-section,
+.bot-target-section {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed #f1f5f9; /* 카드 내부 구분선은 아주 옅게 */
+  border-radius: 0;
+  padding: 16px 4px;
+  margin-bottom: 0;
+  box-shadow: none;
+}
+
+/* 첫 번째 섹션: 상세 화면 열렸을 때 상단 여백 최적화 */
+.bot-log-section {
+  padding-top: 4px;
+}
+
+/* 마지막 섹션 */
+.position-section {
+  padding: 16px 4px 4px;
+}
+
+.section-title {
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 로그 텍스트: pos-card 스타일을 차용하여 미려한 하얀 카드로 변경 */
+.log-text {
+  font-size: 13px;
+  color: #334155;
+  word-break: keep-all;
+  line-height: 1.5;
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.target-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.target-label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.target-val {
+  font-weight: 700;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.3px;
+}
+
+.target-val.buy { color: #0f172a; } 
+.target-val.sell { color: #ef4444; } 
+.target-val.stop { color: #3b82f6; } 
+
+.target-divider {
+  width: 1px;
+  background-color: #e2e8f0;
+  margin: 0 16px;
+}
+
+/* 목표가 박스 스타일: pos-card 스타일 통일 */
+.target-box {
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  margin-bottom: 8px; /* 하단 여백 추가 */
+}
+
+/* 2칸짜리 묶음 박스 (익절/손절)용 래퍼 추가 스타일링 */
+.target-flex-box {
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  display: flex;
+  align-items: center;
+}
+
+.target-flex-box > .target-row {
+  flex: 1;
+}
+
+/* 더미(준비 중) 패널 */
+.dummy-details {
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.dummy-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}
+
+.dummy-title {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.dummy-desc {
+  font-size: 12px;
+  color: #94a3b8;
 }

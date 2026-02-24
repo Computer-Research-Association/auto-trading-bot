@@ -28,3 +28,8 @@ export async function apiFetch<T>(endpoint: string): Promise<T> {
   const response = await api.get<T>(endpoint);
   return response.data;
 }
+// post wrapper
+export async function apiPost<T>(endpoint: string, data?: any): Promise<T> {
+  const response = await api.post<T>(endpoint, data);
+  return response.data;
+}
