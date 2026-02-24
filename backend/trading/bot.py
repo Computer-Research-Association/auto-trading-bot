@@ -44,8 +44,10 @@ class TradingBot:
         self.base_dir = Path(__file__).parent.resolve()  # 현재 파일 디렉토리
         self.state_file = self.base_dir / "bot_state.json"  # 상태 파일 경로
 
-        # 동시성 제어
-        self._lock = asyncio.Lock()  # 상태 변경 및 파일 저장 Race Condition 방지
+        # 동시성 및 파일 I/O 제어
+        self._lock = asyncio.Lock()  # 메모리 속기 시 Race Condition 방지
+        self._state_queue = asyncio.Queue()  # 상태 쓰기 직렬화 큐
+        self._state_worker_task = None  # 워커 태스크 참조
 
         # 타이머 및 하트비트
         self.last_sync_time = 0.0  # 마지막 API 동기화 시간
@@ -112,26 +114,43 @@ class TradingBot:
 
         return state
 
+    async def _state_writer_worker(self):
+        """[백그라운드] 큐에서 상태를 꺼내어 직렬화된 원자적(Atomic) 저장을 수행"""
+        temp_file = self.state_file.with_suffix(".json.tmp")
+        while True:
+            try:
+                export_data = await self._state_queue.get()
+                
+                # None이 큐에 들어오면 종료 신호
+                if export_data is None:
+                    self._state_queue.task_done()
+                    break
+
+                def _atomic_write():
+                    try:
+                        with open(temp_file, "w", encoding="utf-8") as f:
+                            json.dump(export_data, f, indent=4, ensure_ascii=False)
+                        os.replace(temp_file, self.state_file)
+                    except Exception as e:
+                        if temp_file.exists():
+                            os.remove(temp_file)
+                        raise e
+
+                await asyncio.to_thread(_atomic_write)
+                self._state_queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"{self.log_prefix} 상태 파일 저장 워커 오류: {e}")
+
     async def save_state(self):
         """
         원자적 저장 (Atomic Save).
-        Persistent State 키만 필터링하여 저장.
-        Lock은 호출자 측에서 이미 잡혀 있는 경우도 있으므로, 내부에서 중복 Lock 미사용.
+        Persistent State 키만 필터링하여 비동기 큐에 전달하여 파일 I/O 블로킹 및 Race Condition 방지.
         """
         export_data = {k: v for k, v in self.state.items() if k in _PERSISTENT_KEYS}
-        temp_file = self.state_file.with_suffix(".json.tmp")
-
-        def _atomic_write():
-            try:
-                with open(temp_file, "w", encoding="utf-8") as f:
-                    json.dump(export_data, f, indent=4, ensure_ascii=False)
-                os.replace(temp_file, self.state_file)
-            except Exception as e:
-                if temp_file.exists():
-                    os.remove(temp_file)
-                raise e
-
-        await asyncio.to_thread(_atomic_write)
+        # 큐에 복사본(deep copy 필요 없음, 단순 dict)을 던져 워커가 쓰도록 위임
+        await self._state_queue.put(export_data.copy())
 
     # -----------------------------------------------------------
     # [API Control] Rate Limit 및 Transient State 갱신
@@ -152,24 +171,40 @@ class TradingBot:
         """
         await self._wait_for_rate_limit()
 
-        # Phase 1: API 호출 (Lock 없이, 블로킹 I/O는 스레드풀로)
-        current_price = await self.loader.get_current_price()
-        if not current_price:
-            logger.warning(f"{self.log_prefix} 시세 조회 실패로 동기화 건너뜀")
+        # Phase 1: API 호출 (Lock 없이, 블로킹 I/O는 스레드풀로 - Timeout 강제)
+        try:
+            current_price = await asyncio.wait_for(
+                self.loader.get_current_price(), 
+                timeout=self.upbit_client.timeout
+            )
+            if not current_price:
+                logger.warning(f"{self.log_prefix} 시세 조회 실패로 동기화 건너뜀")
+                return
+
+            actual_krw = await asyncio.wait_for(
+                asyncio.to_thread(self.upbit_client.get_krw_balance),
+                timeout=self.upbit_client.timeout
+            )
+            actual_coin_bal = await asyncio.wait_for(
+                asyncio.to_thread(self.upbit_client.get_coin_balance, self.ticker),
+                timeout=self.upbit_client.timeout
+            )
+
+            # 미세 잔고(Dust) 처리: 5,000원 미만은 미보유로 판단
+            is_holding = (actual_coin_bal * current_price) >= 5000
+            if is_holding:
+                avg_buy_price = await asyncio.wait_for(
+                    asyncio.to_thread(self.upbit_client.get_avg_buy_price, self.ticker),
+                    timeout=self.upbit_client.timeout
+                )
+            else:
+                avg_buy_price = 0
+        except asyncio.TimeoutError:
+            logger.warning(f"{self.log_prefix} 동기화 중 HTTP Timeout 발생 (네트워크 지연)")
             return
-
-        actual_krw = await asyncio.to_thread(self.upbit_client.get_krw_balance)
-        actual_coin_bal = await asyncio.to_thread(
-            self.upbit_client.get_coin_balance, self.ticker
-        )
-
-        # 미세 잔고(Dust) 처리: 5,000원 미만은 미보유로 판단
-        is_holding = (actual_coin_bal * current_price) >= 5000
-        avg_buy_price = (
-            await asyncio.to_thread(self.upbit_client.get_avg_buy_price, self.ticker)
-            if is_holding
-            else 0
-        )
+        except Exception as e:
+            logger.error(f"{self.log_prefix} 동기화 중 예외: {e}")
+            return
 
         # Phase 2: 메모리 업데이트 (Lock 안)
         async with self._lock:
@@ -202,11 +237,14 @@ class TradingBot:
         """
         try:
             await self._wait_for_rate_limit()
-            # 실제 주문 실행
-            await asyncio.to_thread(
-                self.upbit_client.buy_market_order,
-                self.ticker,
-                self.state.get("balance", 0),
+            # 실제 주문 실행 (Timeout 강제)
+            await asyncio.wait_for(
+                asyncio.to_thread(
+                    self.upbit_client.buy_market_order,
+                    self.ticker,
+                    self.state.get("balance", 0),
+                ),
+                timeout=self.upbit_client.timeout
             )
 
             # Phase 2: 중요 이벤트 → Lock 안에서 상태 업데이트 및 즉시 저장
@@ -265,11 +303,13 @@ class TradingBot:
         try:
             await self._wait_for_rate_limit()
             # 실제 주문 실행
-            coin_balance = await asyncio.to_thread(
-                self.upbit_client.get_coin_balance, self.ticker
+            coin_balance = await asyncio.wait_for(
+                asyncio.to_thread(self.upbit_client.get_coin_balance, self.ticker),
+                timeout=self.upbit_client.timeout
             )
-            await asyncio.to_thread(
-                self.upbit_client.sell_market_order, self.ticker, coin_balance
+            await asyncio.wait_for(
+                asyncio.to_thread(self.upbit_client.sell_market_order, self.ticker, coin_balance),
+                timeout=self.upbit_client.timeout
             )
 
             # Phase 2: Critical Event → Lock 안에서 상태 업데이트 및 즉시 저장
@@ -513,6 +553,9 @@ class TradingBot:
             message=f"{self.log_prefix} 비동기 엔진 가동 시작",
         )
 
+        # 큐 워커 태스크 시작
+        self._state_worker_task = asyncio.create_task(self._state_worker_task_wrapper())
+
         try:
             await asyncio.gather(
                 self.monitor_market_loop(), self.perform_analysis_loop()
@@ -521,6 +564,10 @@ class TradingBot:
             logger.info(
                 f"{self.log_prefix} 봇 작업이 취소되었습니다 (Graceful Shutdown)."
             )
+            # 종료 시 큐 정리 대기
+            await self._state_queue.put(None)
+            if self._state_worker_task:
+                await self._state_worker_task
             raise
         except Exception as e:
             logger.error(
@@ -532,9 +579,16 @@ class TradingBot:
                 event_name="ERROR",
                 message=f"{self.log_prefix} 봇 메인 루프 크래시: {e}",
             )
-            # 봇이 프로세스 내내 죽지 않게 하려면 여기서 `await asyncio.sleep(10)` 후 메인 루프 자체를 재귀적으로 다시 호출하거나 루프로 감싸는 방법도 있습니다.
-            # 지금은 에러 로그만 제대로 남기는 것에 집중합니다.
             raise
+
+    async def _state_worker_task_wrapper(self):
+        """워커 예외 전파 차단 래퍼"""
+        try:
+            await self._state_writer_worker()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"{self.log_prefix} State worker crashed: {e}")
 
 
 if __name__ == "__main__":
