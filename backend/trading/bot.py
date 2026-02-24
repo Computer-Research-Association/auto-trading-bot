@@ -48,11 +48,11 @@ class TradingBot:
         self._lock = asyncio.Lock()  # 상태 변경 및 파일 저장 Race Condition 방지
 
         # 타이머 및 하트비트
-        self.last_sync_time = 0.0          # 마지막 API 동기화 시간
-        self.last_api_call_time = 0.0      # Rate Limit 추적용
-        self.last_target_save_time = 0.0   # target_price 저장 스로틀 추적
-        self.heartbeat_interval = 5        # 하트비트 간격 (초)
-        self.last_heartbeat_time = 0       # 마지막 하트비트 시간
+        self.last_sync_time = 0.0  # 마지막 API 동기화 시간
+        self.last_api_call_time = 0.0  # Rate Limit 추적용
+        self.last_target_save_time = 0.0  # target_price 저장 스로틀 추적
+        self.heartbeat_interval = 600  # 하트비트 간격 (초)
+        self.last_heartbeat_time = 0  # 마지막 하트비트 시간
 
         # Persistent State는 파일 로드, Transient State는 API로 채움
         self.state = self._load_persistent_state()
@@ -106,7 +106,9 @@ class TradingBot:
 
             logger.info(f"{self.log_prefix} 상태 파일 로드 완료: {self.state_file}")
         except Exception:
-            logger.error(f"{self.log_prefix} 상태 파일 로드 실패: {traceback.format_exc()}")
+            logger.error(
+                f"{self.log_prefix} 상태 파일 로드 실패: {traceback.format_exc()}"
+            )
 
         return state
 
@@ -157,22 +159,27 @@ class TradingBot:
             return
 
         actual_krw = await asyncio.to_thread(self.upbit_client.get_krw_balance)
-        actual_coin_bal = await asyncio.to_thread(self.upbit_client.get_coin_balance, self.ticker)
+        actual_coin_bal = await asyncio.to_thread(
+            self.upbit_client.get_coin_balance, self.ticker
+        )
 
         # 미세 잔고(Dust) 처리: 5,000원 미만은 미보유로 판단
         is_holding = (actual_coin_bal * current_price) >= 5000
         avg_buy_price = (
             await asyncio.to_thread(self.upbit_client.get_avg_buy_price, self.ticker)
-            if is_holding else 0
+            if is_holding
+            else 0
         )
 
         # Phase 2: 메모리 업데이트 (Lock 안)
         async with self._lock:
-            self.state.update({
-                "balance": actual_krw,
-                "is_holding": is_holding,
-                "avg_buy_price": avg_buy_price,
-            })
+            self.state.update(
+                {
+                    "balance": actual_krw,
+                    "is_holding": is_holding,
+                    "avg_buy_price": avg_buy_price,
+                }
+            )
 
         self.last_sync_time = time.time()
 
@@ -197,23 +204,29 @@ class TradingBot:
             await self._wait_for_rate_limit()
             # 실제 주문 실행
             await asyncio.to_thread(
-                self.upbit_client.buy_market_order, self.ticker, self.state.get("balance", 0)
+                self.upbit_client.buy_market_order,
+                self.ticker,
+                self.state.get("balance", 0),
             )
 
             # Phase 2: 중요 이벤트 → Lock 안에서 상태 업데이트 및 즉시 저장
             async with self._lock:
-                self.state.update({
-                    "is_holding": True,
-                    "avg_buy_price": price,
-                    "target_price": trade_params.get("target_price", price * 1.05),
-                    "stop_loss": trade_params.get("stop_loss", price * 0.95),
-                    "last_reason": f"[매수] {reason}",
-                })
+                self.state.update(
+                    {
+                        "is_holding": True,
+                        "avg_buy_price": price,
+                        "target_price": trade_params.get("target_price", price * 1.05),
+                        "stop_loss": trade_params.get("stop_loss", price * 0.95),
+                        "last_reason": f"[매수] {reason}",
+                    }
+                )
                 await self.save_state()  # Critical Event: 즉시 저장
 
         except Exception as e:
             # 자가 치유: 주문 실패/타임아웃 시 실제 체결 여부 즉시 확인
-            logger.error(f"{self.log_prefix} 매수 주문 오류 → 자가 치유 동기화 시도: {e}")
+            logger.error(
+                f"{self.log_prefix} 매수 주문 오류 → 자가 치유 동기화 시도: {e}"
+            )
             await save_log_to_db(
                 level="ERROR",
                 category="TRADE",
@@ -252,23 +265,31 @@ class TradingBot:
         try:
             await self._wait_for_rate_limit()
             # 실제 주문 실행
-            coin_balance = await asyncio.to_thread(self.upbit_client.get_coin_balance, self.ticker)
-            await asyncio.to_thread(self.upbit_client.sell_market_order, self.ticker, coin_balance)
+            coin_balance = await asyncio.to_thread(
+                self.upbit_client.get_coin_balance, self.ticker
+            )
+            await asyncio.to_thread(
+                self.upbit_client.sell_market_order, self.ticker, coin_balance
+            )
 
             # Phase 2: Critical Event → Lock 안에서 상태 업데이트 및 즉시 저장
             async with self._lock:
-                self.state.update({
-                    "is_holding": False,
-                    "avg_buy_price": 0,
-                    "target_price": 0,
-                    "stop_loss": 0,
-                    "last_reason": f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
-                })
+                self.state.update(
+                    {
+                        "is_holding": False,
+                        "avg_buy_price": 0,
+                        "target_price": 0,
+                        "stop_loss": 0,
+                        "last_reason": f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
+                    }
+                )
                 await self.save_state()  # Critical Event: 즉시 저장
 
         except Exception as e:
             # 자가 치유: 주문 실패/타임아웃 시 실제 체결 여부 즉시 확인
-            logger.error(f"{self.log_prefix} 매도 주문 오류 → 자가 치유 동기화 시도: {e}")
+            logger.error(
+                f"{self.log_prefix} 매도 주문 오류 → 자가 치유 동기화 시도: {e}"
+            )
             await save_log_to_db(
                 level="ERROR",
                 category="TRADE",
@@ -326,7 +347,9 @@ class TradingBot:
                     try:
                         await self.sync_state_with_api()
                     except Exception:
-                        await self._log_loop_error("정기 동기화", traceback.format_exc())
+                        await self._log_loop_error(
+                            "정기 동기화", traceback.format_exc()
+                        )
 
                 await self._process_strategy_analysis()
                 await asyncio.sleep(10)  # 매수 판단은 10초 주기
@@ -457,8 +480,8 @@ class TradingBot:
         """
         async with self._lock:
             snapshot = self.state.copy()
-            snapshot['timestamp'] = datetime.utcnow().isoformat()
-            snapshot['strategy_name'] = self.strategy_name
+            snapshot["timestamp"] = datetime.utcnow().isoformat()
+            snapshot["strategy_name"] = self.strategy_name
             return snapshot
 
     async def run(self):
@@ -470,14 +493,16 @@ class TradingBot:
         # Startup Policy: 네트워크 오류 등에도 백그라운드 태스크가 종료되지 않도록 무한 재시도 (10초 대기)
         retry_delay = 10.0
         attempt = 1
-        
+
         while True:
             try:
                 await self.sync_state_with_api()
                 logger.info(f"{self.log_prefix} 초기 API 동기화 성공 (시도 {attempt})")
                 break
             except Exception as e:
-                logger.warning(f"{self.log_prefix} 초기 동기화 실패 (시도 {attempt}): {e}. {retry_delay}초 후 재시도...")
+                logger.warning(
+                    f"{self.log_prefix} 초기 동기화 실패 (시도 {attempt}): {e}. {retry_delay}초 후 재시도..."
+                )
                 await asyncio.sleep(retry_delay)
                 attempt += 1
 
@@ -487,14 +512,20 @@ class TradingBot:
             event_name="ENGINE_START",
             message=f"{self.log_prefix} 비동기 엔진 가동 시작",
         )
-        
+
         try:
-            await asyncio.gather(self.monitor_market_loop(), self.perform_analysis_loop())
+            await asyncio.gather(
+                self.monitor_market_loop(), self.perform_analysis_loop()
+            )
         except asyncio.CancelledError:
-            logger.info(f"{self.log_prefix} 봇 작업이 취소되었습니다 (Graceful Shutdown).")
+            logger.info(
+                f"{self.log_prefix} 봇 작업이 취소되었습니다 (Graceful Shutdown)."
+            )
             raise
         except Exception as e:
-            logger.error(f"{self.log_prefix} 봇 메인 루프 예외 발생: {e}", exc_info=True)
+            logger.error(
+                f"{self.log_prefix} 봇 메인 루프 예외 발생: {e}", exc_info=True
+            )
             await save_log_to_db(
                 level="ERROR",
                 category="SYSTEM",
