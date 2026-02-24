@@ -519,10 +519,11 @@ class TradingBot:
         new_stop = trade_params.get("target_stop_loss", 0)
         reason = trade_params.get("reason", "")
         
-        # 이전 값과 하나라도 다르면 업데이트 대상
+        # 이전 값과 하나라도 다르거나, 상태 메시지(reason)가 다르면 업데이트 대상
         if (new_buy == self.state.get("target_buy_price") and 
             new_sell == self.state.get("target_sell_price") and 
-            new_stop == self.state.get("target_stop_loss")):
+            new_stop == self.state.get("target_stop_loss") and
+            reason == self.state.get("last_reason")):
             return
 
         async with self._lock:
