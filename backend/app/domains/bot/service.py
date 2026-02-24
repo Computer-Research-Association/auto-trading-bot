@@ -38,8 +38,11 @@ class BotService:
             "balance": snapshot.get("balance", 0),
             "is_holding": snapshot.get("is_holding", False),
             "avg_buy_price": avg_price,
-            "target_price": snapshot.get("target_price", 0),
-            "stop_loss": snapshot.get("stop_loss", 0),
+            "target_price": snapshot.get("target_price", 0), # Deprecated 방어
+            "stop_loss": snapshot.get("stop_loss", 0),       # Deprecated 방어
+            "target_buy_price": snapshot.get("target_buy_price", 0.0),
+            "target_sell_price": snapshot.get("target_sell_price", 0.0),
+            "target_stop_loss": snapshot.get("target_stop_loss", 0.0),
             "last_reason": snapshot.get("last_reason", ""),
             "timestamp": snapshot.get("timestamp"),
             "profit_rate": profit_rate
