@@ -492,8 +492,8 @@ class TradingBot:
         df_indicators = self.strategy.setup_indicators(df)
         result = self.strategy.decide(df_indicators, self.state, {})
 
-        # 분석 결과만 메모리에 갱신 (직접 매수/매도 호출 배제)
-        await self._update_target_price(result)
+        # 분석 결과 내의 trade_params만 추출하여 갱신 (KeyError 및 인자 불일치 해결)
+        await self._update_target_price(result.get("trade_params", {}))
 
     async def _update_target_price(self, trade_params):
         new_buy = trade_params.get("target_buy_price", 0)
