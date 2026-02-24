@@ -51,7 +51,7 @@ class RSIBBStrategy(BaseStrategy):
         rsi = last["rsi"]
         bb_upper = last["bb_bb_upper"]
         bb_lower = last["bb_bb_lower"]
-        bb_mid = last["bb_bb_mavg"]
+        bb_mid = last["bb_bb_middle"]
         current_price = last["close"]
 
         # 폭포수(Waterfall) 방어: 최근 3캔들 동안의 하단 밴드 급락률(Slope) 검사
