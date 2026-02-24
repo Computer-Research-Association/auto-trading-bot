@@ -3,6 +3,7 @@ from datetime import datetime
 
 class BotStatusResponse(BaseModel):
     is_active: bool
+    is_dry_run: bool
     strategy_name: str
     balance: float
     is_holding: bool
