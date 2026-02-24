@@ -114,7 +114,7 @@ const Log: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const pageSize = 5;
+  const pageSize = 10;
   const [page, setPage] = useState(1);
   const [sseConnected, setSseConnected] = useState(false);
 
