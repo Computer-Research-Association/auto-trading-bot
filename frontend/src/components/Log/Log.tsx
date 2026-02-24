@@ -16,6 +16,29 @@ function getPageItems(page: number, total: number) {
   return [1, "...", page, "...", total];
 }
 
+// UTC 시간을 한국 시간(KST, UTC+9)으로 보기 좋게 변환
+function formatDateKST(utcStr: string): string {
+  if (!utcStr) return "";
+  // 뒤에 Z가 표기안된 UTC 문자열이라면 Z를 붙여서 JS가 UTC로 인식하게 만듦
+  const safeStr = utcStr.endsWith("Z") || utcStr.includes("+") ? utcStr : `${utcStr}Z`;
+  const date = new Date(safeStr);
+  
+  if (isNaN(date.getTime())) return utcStr; // 파싱 실패 시 원본 문자열 반환
+
+  // 한국 시간대로 연.월.일 시간:분:초 포맷팅
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: "Asia/Seoul",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  };
+  return new Intl.DateTimeFormat('ko-KR', options).format(date);
+}
+
 export function PageBlock({
   page,
   totalPages,
@@ -265,7 +288,7 @@ const Log: React.FC = () => {
         <div className="tableBody">
           {logs.map((l) => (
             <div className="row" key={l.id}>
-              <div className="cell mono">{l.timestamp}</div>
+              <div className="cell mono">{formatDateKST(l.timestamp)}</div>
               <div className="cell">{l.category}</div>
               <div className="cell">{l.eventname}</div>
               <div className="cell level">
