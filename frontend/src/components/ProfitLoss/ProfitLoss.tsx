@@ -98,50 +98,58 @@ export default function Performance() {
 
   // 2. 실시간 업데이트 (1초마다)
   useEffect(() => {
-    // 1초마다 실행할 타이머
-    const timer = setInterval(() => {
-      getAssets().then((res) => {
-        setData((prev) => {
-          if (!prev) return prev;
+    // 실시간 데이터 갱신 로직
+    const fetchRealtimeAssets = () => {
+      getAssets()
+        .then((res) => {
+          setData((prev) => {
+            if (!prev) return prev;
 
-          // KPI 업데이트
-          const newSummary = {
-            ...prev.summary,
-            total_assets_krw: res.summary.total_assets_krw,
-            pnl_krw: res.summary.total_pnl_krw,
-            pnl_rate: res.summary.total_pnl_rate,
-          };
+            // KPI 업데이트
+            const newSummary = {
+              ...prev.summary,
+              total_assets_krw: res.summary.total_assets_krw,
+              pnl_krw: res.summary.total_pnl_krw,
+              pnl_rate: res.summary.total_pnl_rate,
+            };
 
-          // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
-          const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
-          if (!todayStr) return prev; // 날짜 없으면 무시
+            // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
+            const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
+            if (!todayStr) return prev; // 날짜 없으면 무시
 
-          const newPoint = {
-            date: todayStr,
-            assets_krw: res.summary.total_assets_krw,
-            pnl_krw: res.summary.total_pnl_krw,
-            pnl_rate: res.summary.total_pnl_rate,
-          };
+            const newPoint = {
+              date: todayStr,
+              assets_krw: res.summary.total_assets_krw,
+              pnl_krw: res.summary.total_pnl_krw,
+              pnl_rate: res.summary.total_pnl_rate,
+            };
 
-          const newChart = [...prev.chart];
-          const lastIdx = newChart.length - 1;
-          
-          if (lastIdx >= 0 && newChart[lastIdx]!.date === todayStr) {
-            // 오늘 데이터가 이미 있으면 갱신 (실시간 움직임 효과)
-            newChart[lastIdx] = newPoint;
-          } else {
-            // 없으면 추가
-            newChart.push(newPoint);
-          }
+            const newChart = [...prev.chart];
+            const lastIdx = newChart.length - 1;
 
-          return {
-            ...prev,
-            summary: newSummary,
-            chart: newChart,
-          };
-        });
-      }).catch(console.error); // 에러 무시 (다음 틱에 재시도)
-    }, 1000); // 1초
+            if (lastIdx >= 0 && newChart[lastIdx]!.date === todayStr) {
+              // 오늘 데이터가 이미 있으면 갱신 (실시간 움직임 효과)
+              newChart[lastIdx] = newPoint;
+            } else {
+              // 없으면 추가
+              newChart.push(newPoint);
+            }
+
+            return {
+              ...prev,
+              summary: newSummary,
+              chart: newChart,
+            };
+          });
+        })
+        .catch(console.error); // 에러 무시 (다음 틱에 재시도)
+    };
+
+    // 1) 탭을 열자마자 1초를 기다리지 않고 즉시 1회 실행
+    fetchRealtimeAssets();
+
+    // 2) 그 후부터 1초마다 반복 실행
+    const timer = setInterval(fetchRealtimeAssets, 1000);
 
     return () => clearInterval(timer);
   }, []);
