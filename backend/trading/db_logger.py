@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 import logging
 import asyncio
 from datetime import datetime
@@ -73,6 +74,9 @@ logger = logging.getLogger(__name__)
 # 로컬 파일 백업 경로 (DB 장애 시 fallback)
 _BACKUP_LOG_PATH = os.path.join(current_dir, "backup.log")
 
+# 중복 방지를 위한 인메모리 캐시 (최대 3초 내 동일 로그 무시)
+_log_cache = {}
+_CACHE_TIMEOUT = 3.0
 
 def _write_backup_log(level: str, category: str, event_name: str, message: str):
     """DB 저장 완전 실패 시 로컬 파일에 Fallback 기록 (동기 함수, 스레드풀 아닌 직접 호출)"""
@@ -90,9 +94,11 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
     """
     트레이딩 봇의 로그를 비동기 방식으로 DB에 저장
     - 유효성 검사 및 네트워크/DB 일시 장애 대비 재시도 로직 포함
+    - 단기 시간 내 (3초) 동일 메시지 중복 기록 방지 (Idempotency)
     - 저장 성공 시 SSE(EventBus)로 즉시 publish 해서 프론트가 실시간 수신 가능하게 함
     - 모든 재시도 실패 시 로컬 backup.log 파일에 Fallback 기록
     """
+    global _log_cache
 
     if create_log is None:
         # 도메인 로거 import가 안 된 경우: DB 저장 불가
@@ -113,6 +119,20 @@ async def save_log_to_db(level: str, category: str, event_name: str, message: st
 
     # 메시지 길이 제한
     safe_message = (message or "")[:1000]  # 최대 1000자
+
+    # 중복 방지 로직 (Idempotency)
+    now = time.time()
+    log_hash = hash((level, category, event_name, safe_message))
+    
+    # 캐시 만료 정리
+    expired_keys = [k for k, v in _log_cache.items() if now - v > _CACHE_TIMEOUT]
+    for k in expired_keys:
+        del _log_cache[k]
+        
+    if log_hash in _log_cache:
+        return  # 3초 내에 동일한 로그 요청이 있었으므로 무시
+        
+    _log_cache[log_hash] = now
 
     # 일시적 DB 연결 오류 대비
     max_retries = 3

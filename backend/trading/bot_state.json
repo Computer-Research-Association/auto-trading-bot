@@ -1,6 +1,8 @@
 {
-    "is_active": false,
-    "target_price": 0,
-    "stop_loss": 0,
-    "last_reason": ""
+    "is_active": true,
+    "is_dry_run": true,
+    "target_buy_price": 0.0,
+    "target_sell_price": 0.0,
+    "target_stop_loss": 0.0,
+    "last_reason": "테스트 시작"
 }
