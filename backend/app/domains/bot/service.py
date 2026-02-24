@@ -35,6 +35,7 @@ class BotService:
         # API 응답 포맷 매핑
         return {
             "is_active": snapshot.get("is_active", False),
+            "is_dry_run": snapshot.get("is_dry_run", False),
             "strategy_name": snapshot.get("strategy_name", "Unknown"),
             "balance": snapshot.get("balance", 0),
             "is_holding": snapshot.get("is_holding", False),
@@ -45,3 +46,23 @@ class BotService:
             "timestamp": snapshot.get("timestamp"),
             "profit_rate": profit_rate
         }
+
+    async def toggle_dry_run(self, enable: bool) -> dict:
+        async with self.bot._lock:
+            self.bot.state["is_dry_run"] = enable
+            await self.bot.save_state()
+        
+        from core.logger import logger
+        from trading.db_logger import save_log_to_db
+        
+        status_str = "ON (모의투자)" if enable else "OFF (실제 매매)"
+        
+        logger.info(f"사용자 명령에 의해 모의투자(Dry Run) 모드가 {status_str}로 변경되었습니다.")
+        
+        await save_log_to_db(
+            level="INFO",
+            category="SYSTEM",
+            event_name="COMMAND",
+            message=f"{self.bot.log_prefix} 모의투자(Dry-Run) 스위치 변경: {status_str}",
+        )
+        return {"status": "dry run updated", "is_dry_run": enable}
