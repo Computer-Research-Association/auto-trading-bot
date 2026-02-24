@@ -431,11 +431,18 @@ class TradingBot:
 
     async def check_heartbeat(self):
         current_time = time.time()
-        if current_time - self.last_heartbeat_time >= self.heartbeat_interval:
+        if current_time - self.last_heartbeat_time >= self.heartbeat_interval: 
+            # 총 자산 가치 계산 로직 (KRW + 코인 잔고 * 현재가)
+            current_price = await self.loader.get_current_price()
+            krw_balance = self.state.get("balance", 0.0)
+            coin_balance = self.state.get("coin_balance", 0.0)
+            coin_val = coin_balance * (current_price if current_price else 0.0)
+            total_assets = krw_balance + coin_val
+
             msg = (
-                f"[매매 가동 중] 엔진 생존 신고 (보유: {self.is_holding})"
+                f"[매매 가동 중] 엔진 생존 신고 (총 자산: {total_assets:,.0f}원 | 보유 현황: {self.is_holding})"
                 if self.is_active
-                else "[대기 모드] 엔진 생존 신고 (사용자 명령 대기 중)"
+                else f"[대기 모드] 엔진 생존 신고 (총 자산: {total_assets:,.0f}원 | 사용자 명령 대기 중)"
             )
             await save_log_to_db(
                 level="INFO",
