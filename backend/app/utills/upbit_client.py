@@ -25,6 +25,13 @@ class UpbitClient:
         if not access_key or not secret_key:
             raise ValueError("UPBIT_ACCESS_KEY 또는 UPBIT_SECRET_KEY가 .env에 없습니다.")
         self.upbit = pyupbit.Upbit(access_key, secret_key)
+        
+        # 0.2초 초고속 매매 환경을 위한 HTTP Request Timeout 설정 (1.0초)
+        # 이 객체의 메서드(get_krw_balance 등)는 bot.py에서 asyncio.wait_for()와 
+        # 함께 호출될 것이므로 여기서 내부 timeout 변수를 제공.
+        self.timeout = 1.0
+
+
 
     def get_balances(self):
         return self.upbit.get_balances()
@@ -42,7 +49,7 @@ class UpbitClient:
     # 봇 전용 조회 확장 메서드
 
     def get_krw_balance(self) -> float:
-        """"가용 원화(krw) 잔고 조회"""
+        """가용 원화(krw) 잔고 조회"""
         balance = self.upbit.get_balance("KRW")
         return float(balance) if balance is not None else 0.0
 
