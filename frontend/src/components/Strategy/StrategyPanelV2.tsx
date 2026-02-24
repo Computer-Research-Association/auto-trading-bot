@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import "./StrategyPanelV2.css";
 import { mockStrategiesV2, type StrategyV2 } from "../../mocks/mockStrategyV2";
 import { AreaChart, Area, ResponsiveContainer, YAxis } from "recharts";
-import { apiFetch } from "../../Lib/api";
+import { apiFetch, apiPost } from "../../Lib/api";
 // 필요한 타입만 부분적으로 정의 (전체 import 대신)
 interface AssetItem {
   currency: string;
@@ -109,6 +109,29 @@ export default function StrategyPanelV2() {
   // 🟢 자산 데이터 상태
   const [assets, setAssets] = useState<AssetItem[]>([]);
 
+  const [isDryRun, setIsDryRun] = useState<boolean>(false);
+
+  // 🟢 봇 초기 상태 풀링 (시작 시 1회)
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const res = await apiFetch<any>("/bot/status");
+        if (res.is_active) {
+          setRunningIds(new Set(["rsi_bb_core"])); // 백엔드가 켜져있으면 패널도 켜짐 상태로 동기화
+        } else {
+          setRunningIds(new Set());
+        }
+        
+        if (res.is_dry_run !== undefined) {
+          setIsDryRun(res.is_dry_run);
+        }
+      } catch (e) {
+        console.error("Failed to fetch bot status on load", e);
+      }
+    };
+    fetchStatus();
+  }, []);
+
   // 🟢 자산 데이터 폴링 (1초)
   useEffect(() => {
     const fetchAssets = async () => {
@@ -127,23 +150,65 @@ export default function StrategyPanelV2() {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleStrategy = (id: string, e: React.MouseEvent) => {
+  const toggleDryRun = async () => {
+    try {
+      const nextState = !isDryRun;
+      // 백엔드 Dry Run API 호출
+      await apiPost(`/bot/dry-run?enable=${nextState}`);
+      setIsDryRun(nextState);
+    } catch (err) {
+      console.error("Failed to toggle dry run", err);
+      alert("모의투자 모드 변경에 실패했습니다.");
+    }
+  };
+
+  const toggleStrategy = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setRunningIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    
+    // 이 패널 자체가 오직 RSI BB(rsi_bb_core) 전략과 직결되며 다른 전략은 보여주기용(mock)
+    if (id !== "rsi_bb_core") {
+      alert("현재 버전에서는 'RSI BB 매매 전략'만 실가동이 지원됩니다.");
+      return;
+    }
+
+    try {
+      const isCurrentlyRunning = runningIds.has(id);
+      if (isCurrentlyRunning) {
+        // 백엔드 중지 API 호출
+        await apiPost("/bot/stop");
+        setRunningIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      } else {
+        // 백엔드 가동 API 호출
+        await apiPost("/bot/start");
+        setRunningIds((prev) => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error("Failed to toggle bot strategy:", err);
+      alert("봇 설정 변경에 실패했습니다. 서버를 확인해주세요.");
+    }
   };
 
   const toggleExpand = (id: string) => {
     setExpandedId(prev => prev === id ? null : id);
   };
 
-  const stopAll = () => {
-    if (window.confirm("모든 전략을 정지하시겠습니까?")) {
-      setRunningIds(new Set());
+  const stopAll = async () => {
+    if (window.confirm("모든 전략을 정지하시겠습니까? (백엔드 봇이 중지됩니다)")) {
+      try {
+        await apiPost("/bot/stop");
+        setRunningIds(new Set());
+      } catch (err) {
+        console.error("Failed to stop all strategies:", err);
+        alert("봇 중지에 실패했습니다.");
+      }
     }
   };
 
@@ -168,6 +233,13 @@ export default function StrategyPanelV2() {
       <div className="panel-header">
         <h2>자동매매 전략</h2>
         <div className="header-actions">
+          <div 
+            className={`dry-run-pill ${isDryRun ? "active" : ""}`}
+            onClick={toggleDryRun}
+            title="모의투자(실제 주문 X) 전용 모드 전환"
+          >
+            {isDryRun ? "모의투자 중" : "모의투자 OFF"}
+          </div>
           <button 
             className={`sort-btn ${sortBy === "return" ? "active" : ""}`}
             onClick={() => setSortBy("return")}
