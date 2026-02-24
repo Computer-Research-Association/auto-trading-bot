@@ -219,6 +219,7 @@ export default function Assets() {
                 <PieChart>
                   <Pie
                     data={ratio}
+                    isAnimationActive={false}
                     cx="50%"
                     cy="50%"
                     innerRadius={65} /* 얇게 */
