@@ -357,7 +357,7 @@ export default function StrategyPanelV2() {
                   {!isDisabled ? (
                     <>
                       <div className="bot-log-section">
-                        <div className="section-title">📟 봇 시스템 로그</div>
+                        <div className="section-title">🤖 현재 봇 상태</div>
                         <div className="log-text">
                           {botLog?.last_reason ? `> ${botLog.last_reason}` : "> 상태 기록 대기 중..."}
                         </div>
