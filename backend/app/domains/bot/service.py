@@ -6,17 +6,15 @@ class BotService:
         self.bot = bot
 
     async def start(self) -> dict:
-        if self.bot.is_active:
+        changed = await self.bot.set_active(True)
+        if not changed:
             return {"status": "already started", "is_active": True}
-        
-        await self.bot.set_active(True)
         return {"status": "bot started", "is_active": True}
 
     async def stop(self) -> dict:
-        if not self.bot.is_active:
+        changed = await self.bot.set_active(False)
+        if not changed:
             return {"status": "already stopped", "is_active": False}
-            
-        await self.bot.set_active(False)
         return {"status": "bot stopped", "is_active": False}
 
     async def get_status(self) -> dict:

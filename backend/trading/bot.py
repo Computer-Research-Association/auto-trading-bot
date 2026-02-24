@@ -553,18 +553,23 @@ class TradingBot:
     # -----------------------------------------------------------
     # [Lifecycle] 봇 시작 및 외부 제어
     # -----------------------------------------------------------
-    async def set_active(self, new_value: bool):
+    async def set_active(self, new_value: bool) -> bool:
         """
         FastAPI 엔드포인트에서 호출하여 is_active를 메모리에서 직접 변경.
         Critical Event: 즉시 파일 저장.
         """
-        old_value = self.is_active
+        changed = False
         async with self._lock:
-            self.state["is_active"] = new_value
-            await self.save_state()
+            old_value = self.state.get("is_active", False)
+            if old_value != new_value:
+                self.state["is_active"] = new_value
+                await self.save_state()
+                changed = True
 
-        if old_value != new_value:
+        if changed:
             await self._log_command_change(new_value)
+            
+        return changed
 
     async def get_snapshot(self) -> dict:
         """
