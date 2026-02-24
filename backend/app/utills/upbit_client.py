@@ -44,25 +44,40 @@ class UpbitClient:
             # tickers 1개일 때 대비
             return {tickers[0]: float(prices)} if tickers else {}
         if isinstance(prices, dict):
-            return {k: float(v) for k, v in prices.items()}
+            # error 응답 dict 방어
+            if "error" in prices:
+                return {t: 0.0 for t in tickers}
+            valid_prices = {}
+            for k, v in prices.items():
+                try:
+                    valid_prices[k] = float(v)
+                except (ValueError, TypeError):
+                    pass
+            return valid_prices
         return {t: 0.0 for t in tickers}
+
+    # 타입 에러 방어 유틸
+    def _safe_float(self, val: any) -> float:
+        if val is None:
+            return 0.0
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return 0.0
 
     # 봇 전용 조회 확장 메서드
 
     def get_krw_balance(self) -> float:
         """가용 원화(krw) 잔고 조회"""
-        balance = self.upbit.get_balance("KRW")
-        return float(balance) if balance is not None else 0.0
+        return self._safe_float(self.upbit.get_balance("KRW"))
 
     def get_coin_balance(self, ticker: str) -> float:
         """특정 코인의 보유 수량 조회"""
-        balance = self.upbit.get_balance(ticker)
-        return float(balance) if balance is not None else 0.0
+        return self._safe_float(self.upbit.get_balance(ticker))
 
     def get_avg_buy_price(self, ticker: str) -> float:
         """업비트 서버 기준의 실제 평단가 조회"""
-        avg_price = self.upbit.get_avg_buy_price(ticker)
-        return float(avg_price) if avg_price else 0.0
+        return self._safe_float(self.upbit.get_avg_buy_price(ticker))
 
     # 실전 매매 주문 메서드
 
