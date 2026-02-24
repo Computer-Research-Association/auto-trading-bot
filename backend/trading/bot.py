@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # [Constants] 상수 정의
 # -----------------------------------------------------------
 # bot_state.json에 저장할 키 목록 (Persistent State)
-# is_holding, balance, avg_buy_price는 저장하지 않음 (API Fact)
-_PERSISTENT_KEYS = {"is_active", "target_price", "stop_loss", "last_reason"}
+# is_holding, balance, coin_balance 등은 API 동기화를 소스로 활용
+_PERSISTENT_KEYS = {"is_active", "is_dry_run", "target_buy_price", "target_sell_price", "target_stop_loss", "last_reason"}
 
 # API 호출 최소 대기 시간 (Rate Limit 방어, 초)
 _MIN_API_INTERVAL = 0.15
@@ -74,16 +74,19 @@ class TradingBot:
     # [State Management] 초기화, 로드, 저장
     # -----------------------------------------------------------
     def _get_default_state(self) -> dict:
-        """기본 상태 (Persistent State만 정의)"""
+        """기본 상태 (Persistent State + Transient State)"""
         return {
             "is_active": False,
-            "target_price": 0,
-            "stop_loss": 0,
-            "last_reason": "",
-            # Transient: API에서 채워짐
-            "balance": 0,
+            "is_dry_run": False,        # 모의 투자 여부
+            "target_buy_price": 0.0,    # 분석 루프가 설정한 목표 매수가
+            "target_sell_price": 0.0,   # 분석 루프가 설정한 목표 익절가
+            "target_stop_loss": 0.0,    # 분석 루프가 설정한 목표 손절가
+            "last_reason": "",          # 마지막 의사 결정 사유
+            # Transient: API 동기화 기반 Shadow Balance
+            "balance": 0.0,             # KRW 가용 잔고
+            "coin_balance": 0.0,        # 코인 보유 수량
             "is_holding": False,
-            "avg_buy_price": 0,
+            "avg_buy_price": 0.0,
         }
 
     def _load_persistent_state(self) -> dict:
@@ -206,15 +209,25 @@ class TradingBot:
             logger.error(f"{self.log_prefix} 동기화 중 예외: {e}")
             return
 
-        # Phase 2: 메모리 업데이트 (Lock 안)
+        # 모의 투자인 경우, 기존 가상 자산을 API 팩트에 덮어씌워지지 않도록 방지
+        # 실제 매매(운영) 환경에서만 API 잔고를 메모리에 그대로 덮어씀
         async with self._lock:
-            self.state.update(
-                {
-                    "balance": actual_krw,
-                    "is_holding": is_holding,
-                    "avg_buy_price": avg_buy_price,
-                }
-            )
+            if self.state.get("is_dry_run", False):
+                # Dry run 시 초기 1회만 잔고를 반영하고, 그 뒤엔 로컬 Shadow를 신뢰
+                if self.state.get("balance", 0) == 0 and actual_krw > 0:
+                    self.state["balance"] = actual_krw
+                    self.state["coin_balance"] = actual_coin_bal
+                    self.state["avg_buy_price"] = avg_buy_price
+                    self.state["is_holding"] = is_holding
+            else:
+                self.state.update(
+                    {
+                        "balance": actual_krw,
+                        "coin_balance": actual_coin_bal,
+                        "is_holding": is_holding,
+                        "avg_buy_price": avg_buy_price,
+                    }
+                )
 
         self.last_sync_time = time.time()
 
@@ -230,52 +243,60 @@ class TradingBot:
     # -----------------------------------------------------------
     async def execute_buy(self, price, reason, trade_params):
         """
-        매수 로직 실행.
-        1. API 호출 (asyncio.to_thread)
-        2. 상태 업데이트 (Lock)
-        3. 예외 시 즉시 sync_state_with_api (이벤트 기반 자가 치유)
+        매수 로직 실행. (집행관)
+        1. Dry-run 검사
+        2. 실제 API 호출
+        3. Shadow Balance 즉시 갱신 (딜레이 제로)
+        4. 예외 시 안전 정지(Kill Switch) 혹은 자가 치유
         """
-        try:
-            await self._wait_for_rate_limit()
-            # 실제 주문 실행 (Timeout 강제)
-            await asyncio.wait_for(
-                asyncio.to_thread(
-                    self.upbit_client.buy_market_order,
-                    self.ticker,
-                    self.state.get("balance", 0),
-                ),
-                timeout=self.upbit_client.timeout
-            )
+        is_dry_run = self.state.get("is_dry_run", False)
+        buy_amount = self.state.get("balance", 0)
 
-            # Phase 2: 중요 이벤트 → Lock 안에서 상태 업데이트 및 즉시 저장
+        # 안전 장치: 최소 주문 금액 초과 확인
+        if buy_amount < 5000:
+            logger.warning(f"{self.log_prefix} 매수 불가: 잔고 부족 ({buy_amount}원)")
+            return
+
+        try:
+            if not is_dry_run:
+                await self._wait_for_rate_limit()
+                # 실제 주문 실행 (Timeout 강제)
+                await asyncio.wait_for(
+                    asyncio.to_thread(self.upbit_client.buy_market_order, self.ticker, buy_amount),
+                    timeout=self.upbit_client.timeout
+                )
+            else:
+                await asyncio.sleep(0.01) # 모  의 지연
+
+            # Phase 2: Shadow Balance 즉시 갱신(메모리 선반영)
             async with self._lock:
+                fee_rate = 0.0005 # 업비트 기본 수수료 0.05%
+                deducted_krw = buy_amount
+                acquired_coin = (buy_amount * (1 - fee_rate)) / price
+
                 self.state.update(
                     {
                         "is_holding": True,
+                        "balance": 0.0,
+                        "coin_balance": acquired_coin,
                         "avg_buy_price": price,
-                        "target_price": trade_params.get("target_price", price * 1.05),
-                        "stop_loss": trade_params.get("stop_loss", price * 0.95),
-                        "last_reason": f"[매수] {reason}",
+                        "last_reason": f"[DRY-RUN 매수] {reason}" if is_dry_run else f"[매수] {reason}",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
 
         except Exception as e:
-            # 자가 치유: 주문 실패/타임아웃 시 실제 체결 여부 즉시 확인
-            logger.error(
-                f"{self.log_prefix} 매수 주문 오류 → 자가 치유 동기화 시도: {e}"
-            )
-            await save_log_to_db(
-                level="ERROR",
-                category="TRADE",
-                event_name="ERROR",
-                message=f"{self.log_prefix} 매수 실패 ({e}). 즉시 동기화 시도.",
-            )
+            # 방어 로직 (Kill Switch)
+            logger.error(f"{self.log_prefix} 매수 주문 치명적 오류: {e}")
+            await self._trigger_kill_switch(f"매수 실패 예외: {e}")
+            return  # 매수 실패 시 즉시 중단
+
+        # 체결 직후 동기화 (정확한 수수료/단가 보정)
+        if not is_dry_run:
             try:
                 await self.sync_state_with_api()
             except Exception:
-                pass  # 동기화도 실패하면 다음 주기에 맡김
-            return  # 매수 실패 시 로그 기록 없이 종료
+                pass
 
         # 체결 직후 동기화 (정확한 잔고 반영)
         try:
@@ -292,61 +313,60 @@ class TradingBot:
 
     async def execute_sell(self, price, reason, event_name="SELL"):
         """
-        매도 로직 실행.
-        1. API 호출 (asyncio.to_thread)
-        2. 상태 업데이트 (Lock)
-        3. 예외 시 즉시 sync_state_with_api (이벤트 기반 자가 치유)
+        매도 로직 실행. (집행관)
         """
         avg_price = self.state.get("avg_buy_price", 0)
         profit_pct = ((price - avg_price) / avg_price * 100) if avg_price > 0 else 0.0
+        is_dry_run = self.state.get("is_dry_run", False)
+        coin_balance = self.state.get("coin_balance", 0.0)
+
+        # 먼지 잔고(Dust) 무시
+        if (coin_balance * price) < 5000:
+             logger.warning(f"{self.log_prefix} 매도 불가: 잔고 부족 ({coin_balance}개)")
+             return
 
         try:
-            await self._wait_for_rate_limit()
-            # 실제 주문 실행
-            coin_balance = await asyncio.wait_for(
-                asyncio.to_thread(self.upbit_client.get_coin_balance, self.ticker),
-                timeout=self.upbit_client.timeout
-            )
-            await asyncio.wait_for(
-                asyncio.to_thread(self.upbit_client.sell_market_order, self.ticker, coin_balance),
-                timeout=self.upbit_client.timeout
-            )
+            if not is_dry_run:
+                await self._wait_for_rate_limit()
+                # 실제 주문 실행
+                # 이미 메모리에 있는 섀도우 잔고를 우선 던지고 오차는 동시성에 맡김 (0.2초 반응 속도 우선)
+                await asyncio.wait_for(
+                    asyncio.to_thread(self.upbit_client.sell_market_order, self.ticker, coin_balance),
+                    timeout=self.upbit_client.timeout
+                )
+            else:
+                await asyncio.sleep(0.01)
 
-            # Phase 2: Critical Event → Lock 안에서 상태 업데이트 및 즉시 저장
+            # Phase 2: Shadow Balance 즉시 갱신
             async with self._lock:
+                fee_rate = 0.0005
+                acquired_krw = (coin_balance * price) * (1 - fee_rate)
+
                 self.state.update(
                     {
                         "is_holding": False,
-                        "avg_buy_price": 0,
-                        "target_price": 0,
-                        "stop_loss": 0,
-                        "last_reason": f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
+                        "balance": self.state.get("balance", 0.0) + acquired_krw,
+                        "coin_balance": 0.0,
+                        "avg_buy_price": 0.0,
+                        "target_buy_price": 0.0,
+                        "target_sell_price": 0.0,
+                        "target_stop_loss": 0.0,
+                        "last_reason": f"[DRY-RUN 매도] {reason} | 수익률: {profit_pct:.2f}%" if is_dry_run else f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
 
         except Exception as e:
-            # 자가 치유: 주문 실패/타임아웃 시 실제 체결 여부 즉시 확인
-            logger.error(
-                f"{self.log_prefix} 매도 주문 오류 → 자가 치유 동기화 시도: {e}"
-            )
-            await save_log_to_db(
-                level="ERROR",
-                category="TRADE",
-                event_name="ERROR",
-                message=f"{self.log_prefix} 매도 실패 ({e}). 즉시 동기화 시도.",
-            )
+            logger.error(f"{self.log_prefix} 매도 주문 치명적 오류: {e}")
+            await self._trigger_kill_switch(f"매도 실패 예외: {e}")
+            return
+
+        # 체결 직후 정합성 동기화
+        if not is_dry_run:
             try:
                 await self.sync_state_with_api()
             except Exception:
                 pass
-            return  # 매도 실패 시 로그 기록 없이 종료
-
-        # 체결 직후 동기화
-        try:
-            await self.sync_state_with_api()
-        except Exception:
-            pass
 
         await save_log_to_db(
             level="WARNING" if event_name == "STOPLOSS" else "INFO",
@@ -356,20 +376,33 @@ class TradingBot:
         )
 
     # -----------------------------------------------------------
-    # [Main Loops] 감시 및 분석 루프
+    # [Main Loops] 감시(집행관) 및 분석(지휘관) 루프
     # -----------------------------------------------------------
+    async def _trigger_kill_switch(self, reason_msg: str):
+        """치명적 에러 발생 시 알 수 없는 포지션 진입을 막기 위한 강제 정지 장치"""
+        async with self._lock:
+            self.state["is_active"] = False
+            self.state["last_reason"] = f"[KILL-SWITCH 작동] {reason_msg}"
+            await self.save_state()
+            
+        await save_log_to_db(
+            level="ERROR",
+            category="SYSTEM",
+            event_name="KILL_SWITCH",
+            message=f"{self.log_prefix} 시스템 보호를 위해 봇이 긴급 정지되었습니다. 원인: {reason_msg}"
+        )
     async def monitor_market_loop(self):
-        """[파수꾼] 0.2초 주기: 즉각적인 매도(익절/손절) 감시. 파일 폴링 없음."""
+        """[집행관] 0.2초 주기: 즉각적인 매수/매도(익절/손절) 감시. 파일 폴링 없음."""
         while True:
             try:
                 await self.check_heartbeat()  # 하트비트 로그
 
-                # 가드 클로즈: 비활성 또는 미보유 시 스킵
-                if not self.is_active or not self.is_holding:
+                # 가드 클로즈: 비활성 시 완전히 스킵
+                if not self.is_active:
                     await asyncio.sleep(0.2)
                     continue
 
-                await self._check_market_conditions()  # 익절/손절 조건 체크 후 매도 실행
+                await self._check_market_conditions()  # 현재가 vs 목표가 감시
                 await asyncio.sleep(0.2)
             except Exception:
                 await self._log_loop_error("감시 루프", traceback.format_exc())
@@ -382,8 +415,8 @@ class TradingBot:
                     await asyncio.sleep(1)
                     continue  # 비활성 시 대기 시간은 1초
 
-                # 주기적 무결성 체크 (1시간): Drift 감지 및 자가 치유
-                if time.time() - self.last_sync_time >= 3600:
+                # 5분(300초) 주기 백그라운드 무결성 체크: Shadow Balance Drift 감지 및 자가 치유
+                if time.time() - self.last_sync_time >= 300:
                     try:
                         await self.sync_state_with_api()
                     except Exception:
@@ -392,7 +425,7 @@ class TradingBot:
                         )
 
                 await self._process_strategy_analysis()
-                await asyncio.sleep(10)  # 매수 판단은 10초 주기
+                await asyncio.sleep(10)  # 지휘관 분석 및 작전 하달은 10초 주기
             except Exception:
                 await self._log_loop_error("분석 루프", traceback.format_exc())
 
@@ -417,23 +450,28 @@ class TradingBot:
     # -----------------------------------------------------------
     async def _check_market_conditions(self):
         """
-        즉각적인 매도 조건(익절/손절) 체크 및 실행(execute_sell 호출)
-        1. 현재가 조회
-        2. 익절가 도달 시 매도
-        3. 손절가 도달 시 매도
-        4. 조건 미충족 시 종료
+        즉각적인 매수/매도 조건 체크 및 실행 (executor)
         """
         current_price = await self.loader.get_current_price()
         if not current_price:
             return  # 시세 조회 실패 시 중단
 
-        # 익절 체크
-        if current_price >= self.state["target_price"]:
-            return await self.execute_sell(current_price, "익절가 도달")
-
-        # 손절 체크
-        if self.state["stop_loss"] > 0 and current_price <= self.state["stop_loss"]:
-            await self.execute_sell(current_price, "스탑로스 도달", "STOPLOSS")
+        if self.is_holding:
+            # 매도 감시 (보유 중)
+            target_sell = self.state.get("target_sell_price", 0)
+            target_stop = self.state.get("target_stop_loss", 0)
+            
+            if target_sell > 0 and current_price >= target_sell:
+                return await self.execute_sell(current_price, "목표 익절가 도달", "SELL")
+                
+            if target_stop > 0 and current_price <= target_stop:
+                return await self.execute_sell(current_price, "목표 손절가 도달", "STOPLOSS")
+        else:
+            # 매수 감시 (미보유 중)
+            target_buy = self.state.get("target_buy_price", 0)
+            
+            if target_buy > 0 and current_price <= target_buy:
+                return await self.execute_buy(current_price, "목표 매수가 도달", {})
 
     async def _process_strategy_analysis(self):
         df = await self.loader.fetch_ohlcv()  # 최신 ohlcv 데이터 로드
@@ -446,38 +484,45 @@ class TradingBot:
 
         df_indicators = self.strategy.setup_indicators(df)
         result = self.strategy.decide(df_indicators, self.state, {})
-        current_close = df_indicators["close"].iloc[-1]
 
-        # 1. 미보유 시 → 매수 판단
-        if not self.is_holding:
-            if result["decision"] == "BUY":
-                await self.execute_buy(
-                    current_close, result["reason"], result.get("trade_params", {})
-                )
-            return
-
-        # 2. 보유 시 → 목표가 갱신 로직
-        await self._update_target_price(result.get("trade_params", {}))
+        # 분석 결과만 메모리에 갱신 (직접 매수/매도 호출 배제)
+        await self._update_target_price(result)
 
     async def _update_target_price(self, trade_params):
-        new_target = trade_params.get("target_price", self.state["target_price"])
-        if new_target == self.state["target_price"]:
+        new_buy = trade_params.get("target_buy_price", 0)
+        new_sell = trade_params.get("target_sell_price", 0)
+        new_stop = trade_params.get("target_stop_loss", 0)
+        reason = trade_params.get("reason", "")
+        
+        # 이전 값과 하나라도 다르면 업데이트 대상
+        if (new_buy == self.state.get("target_buy_price") and 
+            new_sell == self.state.get("target_sell_price") and 
+            new_stop == self.state.get("target_stop_loss")):
             return
 
-        # 스로틀링: 10초 이내 재저장 방지 (메모리는 즉시 갱신)
         async with self._lock:
-            self.state["target_price"] = new_target
+            self.state["target_buy_price"] = new_buy
+            self.state["target_sell_price"] = new_sell
+            self.state["target_stop_loss"] = new_stop
+            if reason:
+                self.state["last_reason"] = reason
 
         now = time.time()
         if now - self.last_target_save_time >= _TARGET_PRICE_SAVE_THROTTLE:
             await self.save_state()
             self.last_target_save_time = now
 
+        msg = ""
+        if self.is_holding:
+            msg = f"익절: {new_sell:,.0f} / 손절: {new_stop:,.0f}" if new_sell else "대기"
+        else:
+            msg = f"진입: {new_buy:,.0f}" if new_buy else "대기"
+
         await save_log_to_db(
             level="INFO",
             category="STRATEGY",
             event_name="DECISION",
-            message=f"{self.log_prefix} 목표가 업데이트: {new_target:,.0f}",
+            message=f"{self.log_prefix} [모드:{'보유' if self.is_holding else '현금'}] 목표가 갱신 → {msg}",
         )
 
     async def _log_command_change(self, new_active):
