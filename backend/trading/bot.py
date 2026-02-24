@@ -51,7 +51,7 @@ class TradingBot:
         self.last_sync_time = 0.0  # 마지막 API 동기화 시간
         self.last_api_call_time = 0.0  # Rate Limit 추적용
         self.last_target_save_time = 0.0  # target_price 저장 스로틀 추적
-        self.heartbeat_interval = 600  # 하트비트 간격 (초)
+        self.heartbeat_interval = 600  # heartbeat 간격 (초)
         self.last_heartbeat_time = 0  # 마지막 하트비트 시간
 
         # Persistent State는 파일 로드, Transient State는 API로 채움
