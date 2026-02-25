@@ -1,337 +1,475 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
 import { apiFetch } from "../../Lib/api";
-import { getLogs, type LogItem, type LogLevel } from "../../Lib/log.api"; // API & Types
+import { type LogItem, type LogLevel } from "../../Lib/log.api";
 
-// Local types removed (imported from api)
-// type LogLevel = 'INFO' | 'WARNING' | 'ERROR';
-// ...
+/* ───────────────────────────────────────────────────────────────
+   유틸: 날짜 포맷
+─────────────────────────────────────────────────────────────── */
+function formatDateKST(utcStr: string): string {
+  if (!utcStr) return '';
+  const safeStr = utcStr.endsWith('Z') || utcStr.includes('+') ? utcStr : `${utcStr}Z`;
+  const date = new Date(safeStr);
+  if (isNaN(date.getTime())) return utcStr;
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).format(date);
+}
 
+/* ───────────────────────────────────────────────────────────────
+   페이지네이션
+─────────────────────────────────────────────────────────────── */
 function getPageItems(page: number, total: number) {
   if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-  if (page <= 2) return [1, 2, "...", total];
-  if (page >= total - 1) return [1, "...", total - 1, total];
-  return [1, "...", page, "...", total];
+  if (page <= 2) return [1, 2, '...', total];
+  if (page >= total - 1) return [1, '...', total - 1, total];
+  return [1, '...', page, '...', total];
 }
 
-// UTC 시간을 한국 시간(KST, UTC+9)으로 보기 좋게 변환
-function formatDateKST(utcStr: string): string {
-  if (!utcStr) return "";
-  // 뒤에 Z가 표기안된 UTC 문자열이라면 Z를 붙여서 JS가 UTC로 인식하게 만듦
-  const safeStr = utcStr.endsWith("Z") || utcStr.includes("+") ? utcStr : `${utcStr}Z`;
-  const date = new Date(safeStr);
-  
-  if (isNaN(date.getTime())) return utcStr; // 파싱 실패 시 원본 문자열 반환
-
-  // 한국 시간대로 연.월.일 시간:분:초 포맷팅
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone: "Asia/Seoul",
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  };
-  return new Intl.DateTimeFormat('ko-KR', options).format(date);
-}
-
-export function PageBlock({
-  page,
-  totalPages,
-  onChange,
-}: {
-  page: number;
-  totalPages: number;
-  onChange: (p: number) => void;
+export function PageBlock({ page, totalPages, onChange }: {
+  page: number; totalPages: number; onChange: (p: number) => void;
 }) {
-  const items = getPageItems(page, totalPages);
-
   return (
     <div className="pagination">
-      <button
-        className="pageNav"
-        onClick={() => onChange(Math.max(1, page - 1))}
-        disabled={page === 1}
-      >
-        ‹
-      </button>
-
-      {items.map((it, idx) =>
-        it === "..." ? (
-          <span key={`dots-${idx}`} className="pageDots">…</span>
-        ) : (
-          <button
-            key={it}
-            className={`pageBtn ${page === it ? "active" : ""}`}
-            onClick={() => onChange(it as number)}
-          >
-            {it}
-          </button>
-        )
+      <button className="pageNav" onClick={() => onChange(Math.max(1, page - 1))} disabled={page === 1}>‹</button>
+      {getPageItems(page, totalPages).map((it, idx) =>
+        it === '...'
+          ? <span key={`d${idx}`} className="pageDots">…</span>
+          : <button key={it} className={`pageBtn ${page === it ? 'active' : ''}`} onClick={() => onChange(it as number)}>{it}</button>
       )}
-
-      <button
-        className="pageNav"
-        onClick={() => onChange(Math.min(totalPages, page + 1))}
-        disabled={page === totalPages}
-      >
-        ›
-      </button>
+      <button className="pageNav" onClick={() => onChange(Math.min(totalPages, page + 1))} disabled={page === totalPages}>›</button>
     </div>
   );
 }
 
-const Filters: Array<{ key: 'ALL' | LogLevel; label: string }> = [
-  { key: 'ALL', label: 'All Logs' },
-  { key: 'INFO', label: 'Info' },
-  { key: 'WARNING', label: 'Warning' },
-  { key: 'ERROR', label: 'Error' },
+/* ───────────────────────────────────────────────────────────────
+   상수 / 타입
+─────────────────────────────────────────────────────────────── */
+const LEVELS: LogLevel[] = ['INFO', 'WARNING', 'ERROR'];
+
+const LEVEL_COLOR: Record<LogLevel, string> = {
+  INFO:    '#2563eb',
+  WARNING: '#d97706',
+  ERROR:   '#dc2626',
+};
+
+const CATEGORIES = ['System', 'Data', 'Strategy', 'Trade'] as const;
+
+const EVENT_NAMES = [
+  'Engine_Start', 'Heartbeat', 'Error', 'Fetch_Fail',
+  'Valid_Fail', 'Decision', 'Buy', 'Sell', 'Stoploss',
+  'Command', 'Sync',
 ];
 
+type ActiveFilter =
+  | { type: 'level';     value: LogLevel }
+  | { type: 'category';  value: string }
+  | { type: 'eventname'; value: string }
+  | { type: 'date';      value: string; label: string };
+
+/* ───────────────────────────────────────────────────────────────
+   메인 컴포넌트
+─────────────────────────────────────────────────────────────── */
 const Log: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [logs, setLogs] = useState<LogItem[]>([]);
-  const [totalCount, setTotalCount] = useState(0); // 전체 로그 개수 (서버에서 받음)
-  const [query, setQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [levelFilter, setLevelFilter] = useState<'ALL' | LogLevel>('ALL');
-
-  // 검색어 디바운스 처리
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setQuery((prev) => {
-        if (prev !== searchInput) {
-          setPage(1); // 검색어가 실제로 변경되었을 때만 1페이지로
-          return searchInput;
-        }
-        return prev;
-      });
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  const pageSize = 10;
-  const [page, setPage] = useState(1);
+  /* ── 기본 상태 ── */
+  const [loading, setLoading]           = useState(true);
+  const [logs, setLogs]                 = useState<LogItem[]>([]);
+  const [totalCount, setTotalCount]     = useState(0);
   const [sseConnected, setSseConnected] = useState(false);
 
-  // 1. 로그 데이터 가져오기 (서버 사이드 페이지네이션 & 필터링)
+  /* ── 검색 ── */
+  const [searchInput, setSearchInput] = useState('');
+  const [query, setQuery]             = useState('');
+
+  /* ── 페이지 ── */
+  const pageSize = 10;
+  const [page, setPage] = useState(1);
+
+  /* ── 레벨 카운트 (사이드바 뱃지용) ── */
+  const [levelCounts, setLevelCounts] = useState<Record<LogLevel, number>>({
+    INFO: 0, WARNING: 0, ERROR: 0,
+  });
+
+  /* ── 사이드바 아코디언 열림 여부 ── */
+  const [openSections, setOpenSections] = useState({
+    level: true, category: true, date: false,
+  });
+
+  /* ── 카테고리 → 이벤트명 드릴다운 ── */
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  /* ── 활성 필터 목록 (칩) ── */
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
+
+  /* ── AND / OR 로직 ── */
+  const [filterOp, setFilterOp] = useState<'AND' | 'OR'>('AND');
+
+  /* ── 날짜 범위 ── */
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo]     = useState('');
+
+  /* ─────────────────────────────────────────────────────────────
+     검색어 디바운스
+  ───────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(prev => { if (prev !== searchInput) { setPage(1); return searchInput; } return prev; });
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  /* ─────────────────────────────────────────────────────────────
+     로그 fetch (서버 사이드 페이지네이션 + 필터)
+  ───────────────────────────────────────────────────────────── */
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // 쿼리 파라미터 구성
-      const params = new URLSearchParams();
-      params.append("page", page.toString());
-      params.append("limit", pageSize.toString());
-      if (levelFilter !== "ALL") params.append("level", levelFilter);
-      if (query.trim()) params.append("search", query.trim());
+      const p = new URLSearchParams();
+      p.append('page', page.toString());
+      p.append('limit', pageSize.toString());
 
-      const res = await apiFetch<{ items: LogItem[]; total_count: number }>(
-        `/v1/logs?${params.toString()}`
+      activeFilters.forEach(f => {
+        if (f.type === 'level')     p.append('level', f.value);
+        if (f.type === 'category')  p.append('category', f.value.toUpperCase());
+        if (f.type === 'eventname') p.append('eventname', f.value.toUpperCase());
+        if (f.type === 'date') {
+          const [from, to] = f.value.split('~');
+          if (from) p.append('date_from', from.trim());
+          if (to)   p.append('date_to', to.trim());
+        }
+      });
+      // AND 로직: 모든 필터 조건 일치 / OR 로직: 한가지라도 일치
+      if (activeFilters.length > 1) p.append('filter_op', filterOp);
+
+      if (query.trim()) p.append('search', query.trim());
+
+      const res = await apiFetch<{ items: LogItem[]; total_count: number; level_counts?: Record<LogLevel, number> }>(
+        `/v1/logs?${p.toString()}`
       );
       setLogs(res.items);
       setTotalCount(res.total_count);
+      if (res.level_counts) setLevelCounts(res.level_counts);
     } catch (e) {
-      console.error("Failed to fetch logs:", e);
-      // 에러 시 빈 배열 (목 데이터 제거)
-      setLogs([]); 
+      console.error('Failed to fetch logs:', e);
+      setLogs([]);
       setTotalCount(0);
     } finally {
       setLoading(false);
     }
   };
 
-  // 페이지, 필터, 검색어 변경 시 API 재호출
-  useEffect(() => {
-    fetchLogs();
-  }, [page, levelFilter, query]); // 의존성 배열에 파라미터들 포함
+  useEffect(() => { fetchLogs(); }, [page, activeFilters, filterOp, query]);
 
-  // 2. SSE 실시간 로그 업데이트 (EventSource 연결)
+  /* ─────────────────────────────────────────────────────────────
+     레벨 카운트만 별도로 가져오기 (필터 무관하게 항상 전체 기준)
+  ───────────────────────────────────────────────────────────── */
   useEffect(() => {
-    // 📌 SSE 엔드포인트 URL (절대 경로 사용 - 404 방지)
-    // 백엔드는 8000 포트, 프론트는 5173 포트이므로 명시적 지정 필요
-    // (Vite proxy 설정이 확실하다면 상대 경로도 가능하지만, 안전하게 절대 경로 사용)
-    const SSE_URL = 'http://localhost:8000/api/v1/logs/stream';
-    
-    let eventSource: EventSource | null = null;
+    apiFetch<{ level_counts: Record<LogLevel, number> }>('/v1/logs/counts')
+      .then(res => { if (res.level_counts) setLevelCounts(res.level_counts); })
+      .catch(() => {}); // 엔드포인트 없으면 무시
+  }, []);
 
+  /* ─────────────────────────────────────────────────────────────
+     SSE 실시간 업데이트
+  ───────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    let es: EventSource | null = null;
     try {
-      eventSource = new EventSource(SSE_URL);
-
-      eventSource.onopen = () => {
-        console.log('✅ [SSE] 실시간 로그 연결 성공');
-        setSseConnected(true);
-      };
-
-      eventSource.onmessage = (event) => {
+      es = new EventSource('http://localhost:8000/api/v1/logs/stream');
+      es.onopen = () => setSseConnected(true);
+      es.onmessage = (event) => {
         try {
           const newLog: LogItem = JSON.parse(event.data);
-          
-          // 🚨 중요: 1페이지를 보고 있고, 필터/검색어가 없을 때만 리스트에 추가
-          // (과거 페이지를 보는데 갑자기 새 로그가 끼어들면 안 됨)
-          if (page === 1 && levelFilter === 'ALL' && query === '') {
-            setLogs((prevLogs) => {
-              // 중복 방지 (혹시 몰라서)
-              if (prevLogs.some(l => l.id === newLog.id)) return prevLogs;
-              
-              // 맨 앞에 추가하고 pageSize 개수만큼만 유지 (선택사항, 일단은 그냥 추가)
-              const updated = [newLog, ...prevLogs];
-              if (updated.length > pageSize) updated.pop(); // 길어지면 뒤에꺼 자름
+          if (page === 1 && activeFilters.length === 0 && !query) {
+            setLogs(prev => {
+              if (prev.some(l => l.id === newLog.id)) return prev;
+              const updated = [newLog, ...prev];
+              if (updated.length > pageSize) updated.pop();
               return updated;
             });
-            // 전체 개수도 1 증가 (실시간 반영)
             setTotalCount(prev => prev + 1);
-          } else {
-             // 다른 페이지 보고 있을 땐 알림만? (지금은 생략)
-             console.log('📩 [SSE] 백그라운드 수신:', newLog);
+            setLevelCounts(prev => ({
+              ...prev,
+              [newLog.level]: (prev[newLog.level as LogLevel] || 0) + 1,
+            }));
           }
-          
-        } catch (error) {
-          console.error('❌ [SSE] 데이터 파싱 에러:', error);
-        }
+        } catch { /* ignore */ }
       };
+      es.onerror = () => { setSseConnected(false); es?.close(); };
+    } catch { /* ignore */ }
+    return () => { es?.close(); };
+  }, [page, activeFilters, query]);
 
-      eventSource.onerror = (error) => {
-        console.error('⚠️ [SSE] 연결 에러', error);
-        // EventSource는 자동 재연결 시도함.
-        // 연결 끊김 상태 표시를 위해 state 업데이트 가능
-        setSseConnected(false);
-        eventSource?.close(); // 에러 시 닫고 재연결 유도? 아님 브라우저에게 맡김?
-        // 보통 닫으면 재연결 안 함. 브라우저가 알아서 하도록 둠.
-      };
-    } catch (error) {
-      console.error('❌ [SSE] EventSource 생성 실패:', error);
-    }
-
-    return () => {
-      if (eventSource) {
-        console.log('🔌 [SSE] 연결 종료');
-        eventSource.close();
-      }
-    };
-  }, [page, levelFilter, query]); // 페이지/필터 상태에 따라 SSE 로직(추가 여부)이 달라져야 하므로 의존성 추가?
-  // 아니면 내부에서 state ref를 쓰거나 해야 하는데, 
-  // 심플하게: 의존성 넣으면 페이지 바뀔 때마다 연결 끊고 다시 맺음. (비효율적일 수 있음)
-  // 하지만 구현이 제일 쉬움. -> 'page === 1' 조건이 closure에 갇히지 않게 하려면 의존성 필요.
-
-  // 3. 필터 핸들러 (서버 사이드이므로 페이지 1로 리셋)
-  const handleLevelFilter = (lvl: 'ALL' | LogLevel) => {
-    setLevelFilter(lvl);
+  /* ─────────────────────────────────────────────────────────────
+     필터 추가/제거 헬퍼
+  ───────────────────────────────────────────────────────────── */
+  const addFilter = (filter: ActiveFilter) => {
+    setActiveFilters(prev => {
+      // 같은 type의 필터가 이미 있으면 교체 (단일 선택)
+      const without = prev.filter(f => f.type !== filter.type);
+      return [...without, filter];
+    });
     setPage(1);
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchInput(e.target.value);
+  const removeFilter = (type: string, value?: string) => {
+    setActiveFilters(prev => prev.filter(f => !(f.type === type && (!value || f.value === value))));
+    setPage(1);
   };
 
-  const onClearView = () => {
+  const toggleFilter = (filter: ActiveFilter) => {
+    const exists = activeFilters.find(f => f.type === filter.type && f.value === filter.value);
+    if (exists) removeFilter(filter.type, filter.value);
+    else addFilter(filter);
+  };
+
+  const isActive = (type: string, value: string) =>
+    activeFilters.some(f => f.type === type && f.value === value);
+
+  /* ─────────────────────────────────────────────────────────────
+     날짜 필터 적용
+  ───────────────────────────────────────────────────────────── */
+  const applyDateFilter = () => {
+    if (!dateFrom && !dateTo) return;
+    const label = `${dateFrom || '시작'}~${dateTo || '종료'}`;
+    addFilter({ type: 'date', value: `${dateFrom}~${dateTo}`, label });
+  };
+
+  /* ─────────────────────────────────────────────────────────────
+     아코디언 토글
+  ───────────────────────────────────────────────────────────── */
+  const toggleSection = (key: keyof typeof openSections) =>
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  /* ─────────────────────────────────────────────────────────────
+     초기화
+  ───────────────────────────────────────────────────────────── */
+  const clearAll = () => {
+    setActiveFilters([]);
     setSearchInput('');
     setQuery('');
-    setLevelFilter('ALL');
+    setDateFrom('');
+    setDateTo('');
+    setExpandedCategory(null);
     setPage(1);
   };
 
-  // 계산된 totalPages (서버에서 받은 totalCount 기반)
+  /* ─────────────────────────────────────────────────────────────
+     계산값
+  ───────────────────────────────────────────────────────────── */
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
   const startIndex = (page - 1) * pageSize + 1;
-  const endIndex = Math.min(page * pageSize, totalCount);
+  const endIndex   = Math.min(page * pageSize, totalCount);
 
+  /* ═══════════════════════════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════════════════════════════ */
   return (
     <div className="logPage">
-      {/* Top bar */}
+
+      {/* ── 상단 Topbar ─────────────────────────────────────────── */}
       <div className="logTopbar">
         <div className="brand">
-          <div className={`brandIcon ${sseConnected ? 'online' : 'offline'}`} aria-hidden title={sseConnected ? "실시간 연동됨" : "연결 끊김"} />
+          <div className={`brandIcon ${sseConnected ? 'online' : 'offline'}`}
+               title={sseConnected ? '실시간 연동됨' : '연결 끊김'} />
         </div>
-
         <div className="searchWrap">
-          <span className="searchIcon" aria-hidden>🔎</span>
+          <span className="searchIcon">🔎</span>
           <input
             className="searchInput"
             value={searchInput}
-            onChange={handleSearch}
-            placeholder="이벤트명/등급/상세내용 검색..."
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder="이벤트명 / 등급 / 상세내용 검색..."
           />
         </div>
         <div className="actions">
-          <button className="btn ghost" type="button" onClick={onClearView}>
-            🗑 Clear View
-          </button>
+          <button className="btn ghost" onClick={clearAll}>🗑 Clear View</button>
         </div>
       </div>
 
-      {/* Title*/}
+      {/* ── 제목 ─────────────────────────────────────────────────── */}
       <div className="logHeader">
-        <div>
-          <h1 className="title">시스템 활동 로그</h1>
-        </div>
+        <h1 className="title">시스템 활동 로그</h1>
       </div>
 
-      {/* Filters */}
-      <div className="filterRow">
-        {Filters.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            className={`pill ${levelFilter === f.key ? 'active' : ''}`}
-            onClick={() => handleLevelFilter(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
-      <div className="tableCard">
-        <div className="tableHead">
-          <div>날짜 및 시간</div>
-          <div>분류</div>
-          <div>이벤트명</div>
-          <div>등급</div>
-          <div>상세내용</div>
-        </div>
-
-        <div className="tableBody">
-          {loading && logs.length === 0 ? (
-            <div style={{ padding: '40px 0', display: 'flex', justifyContent: 'center' }}>
-              <Loading message="로그 데이터를 불러오는 중입니다..." />
-            </div>
-          ) : logs.map((l) => (
-            <div className="row" key={l.id}>
-              <div className="cell mono">{formatDateKST(l.timestamp)}</div>
-              <div className="cell">{l.category}</div>
-              <div className="cell">{l.eventname}</div>
-              <div className="cell level">
-                <div className={`badge ${l.level.toLowerCase()}`}>
-                  {l.level}
-                </div>
-              </div>
-              <div className="cell message">{l.message}</div>
-            </div>
+      {/* ── 활성 필터 칩 ─────────────────────────────────────────── */}
+      {activeFilters.length > 0 && (
+        <div className="activeChips">
+          <span className="activeChipsLabel">적용된 필터</span>
+          {activeFilters.map((f, i) => (
+            <span key={i} className={`activeChip chip-${f.type}`}>
+              {f.type === 'level' && <span className="chipDot" style={{ background: LEVEL_COLOR[f.value as LogLevel] }} />}
+              {f.type === 'date' ? (f as any).label : f.value.toUpperCase()}
+              <button className="chipClose" onClick={() => removeFilter(f.type, f.value)}>×</button>
+            </span>
           ))}
-          {logs.length === 0 && !loading && (
-            <div className="empty">검색/필터 결과가 없습니다.</div>
-          )}
-        </div>
-        
-        {/* 서버 사이드 페이지네이션이므로 totalPages 전달 */}
-        <PageBlock
-          page={page}
-          totalPages={totalPages}
-          onChange={setPage}
-        />
 
-        <div className="tableFooter">
-          <span className="footerText">
-             {totalCount > 0 ? `Showing ${startIndex}-${endIndex} of ${totalCount} logs` : 'No logs'}
-          </span>
+          {/* AND/OR 토글 (필터가 2개 이상일 때만 표시) */}
+          {activeFilters.length >= 2 && (
+            <div className="filterOpToggle">
+              <button
+                className={`filterOpBtn ${filterOp === 'AND' ? 'opActive' : ''}`}
+                onClick={() => setFilterOp('AND')}
+                title="모든 필터를 동시에 만족하는 로그만 표시"
+              >AND</button>
+              <button
+                className={`filterOpBtn ${filterOp === 'OR' ? 'opActive' : ''}`}
+                onClick={() => setFilterOp('OR')}
+                title="필터 중 하나라도 포함된 로그 표시"
+              >OR</button>
+            </div>
+          )}
+
+          <button className="chipClearAll" onClick={clearAll}>전체 초기화</button>
+        </div>
+      )}
+
+      {/* ── 본문: 사이드바 + 테이블 ──────────────────────────────── */}
+      <div className="logBody">
+
+        {/* ━━━━ 좌측 사이드바 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <aside className="filterSidebar">
+
+          {/* 1. Level 섹션 */}
+          <div className="accordionItem">
+            <button className="accordionHeader" onClick={() => toggleSection('level')}>
+              <span>Level</span>
+              <span className={`accordionChevron ${openSections.level ? 'open' : ''}`}>›</span>
+            </button>
+            {openSections.level && (
+              <div className="accordionBody">
+                {LEVELS.map(lvl => (
+                  <button
+                    key={lvl}
+                    className={`sidebarOption ${isActive('level', lvl) ? 'sidebarOptionActive' : ''}`}
+                    onClick={() => toggleFilter({ type: 'level', value: lvl })}
+                  >
+                    <span className="sidebarDot" style={{ background: LEVEL_COLOR[lvl] }} />
+                    <span className="sidebarLabel" style={lvl === 'ERROR' ? { color: '#dc2626', fontWeight: 700 } : {}}>
+                      {lvl}
+                    </span>
+                    <span className={`sidebarCount ${lvl === 'ERROR' ? 'countError' : ''}`}>
+                      {levelCounts[lvl] ?? 0}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Category + EventName 드릴다운 */}
+          <div className="accordionItem">
+            <button className="accordionHeader" onClick={() => toggleSection('category')}>
+              <span>Category</span>
+              <span className={`accordionChevron ${openSections.category ? 'open' : ''}`}>›</span>
+            </button>
+            {openSections.category && (
+              <div className="accordionBody">
+                {CATEGORIES.map(cat => (
+                  <div key={cat}>
+                    <div className="categoryRow">
+                      <button
+                        className={`sidebarOption catOption ${isActive('category', cat) ? 'sidebarOptionActive' : ''}`}
+                        onClick={() => toggleFilter({ type: 'category', value: cat })}
+                      >
+                        <span className="sidebarLabel">{cat.toUpperCase()}</span>
+                      </button>
+                      {/* 드릴다운 토글 화살표 */}
+                      <button
+                        className="drillToggle"
+                        onClick={() => setExpandedCategory(prev => prev === cat ? null : cat)}
+                        title="이벤트명 보기"
+                      >
+                        <span className={`accordionChevron ${expandedCategory === cat ? 'open' : ''}`}>›</span>
+                      </button>
+                    </div>
+
+                    {/* 이벤트명 서브 메뉴 */}
+                    {expandedCategory === cat && (
+                      <div className="subMenu">
+                        {EVENT_NAMES.map(ev => (
+                          <button
+                            key={ev}
+                            className={`sidebarOption subOption ${isActive('eventname', ev) ? 'sidebarOptionActive' : ''}`}
+                            onClick={() => toggleFilter({ type: 'eventname', value: ev })}
+                          >
+                            <span className="subDot">·</span>
+                            <span className="sidebarLabel">{ev.toUpperCase()}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 3. Date Range 섹션 */}
+          <div className="accordionItem">
+            <button className="accordionHeader" onClick={() => toggleSection('date')}>
+              <span>Date Range</span>
+              <span className={`accordionChevron ${openSections.date ? 'open' : ''}`}>›</span>
+            </button>
+            {openSections.date && (
+              <div className="accordionBody dateSection">
+                <label className="dateLabel">시작일</label>
+                <input type="date" className="dateInput" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+                <label className="dateLabel">종료일</label>
+                <input type="date" className="dateInput" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+                <button className="applyDateBtn" onClick={applyDateFilter}>적용</button>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ━━━━ 우측 테이블 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <div className="tableArea">
+          <div className="tableCard">
+            <div className="tableHead">
+              <div>날짜 및 시간</div>
+              <div>분류</div>
+              <div>이벤트명</div>
+              <div>등급</div>
+              <div>상세내용</div>
+            </div>
+
+            <div className="tableBody">
+              {loading && logs.length === 0 ? (
+                <div style={{ padding: '40px 0', display: 'flex', justifyContent: 'center' }}>
+                  <Loading message="로그 데이터를 불러오는 중입니다..." />
+                </div>
+              ) : logs.map(l => (
+                <div className="row" key={l.id}>
+                  <div className="cell mono">{formatDateKST(l.timestamp)}</div>
+                  <div className="cell">{l.category}</div>
+                  <div className="cell">{l.eventname}</div>
+                  <div className="cell level">
+                    <div className={`badge ${l.level.toLowerCase()}`}>{l.level}</div>
+                  </div>
+                  <div className="cell message">{l.message}</div>
+                </div>
+              ))}
+              {logs.length === 0 && !loading && (
+                <div className="empty">검색/필터 결과가 없습니다.</div>
+              )}
+            </div>
+
+            <PageBlock page={page} totalPages={totalPages} onChange={setPage} />
+
+            <div className="tableFooter">
+              <span className="footerText">
+                {totalCount > 0 ? `Showing ${startIndex}–${endIndex} of ${totalCount} logs` : 'No logs'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default Log;
