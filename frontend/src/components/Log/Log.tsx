@@ -137,14 +137,17 @@ const Log: React.FC = () => {
         if (f.type === 'eventname') p.append('eventname', f.value.toUpperCase());
         if (f.type === 'date') {
           const [from, to] = f.value.split('~');
-          if (from) p.append('date_from', from.trim());
-          if (to)   p.append('date_to', to.trim());
+          if (from) p.append('start_date', from.trim());  // 백엔드 파라미터명과 일치
+          if (to)   p.append('end_date', to.trim());
         }
       });
       // AND 로직: 모든 필터 조건 일치 / OR 로직: 한가지라도 일치
       if (activeFilters.length > 1) p.append('filter_op', filterOp);
 
       if (query.trim()) p.append('search', query.trim());
+
+      // 🔍 디버그: 실제로 날아가는 URL 확인 (개발용, 나중에 삭제)
+      console.log('[LOG FILTER] 요청 URL:', `/v1/logs?${p.toString()}`);
 
       const res = await apiFetch<{ items: LogItem[]; total_count: number; level_counts?: Record<LogLevel, number> }>(
         `/v1/logs?${p.toString()}`
@@ -207,10 +210,10 @@ const Log: React.FC = () => {
      필터 추가/제거 헬퍼
   ───────────────────────────────────────────────────────────── */
   const addFilter = (filter: ActiveFilter) => {
+    // 같은 type + value가 이미 있으면 추가 안 함 (toggleFilter가 제거 처리)
     setActiveFilters(prev => {
-      // 같은 type의 필터가 이미 있으면 교체 (단일 선택)
-      const without = prev.filter(f => f.type !== filter.type);
-      return [...without, filter];
+      if (prev.some(f => f.type === filter.type && f.value === filter.value)) return prev;
+      return [...prev, filter];
     });
     setPage(1);
   };
