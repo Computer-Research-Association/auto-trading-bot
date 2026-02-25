@@ -1,7 +1,10 @@
-from datetime import datetime, time, timezone, date
+from datetime import datetime, time, timezone, date, timedelta
 from sqlalchemy import select, func, desc, asc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domains.log.models import Log
+
+# 한국 표준시 (UTC+9) — 날짜 필터 기준
+KST = timezone(timedelta(hours=9))
 
 async def list_logs(
     db: AsyncSession,
@@ -47,11 +50,12 @@ async def list_logs(
             )
         )
     if start_date:
-        start_dt = datetime.combine(start_date, time.min).replace(tzinfo=timezone.utc)
-        fixed_filters.append(Log.timestamp >= start_dt)
+        # 사용자가 선택한 날짜는 KST 기준 → UTC로 변환해서 DB 비교
+        start_kst = datetime.combine(start_date, time.min, tzinfo=KST)
+        fixed_filters.append(Log.timestamp >= start_kst.astimezone(timezone.utc))
     if end_date:
-        end_dt = datetime.combine(end_date, time.max).replace(tzinfo=timezone.utc)
-        fixed_filters.append(Log.timestamp <= end_dt)
+        end_kst = datetime.combine(end_date, time.max, tzinfo=KST)
+        fixed_filters.append(Log.timestamp <= end_kst.astimezone(timezone.utc))
 
     # AND / OR 조합
     all_filters = []
