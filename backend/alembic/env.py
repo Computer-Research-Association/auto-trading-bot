@@ -5,8 +5,6 @@ from pathlib import Path
 from alembic import context
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
-from app.utills.models import Base
-from app.domains.coin.models import TradeHistory
 import sys
 
 
@@ -26,9 +24,11 @@ sys.path.append(str(BASE_DIR))
 load_dotenv(BASE_DIR / ".env")
 
 # 모델들을 임포트해야 SQLModel.metadata에 등록됩니다.
+from app.utills.models import Base
 from models import User
 from app.domains.portfolio.models import PortfolioSnapshot
 from app.domains.log.models import Log
+from app.domains.coin.models import TradeHistory
 
 # add your model's MetaData object here
 # for 'autogenerate' support
