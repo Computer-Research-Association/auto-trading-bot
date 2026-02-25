@@ -11,22 +11,22 @@ Period = Literal["7d", "30d", "90d", "180d"]
 class TradeHistoryQuery(BaseModel):
     period: Period = "30d"
     tx_type: TxType = "all"
-    keyword: None
+    keyword: Optional[str] = None
     page: int = 1
-    size: int = 20
+    limit: int = 20
 
 class TradeHistoryRow(BaseModel):
-    executed_at: datetime
+    timestamp: datetime
     market: str
-    tx_type: TxType
-    qty: float
-    price_krw: float
-    amount_krw: float
-    fee_krw: float = 0
-    strategy: None
+    side: str
+    volume: float
+    price: float
+    amount: float
+    fee: float = 0
+    strategy: Optional[str] = None
 
 class TradeHistoryResponse(BaseModel):
     rows: List[TradeHistoryRow] = Field(default_factory=list)
     total: int = 0
     page: int = 1
-    size: int = 20
+    limit: int = 20

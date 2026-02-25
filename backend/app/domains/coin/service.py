@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.coin import schemas
+from app.domains.coin.models import TradeHistory
 
 _PERIOD_TO_DAYS = {
     "7d": 7,
@@ -20,44 +20,54 @@ def _since_dt(period: schemas.Period) -> datetime:
 async def get_trade_history(q: schemas.TradeHistoryQuery, db: AsyncSession) -> schemas.TradeHistoryResponse:
     since = _since_dt(q.period)
 
-    stmt = select(Trade).where(Trade.executed_at >= since)
+    stmt = select(TradeHistory).where(TradeHistory.timestamp >= since)
 
-    # 타입 필터
+    # 타입 필터 (side)
     if q.tx_type != "all":
-        stmt = stmt.where(Trade.tx_type == q.tx_type)
+        stmt = stmt.where(TradeHistory.side == q.tx_type.upper())
 
-    # 검색 (market/coin)
+    # 검색 (market)
     if q.keyword:
         kw = f"%{q.keyword.strip()}%"
-        stmt = stmt.where(Trade.market.ilike(kw))
-
-    # 전략 필터
-    if q.strategy:
-        stmt = stmt.where(Trade.strategy == q.strategy)
+        stmt = stmt.where(TradeHistory.market.ilike(kw))
 
     # total
     total_stmt = select(func.count()).select_from(stmt.subquery())
     total = (await db.execute(total_stmt)).scalar_one()
 
     # paging
-    offset = (q.page - 1) * q.size
-    stmt = stmt.order_by(desc(Trade.executed_at)).offset(offset).limit(q.size)
+    offset = (q.page - 1) * q.limit
+    stmt = stmt.order_by(desc(TradeHistory.timestamp)).offset(offset).limit(q.limit)
 
     trades = (await db.execute(stmt)).scalars().all()
 
     rows = [
         schemas.TradeHistoryRow(
-            executed_at=t.executed_at,
+            timestamp=t.timestamp,
             market=t.market,
-            tx_type=t.tx_type,
-            qty=float(t.qty),
-            price_krw=float(t.price_krw),
-            amount_krw=float(t.amount_krw),
-            fee_krw=float(getattr(t, "fee_krw", 0) or 0),
-            strategy=getattr(t, "strategy", None),
+            side=t.side,
+            volume=float(t.volume),
+            price=float(t.price),
+            amount=float(t.amount),
+            fee=float(t.fee),
+            strategy=t.strategy,
         )
         for t in trades
     ]
 
-    return schemas.TradeHistoryResponse(rows=rows, total=total, page=q.page, size=q.size)
+    return schemas.TradeHistoryResponse(rows=rows, total=total, page=q.page, limit=q.limit)
+
+async def create_seed_data(db: AsyncSession):
+    new_trade = TradeHistory(
+        market="KRW-BTC",
+        side="BUY",
+        volume=0.001,
+        price=100000000.0,
+        amount=100000.0,
+        fee=50.0,
+        strategy="Test Strategy"
+    )
+    db.add(new_trade)
+    await db.commit()
+    return new_trade
 

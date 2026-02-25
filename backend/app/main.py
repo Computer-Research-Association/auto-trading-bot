@@ -66,7 +66,5 @@ async def db_test(db: AsyncSession = Depends(get_database)):
     value = result.scalar()
     return {"db": "ok", "result": value}
 
-
-
 cors_config.setup_cors(app)
 app.include_router(api_router)
