@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
-import { mockLog } from '../../mocks/mockLog';
 import { apiFetch } from "../../Lib/api";
 import { getLogs, type LogItem, type LogLevel } from "../../Lib/log.api"; // API & Types
 
