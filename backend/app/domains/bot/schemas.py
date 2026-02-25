@@ -16,3 +16,4 @@ class BotStatusResponse(BaseModel):
     last_reason: str
     timestamp: datetime
     profit_rate: float
+    sparkline_data: list[float] = []

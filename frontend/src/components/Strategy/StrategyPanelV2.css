@@ -468,119 +468,245 @@
   margin-bottom: 8px;
 }
 
-/* 🟢 상세 (Accordion) 내부 패널 디자인 (라이트 테마 / 모던 미니멀리즘) */
+/* 🟢 Premium Fintech Design for Details Panel */
 .bot-log-section,
 .bot-target-section {
   background: transparent;
-  border: none;
-  border-bottom: 1px dashed #f1f5f9; /* 카드 내부 구분선은 아주 옅게 */
-  border-radius: 0;
-  padding: 16px 4px;
+  padding: 16px 8px 8px;
   margin-bottom: 0;
-  box-shadow: none;
 }
 
-/* 첫 번째 섹션: 상세 화면 열렸을 때 상단 여백 최적화 */
 .bot-log-section {
-  padding-top: 4px;
+  padding-top: 12px;
 }
 
-/* 마지막 섹션 */
-.position-section {
-  padding: 16px 4px 4px;
-}
-
+/* Section Header (Icon + Title) */
 .section-title {
-  font-size: 12px;
-  color: #475569;
+  font-size: 14px;
+  color: #1e293b;
   margin-bottom: 12px;
-  font-weight: 700;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.3px;
+}
+
+.section-title.muted-title {
+  color: #334155;
+}
+
+.title-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: 2px;
+}
+
+/* Minimalist Icons */
+.status-dot-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.status-dot-inner {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.status-dot-inner.active {
+  background: #3b82f6;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+.bullseye-icon {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+/* Card Styles */
+.premium-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  padding: 14px 16px;
+}
+
+/* Bot Status Card */
+.status-text-content {
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-/* 로그 텍스트: pos-card 스타일을 차용하여 미려한 하얀 카드로 변경 */
-.log-text {
-  font-size: 13px;
-  color: #334155;
-  word-break: keep-all;
-  line-height: 1.5;
-  background: #ffffff;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+/* Target Area */
+.target-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.target-row {
+.target-card-full {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+.target-card-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .target-label {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center; /* 라벨과 퍼센트 수평 정렬 */
+}
+
+.target-val-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .target-val {
+  font-size: 13px;
+  color: #0f172a;
   font-weight: 700;
-  font-size: 14px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: -0.3px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  line-height: 1.4;
 }
 
-.target-val.buy { color: #0f172a; } 
-.target-val.sell { color: #ef4444; } 
-.target-val.stop { color: #3b82f6; } 
-
-.target-divider {
-  width: 1px;
-  background-color: #e2e8f0;
-  margin: 0 16px;
+.target-val.muted {
+  color: #94a3b8;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 12px;
+  display: block;
 }
 
-/* 목표가 박스 스타일: pos-card 스타일 통일 */
-.target-box {
-  background: #ffffff;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-  margin-bottom: 8px; /* 하단 여백 추가 */
+.target-percent {
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px; /* 라벨 옆 여백 확보 */
 }
 
-/* 2칸짜리 묶음 박스 (익절/손절)용 래퍼 추가 스타일링 */
-.target-flex-box {
-  background: #ffffff;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+.target-percent.positive {
+  color: #ef4444; /* Light Red for positive (KRW market convention) */
+}
+
+.target-percent.negative {
+  color: #3b82f6; /* Light Blue for negative (KRW market convention) */
+}
+
+/* Footer Watermark */
+.details-footer-watermark {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 8px 8px;
+  margin-top: 8px;
+}
+
+.watermark-lines {
+  display: flex;
+  gap: 4px;
   align-items: center;
 }
 
-.target-flex-box > .target-row {
-  flex: 1;
+.w-line-long {
+  width: 12px;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+}
+
+.w-line-dot {
+  width: 3px;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 50%;
+}
+
+.watermark-text {
+  font-size: 10px;
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 1px;
+}
+
+/* 전략 실행 섹션 (추가 요약 정보) */
+.strategy-run-section {
+  padding: 16px 4px 4px;
+}
+
+.strategy-stats-row {
+  margin-top: 4px;
+}
+
+.stat-box {
+  width: 100%;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.stat-box.blue {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b82f6;
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e40af;
+  letter-spacing: -0.5px;
 }
 
 /* 더미(준비 중) 패널 */
 .dummy-details {
-  background: #f1f5f9;
-  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
   border-radius: 10px;
-  padding: 20px;
+  padding: 32px 20px;
   text-align: center;
   color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .dummy-icon {
-  font-size: 24px;
-  margin-bottom: 8px;
-  opacity: 0.5;
+  font-size: 40px;
+  margin-bottom: 4px;
 }
 
 .dummy-title {

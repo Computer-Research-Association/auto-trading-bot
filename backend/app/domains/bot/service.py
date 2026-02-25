@@ -1,3 +1,5 @@
+import asyncio
+import pyupbit
 from trading.bot import TradingBot
 from datetime import datetime
 
@@ -16,13 +18,24 @@ class BotService:
         if not changed:
             return {"status": "already stopped", "is_active": False}
         return {"status": "bot stopped", "is_active": False}
-
     async def get_status(self) -> dict:
         # Use cached snapshot to avoid Rate Limit
         snapshot = await self.bot.get_snapshot()
         
         # 봇의 메모리에서 직접 수익률을 꺼냄 (API 호출 없이 0.2초마다 자동 갱신됨)
         profit_rate = snapshot.get("profit_rate", 0.0)
+
+        # ✨ 스파크라인용 1분봉 데이터 추가 획득 (Upbit API 호출)
+        sparkline_data = []
+        try:
+            ticker = self.bot.ticker if hasattr(self.bot, 'ticker') else "KRW-BTC"
+            # 1분봉으로 최근 20개 가져오기
+            df = await asyncio.to_thread(pyupbit.get_ohlcv, ticker, interval="minute1", count=20)
+            if df is not None and not df.empty:
+                sparkline_data = df['close'].tolist()
+        except Exception as e:
+            from core.logger import logger
+            logger.warning(f"스파크라인 데이터 조회 실패: {e}")
 
         # API 응답 포맷 매핑
         return {
@@ -39,7 +52,8 @@ class BotService:
             "target_stop_loss": snapshot.get("target_stop_loss", 0.0),
             "last_reason": snapshot.get("last_reason", ""),
             "timestamp": snapshot.get("timestamp"),
-            "profit_rate": profit_rate
+            "profit_rate": profit_rate,
+            "sparkline_data": sparkline_data
         }
 
     async def toggle_dry_run(self, enable: bool) -> dict:

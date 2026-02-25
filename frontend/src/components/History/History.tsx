@@ -41,6 +41,7 @@ const StrategyOptions = [
   { label: '이동평균선 골든크로스', value: 'Moving Average' },
   { label: 'RSI 과매도 반동', value: 'RSI Oversold' },
   { label: '볼린저 밴드 하단 터치', value: 'Bollinger band' },
+  { label: '초단타 스캘핑 V1', value: 'Scalping V1'},
 ];
 
 export default function History() {
@@ -57,7 +58,6 @@ export default function History() {
   const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [historyData, setHistoryData] = useState<History[]>(mockHistory);
-
 
   const filteredData = historyData
     // 전체/매수/매도
@@ -80,7 +80,8 @@ export default function History() {
 
     apiFetch<History[]>("/trades/history")
       .then((res: History[]) => setHistoryData(res))
-      .catch(() => {
+      .catch((e) => {
+        console.error("Failed to fetch history:", e);
         // 서버 안 되면 mock 유지
         setHistoryData(mockHistory);
       })
