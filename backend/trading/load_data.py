@@ -29,7 +29,7 @@ class DataLoader:
                         interval=self.interval,
                         count=count
                     ),
-                    timeout=5.0
+                    timeout=5.0  # Fail-Fast 전략: 5초 이상 걸리면 즉시 버리고 재시도
                 )
                 # 데이터 존재 여부 및 정합성 체크 (DataFrame 타입 가드)
                 if df is None or not isinstance(df, pd.DataFrame) or df.empty:
