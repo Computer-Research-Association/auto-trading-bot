@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_db
+from core.deps import get_database
 from app.domains.coin import schemas, service
 
 router = APIRouter(tags=["coin"])
@@ -12,7 +12,7 @@ async def list_trades(
     period: schemas.Period = Query("30d"),
     tx_type: schemas.TxType = Query("all"),
     keyword: str = Query(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_database)
 ):
     q = schemas.TradeHistoryQuery(
         page=page,
@@ -24,7 +24,7 @@ async def list_trades(
     return await service.get_trade_history(q, db)
 
 @router.post("/trades/test-seed")
-async def seed_trade(db: AsyncSession = Depends(get_db)):
+async def seed_trade(db: AsyncSession = Depends(get_database)):
     """테스트용 데이터 1건 생성 (나중에 삭제 예정)"""
     trade = await service.create_seed_data(db)
     return {"status": "success", "id": trade.id}
