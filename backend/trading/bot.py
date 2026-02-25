@@ -290,7 +290,7 @@ class TradingBot:
                         "balance": 0.0,
                         "coin_balance": acquired_coin,
                         "avg_buy_price": price,
-                        "last_reason": f"[DRY-RUN 매수] {reason}" if is_dry_run else f"[매수] {reason}",
+                        "last_reason": f"[DRY-RUN 매수] {reason} | 체결금액: {deducted_krw:,.0f}원" if is_dry_run else f"[매수] {reason} | 체결금액: {deducted_krw:,.0f}원",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
@@ -353,6 +353,10 @@ class TradingBot:
                 fee_rate = 0.0005
                 acquired_krw = (coin_balance * price) * (1 - fee_rate)
 
+                # 대략적인 손익금(KRW) 계산 (매도 회수금 - 매수 원금)
+                invested_krw = coin_balance * avg_price
+                pnl_amount = acquired_krw - invested_krw
+
                 self.state.update(
                     {
                         "is_holding": False,
@@ -362,7 +366,7 @@ class TradingBot:
                         "target_buy_price": 0.0,
                         "target_sell_price": 0.0,
                         "target_stop_loss": 0.0,
-                        "last_reason": f"[DRY-RUN 매도] {reason} | 수익률: {profit_pct:.2f}%" if is_dry_run else f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
+                        "last_reason": f"[DRY-RUN 매도] {reason} | 손익: {pnl_amount:,.0f}원 ({profit_pct:.2f}%)" if is_dry_run else f"[매도] {reason} | 손익: {pnl_amount:,.0f}원 ({profit_pct:.2f}%)",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
