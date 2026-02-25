@@ -24,21 +24,39 @@ async def list_logs(
     stmt = select(Log)
     count_stmt = select(func.count()).select_from(Log)
 
-    # ① 주요 필터 (AND/OR 로직 대상)
-    # 같은 타입 내 여러 값 → 항상 IN() (OR)
-    # 서로 다른 타입 간 → filter_op 에 따라 AND / OR
-    main_filters = []
-    if level:
-        vals = [v.upper() for v in level]
-        main_filters.append(Log.level.in_(vals))
-    if category:
-        vals = [v.upper() for v in category]
-        main_filters.append(Log.category.in_(vals))
-    if eventname:
-        vals = [v.upper() for v in eventname]
-        main_filters.append(Log.event_name.in_(vals))
+    # ① 주요 필터 — filter_op에 따라 다르게 조합
+    #
+    # AND 모드 (기본): 선택한 값마다 별도의 WHERE 조건 추가
+    #   → category=SYSTEM AND category=DATA 는 불가능 → 0건 (정상)
+    #   → category=SYSTEM AND event_name=SYNC → SYSTEM이면서 SYNC인 것
+    #
+    # OR 모드: 모든 선택값을 하나의 OR 조건으로 묶음
+    #   → category=SYSTEM OR category=DATA OR event_name=SYNC → 하나라도 해당되면 표시
+    #
+    all_values = []  # OR 모드용: (컬럼, 값) 쌍 목록
+    main_filters = []  # AND 모드용: 각 조건
 
-    # ② 고정 필터 (검색어·날짜 → 항상 AND)
+    for lvl in (level or []):
+        v = lvl.upper()
+        if filter_op == "OR":
+            all_values.append(Log.level == v)
+        else:
+            main_filters.append(Log.level == v)
+
+    for cat in (category or []):
+        v = cat.upper()
+        if filter_op == "OR":
+            all_values.append(Log.category == v)
+        else:
+            main_filters.append(Log.category == v)
+
+    for ev in (eventname or []):
+        v = ev.upper()
+        if filter_op == "OR":
+            all_values.append(Log.event_name == v)
+        else:
+            main_filters.append(Log.event_name == v)
+
     fixed_filters = []
     if search:
         fixed_filters.append(
@@ -57,13 +75,12 @@ async def list_logs(
         end_kst = datetime.combine(end_date, time.max, tzinfo=KST)
         fixed_filters.append(Log.timestamp <= end_kst.astimezone(timezone.utc))
 
-    # AND / OR 조합
+    # 최종 조합
     all_filters = []
-    if main_filters:
-        if filter_op == "OR" and len(main_filters) > 1:
-            all_filters.append(or_(*main_filters))   # 타입 간 OR
-        else:
-            all_filters.extend(main_filters)         # 타입 간 AND (각각 where)
+    if filter_op == "OR" and all_values:
+        all_filters.append(or_(*all_values))   # 하나라도 맞으면 표시
+    elif main_filters:
+        all_filters.extend(main_filters)       # 모두 AND (같은 타입 2개 → 0건)
     all_filters.extend(fixed_filters)
 
     if all_filters:
