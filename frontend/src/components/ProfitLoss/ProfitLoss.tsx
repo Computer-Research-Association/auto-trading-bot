@@ -38,6 +38,8 @@ export default function Performance() {
   const [data, setData] = useState<PerfResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  // 실시간 패치가 1회 이상 완료돼야 차트를 보여줌 → summary API와 realtime fetch간 색상 불일치 깜빡임 방지
+  const [realtimeReady, setRealtimeReady] = useState<boolean>(false);
 
   // 1. 초기 데이터 로드 (기존 로직 유지)
   useEffect(() => {
@@ -142,6 +144,10 @@ export default function Performance() {
             };
           });
         })
+        .then(() => {
+          // 첫 번째 실시간 패치가 완료됐을 때만 차트를 표시 허용
+          setRealtimeReady(true);
+        })
         .catch(console.error); // 에러 무시 (다음 틱에 재시도)
     };
 
@@ -170,6 +176,10 @@ export default function Performance() {
         ? (today_change_krw / yesterday.assets_krw) * 100 
         : 0;
     }
+  } else if (daily.length === 1 && summary) {
+    // 요약 정보만 있거나 하루 데이터만 있을 때 오늘의 변동분 계산을 pnl 통일
+    today_change_krw = summary.pnl_krw ?? 0;
+    today_change_rate = summary.pnl_rate ?? 0;
   }
 
   const pnlPositive = (summary?.pnl_krw ?? 0) >= 0;
@@ -182,7 +192,8 @@ export default function Performance() {
   ];
 
   if (err) return <div className="main-panel">에러: {err}</div>;
-  if (loading || !data) return <Loading />;
+  // summary 로딩 완료 + 실시간 패치 1회 완료 둘 다 충족해야 차트를 그림
+  if (loading || !data || !realtimeReady) return <Loading />;
 
   const gradientOffset = () => {
     if (!Array.isArray(chart) || chart.length === 0) return 0;
@@ -309,8 +320,7 @@ export default function Performance() {
               stroke={pnlPositive ? "#ef4444" : "#3b82f6"}
               strokeWidth={2}
               fill="url(#splitColor)"
-              isAnimationActive={true}
-              animationDuration={0.0001}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
