@@ -26,11 +26,7 @@ async def get_logs(
     end_date: date | None = Query(None, description="YYYY-MM-DD"),
     db: AsyncSession = Depends(get_database),
 ):
-    """
-    ✅ 과거 로그 조회(페이지네이션)
-    - 프론트에서 페이지 처음 열 때 과거 로그 로드용
-    - SSE는 '실시간'만 담당하고, 히스토리는 이 API가 담당
-    """
+
     items, total_count = await service.list_logs(
         db,
         page=page,
@@ -46,11 +42,6 @@ async def get_logs(
 
 @router.get("/stream")
 async def stream_logs(request: Request):
-    """
-    ✅ 진짜 실시간 SSE (DB polling 제거)
-    - bot.py/save_log_to_db에서 event_bus.publish(payload) 하면
-      여기서 즉시 받아 프론트로 push
-    """
 
     async def event_generator():
         # 클라이언트별 구독 큐 생성
