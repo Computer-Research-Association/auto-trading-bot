@@ -24,10 +24,25 @@ export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"return" | "winRate">("return");
+  const [sortBy, setSortBy] = useState<"return">("return");
   
   const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
+  const [totalTrades, setTotalTrades] = useState<number>(0);
+
+  // 📊 총 체결 횟수: 실거래 내역(sell)에서 카운트
+  useEffect(() => {
+    const fetchTotalTrades = async () => {
+      try {
+        const res = await apiFetch<any>("/trades/history?period=180d&tx_type=sell&size=1000");
+        // total 필드가 있으면 그걸 사용, 없으면 rows 배열 길이로 계산
+        setTotalTrades(res?.total ?? res?.rows?.length ?? 0);
+      } catch (err) {
+        console.error("총 체결 횟수 조회 실패", err);
+      }
+    };
+    fetchTotalTrades();
+  }, []);
 
   // 🟢 봇 상태 SSE (Server-Sent Events) 최적화로 대체
   useEffect(() => {
@@ -91,28 +106,33 @@ export default function StrategyPanelV2() {
       return;
     }
 
+    const isCurrentlyRunning = runningIds.has(id);
+
+    // 1️⃣ [낙관적 업데이트] 통신 전에 일단 React 화면(Toggle)부터 즉시 뒤집어 줌
+    setRunningIds((prev) => {
+      const next = new Set(prev);
+      isCurrentlyRunning ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+    // 2️⃣ [백그라운드 통신] 서버에 명령을 하달함
     try {
-      const isCurrentlyRunning = runningIds.has(id);
       if (isCurrentlyRunning) {
         // 백엔드 중지 API 호출
         await apiPost("/bot/stop");
-        setRunningIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
       } else {
         // 백엔드 가동 API 호출
         await apiPost("/bot/start");
-        setRunningIds((prev) => {
-          const next = new Set(prev);
-          next.add(id);
-          return next;
-        });
       }
     } catch (err) {
+      // 3️⃣ [롤백 처리] 서버에서 에러가 났다면, 조용히 아까 바꿨던 토글을 원상복구시켜줌
       console.error("Failed to toggle bot strategy:", err);
-      alert("봇 설정 변경에 실패했습니다. 서버를 확인해주세요.");
+      alert("봇 상태 변경 실패. 롤백합니다.");
+      setRunningIds((prev) => {
+        const next = new Set(prev);
+        isCurrentlyRunning ? next.add(id) : next.delete(id); // 다시 반대로 돌리기
+        return next;
+      });
     }
   };
 
@@ -135,7 +155,6 @@ export default function StrategyPanelV2() {
   const sortedStrategies = useMemo(() => {
     return [...strategies].sort((a, b) => {
       if (sortBy === "return") return b.rateOfReturn - a.rateOfReturn;
-      if (sortBy === "winRate") return b.winRate - a.winRate;
       return 0;
     });
   }, [strategies, sortBy]);
@@ -164,10 +183,6 @@ export default function StrategyPanelV2() {
             className={`sort-btn ${sortBy === "return" ? "active" : ""}`}
             onClick={() => setSortBy("return")}
           >수익률순</button>
-          <button 
-            className={`sort-btn ${sortBy === "winRate" ? "active" : ""}`}
-            onClick={() => setSortBy("winRate")}
-          >승률순</button>
         </div>
       </div>
 
@@ -179,9 +194,8 @@ export default function StrategyPanelV2() {
           // 🔥 진짜 백엔드 데이터 연동 (RSI BB 코어 한정)
           let displayPnl = s.rateOfReturn;
           if (s.id === "rsi_bb_core") {
-            // 백엔드가 살아있다면 백엔드의 실행 상태와 서비스단의 수익률을 최우선으로 사용
+            // 백엔드가 살아있다면 서비스단의 수익률을 최우선으로 사용
             if (botLog) {
-              isRunning = botLog.is_active;
               // 백엔드의 profit_rate (미보유 시 0.0)
               displayPnl = Number(botLog.profit_rate?.toFixed(2) || 0);
             } else {
@@ -305,14 +319,21 @@ export default function StrategyPanelV2() {
                         </div>
                       </div>
 
-
+                      <div className="strategy-run-section">
+                        <div className="strategy-stats-row">
+                          <div className="stat-box blue">
+                            <span className="stat-label">총 체결 횟수</span>
+                            <span className="stat-value">{totalTrades}회</span>
+                          </div>
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <div className="dummy-details">
-                      <div className="dummy-icon">🚧</div>
+                      <div className="dummy-icon">🛠️</div>
                       <div className="dummy-title">
                         이 전략 모듈은 현재 백엔드(서버)에 플러그인되지 않아 <br/>
-                        <span style={{color: "#ef4444"}}>준비 중</span>입니다.
+                        <span style={{color: "#EF4444"}}>준비 중</span>입니다.
                       </div>
                       <div className="dummy-desc">{s.descriptionDetail}</div>
                     </div>

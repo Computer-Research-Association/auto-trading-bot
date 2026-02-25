@@ -5,7 +5,4 @@ export type Strategy = {
     desc: string;
     tags: string[];
     rateOfReturn: number;
-    winRate: number;
-    mdd: number;
-    performanceScore: number;
 };
