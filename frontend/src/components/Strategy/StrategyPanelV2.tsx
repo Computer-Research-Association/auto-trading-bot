@@ -191,6 +191,18 @@ export default function StrategyPanelV2() {
           let isRunning = runningIds.has(s.id);
           const isExpanded = expandedId === s.id;
           
+          // 🔥 보조 계산 로직 (목표 익절/손절 퍼센트)
+          let estProfitPct = 0;
+          let estLossPct = 0;
+          if (botLog && botLog.target_buy_price && botLog.target_buy_price > 0) {
+            if (botLog.target_sell_price && botLog.target_sell_price > botLog.target_buy_price) {
+              estProfitPct = ((botLog.target_sell_price - botLog.target_buy_price) / botLog.target_buy_price) * 100;
+            }
+            if (botLog.target_stop_loss && botLog.target_stop_loss > 0 && botLog.target_stop_loss < botLog.target_buy_price) {
+              estLossPct = ((botLog.target_stop_loss - botLog.target_buy_price) / botLog.target_buy_price) * 100;
+            }
+          }
+
           // 🔥 진짜 백엔드 데이터 연동 (RSI BB 코어 한정)
           let displayPnl = s.rateOfReturn;
           if (s.id === "rsi_bb_core") {
@@ -281,40 +293,67 @@ export default function StrategyPanelV2() {
                   {!isDisabled ? (
                     <>
                       <div className="bot-log-section">
-                        <div className="section-title">🤖 현재 봇 상태</div>
-                        <div className="log-text">
-                          {botLog?.last_reason ? `> ${botLog.last_reason}` : "> 상태 기록 대기 중..."}
+                        <div className="section-title">
+                          <div className="status-dot-icon">
+                            <div className={`status-dot-inner ${isRunning ? 'active' : ''}`}></div>
+                          </div>
+                          현재 봇 상태
+                        </div>
+                        <div className="premium-card">
+                          <div className="status-text-content">
+                            <span style={{color: '#94a3b8', marginRight: '4px'}}>&gt;</span> 
+                            {botLog?.last_reason ? botLog.last_reason : "대기 중..."}
+                          </div>
                         </div>
                       </div>
 
                       <div className="bot-target-section">
-                        <div className="section-title">🎯 작전 목표 (Target)</div>
-                        
-                        <div className="target-row target-box mb-2">
-                          <span className="target-label">다음 진입 목표가:</span>
-                          <span className="target-val buy">
-                            {botLog?.target_buy_price && botLog.target_buy_price > 0 
-                              ? `${Math.floor(botLog.target_buy_price).toLocaleString()}원` 
-                              : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - RSI 미충족)</span>}
-                          </span>
+                        <div className="section-title muted-title">
+                          <svg className="bullseye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <circle cx="12" cy="12" r="1"></circle>
+                          </svg>
+                          작전 목표 <span className="title-sub">TARGET</span>
                         </div>
-                        <div className="target-flex-box">
-                          <div className="target-row">
-                            <span className="target-label">목표 익절가:</span>
-                            <span className="target-val sell">
+                        
+                        <div className="premium-card target-card-full mb-2">
+                          <span className="target-label">다음 진입 목표가</span>
+                          {botLog?.target_buy_price && botLog.target_buy_price > 0 
+                            ? <span className="target-val">{Math.floor(botLog.target_buy_price).toLocaleString()} 원</span>
+                            : botLog?.profit_rate !== undefined && botLog?.profit_rate !== 0
+                              ? <span className="target-val" style={{color: '#3b82f6'}}>현재 코인 등락 감시 중... (보유 중)</span>
+                              : <span className="target-val muted">(대기 - RSI 미충족)</span>}
+                        </div>
+
+                        <div className="target-grid">
+                          <div className="premium-card target-card-col">
+                            <span className="target-label">
+                              목표 익절가
+                              {estProfitPct > 0 && <span className="target-percent positive">(+{estProfitPct.toFixed(2)}%)</span>}
+                            </span>
+                            <div className="target-val-wrapper">
+                              <div className="status-dot-icon" style={{width: 10, height: 10, marginTop: 4, background: 'transparent'}}><div className="status-dot-inner" style={{width: 5, height: 5}}></div></div>
                               {botLog?.target_sell_price && botLog.target_sell_price > 0 
-                                ? `${Math.floor(botLog.target_sell_price).toLocaleString()}` 
-                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
-                            </span>
+                                ? <span className="target-val">
+                                    {Math.floor(botLog.target_sell_price).toLocaleString()}
+                                  </span>
+                                : <span className="target-val muted">대기 -<br/>분석 중</span>}
+                            </div>
                           </div>
-                          <div className="target-divider"></div>
-                          <div className="target-row">
-                            <span className="target-label">목표 손절가:</span>
-                            <span className="target-val stop">
-                              {botLog?.target_stop_loss && botLog.target_stop_loss > 0 
-                                ? `${Math.floor(botLog.target_stop_loss).toLocaleString()}` 
-                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
+                          <div className="premium-card target-card-col">
+                            <span className="target-label">
+                              목표 손절가
+                              {estLossPct < 0 && <span className="target-percent negative">({estLossPct.toFixed(2)}%)</span>}
                             </span>
+                            <div className="target-val-wrapper">
+                              <div className="status-dot-icon" style={{width: 10, height: 10, marginTop: 4, background: 'transparent'}}><div className="status-dot-inner" style={{width: 5, height: 5}}></div></div>
+                              {botLog?.target_stop_loss && botLog.target_stop_loss > 0 
+                                ? <span className="target-val">
+                                    {Math.floor(botLog.target_stop_loss).toLocaleString()}
+                                  </span>
+                                : <span className="target-val muted">대기 -<br/>분석 중</span>}
+                            </div>
                           </div>
                         </div>
                       </div>
