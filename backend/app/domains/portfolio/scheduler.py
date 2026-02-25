@@ -124,7 +124,8 @@ def start_snapshot_scheduler():
             id="save_portfolio_snapshot",
             replace_existing=True,
             coalesce=True,
-            max_instances=1
+            max_instances=1,
+            misfire_grace_time=10  # 10초 허용
         )
         
         scheduler.start()
