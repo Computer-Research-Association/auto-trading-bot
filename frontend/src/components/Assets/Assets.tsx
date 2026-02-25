@@ -119,7 +119,7 @@ export default function Assets() {
     };
 
     fetchAssets(); // 초기 실행
-    const interval = setInterval(fetchAssets, 1000); // 1초마다 갱신 (Polling)
+    const interval = setInterval(fetchAssets, 3000); // 3초마다 갱신 (Polling)
     return () => clearInterval(interval);
   }, []);
 
