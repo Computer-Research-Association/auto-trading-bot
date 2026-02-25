@@ -205,11 +205,18 @@ export default function StrategyPanelV2() {
 
           // 🔥 진짜 백엔드 데이터 연동 (RSI BB 코어 한정)
           let displayPnl = s.rateOfReturn;
+          let chartData = s.sparklineData; // 기본값은 목업 데이터
+          
           if (s.id === "rsi_bb_core") {
             // 백엔드가 살아있다면 서비스단의 수익률을 최우선으로 사용
             if (botLog) {
               // 백엔드의 profit_rate (미보유 시 0.0)
               displayPnl = Number(botLog.profit_rate?.toFixed(2) || 0);
+
+              // 백엔드에서 sparkline_data 배열을 줬다면 그걸로 차트 렌더링
+              if (botLog.sparkline_data && Array.isArray(botLog.sparkline_data) && botLog.sparkline_data.length > 0) {
+                chartData = botLog.sparkline_data.map((val: number) => ({ value: val }));
+              }
             } else {
               displayPnl = 0.00;
             }
@@ -265,7 +272,7 @@ export default function StrategyPanelV2() {
               {/* Sparkline (Mini Chart) - 보여주기용 */}
               <div className="card-sparkline">
                 <ResponsiveContainer width="100%" height={35}>
-                  <AreaChart data={s.sparklineData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
                     <defs>
                       <linearGradient id={`grad-${s.id}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity={0.3} />
@@ -280,7 +287,7 @@ export default function StrategyPanelV2() {
                       strokeWidth={2}
                       isAnimationActive={true}
                       animationDuration={1500}
-                      dot={(props) => <CustomDot {...props} isPositive={isPositive} payload={s.sparklineData} />}
+                      dot={(props) => <CustomDot {...props} isPositive={isPositive} payload={chartData} />}
                     />
                     <YAxis domain={['dataMin', 'dataMax']} hide />
                   </AreaChart>
