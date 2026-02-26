@@ -78,8 +78,26 @@ export default function History() {
   useEffect(() => {
     setLoading(true);
 
-    apiFetch<History[]>("/trades/history")
-      .then((res: History[]) => setHistoryData(res))
+    apiFetch<any>("http://127.0.0.1:8000/api/coin/trades")
+      .then((res: any) => {
+        // 백엔드 응답은 { rows: [...], total: ... } 형태입니다.
+        const rows = res?.rows || [];
+        
+        // 프론트엔드 History 인터페이스에 맞게 데이터 매핑
+        const mappedData: History[] = rows.map((item: any, idx: number) => ({
+          id: idx, // 백엔드에 id가 없으면 임시 부여
+          DateTime: item.timestamp ? new Date(item.timestamp).toLocaleString() : '-',
+          CoinName: item.market || 'Unknown',
+          Type: item.side && (item.side.toLowerCase() === 'bid' || item.side.toLowerCase() === 'buy') ? 'Buy' : 'Sell',
+          TVolume: item.volume || 0,
+          TUnitPrice: item.price || 0,
+          TAmount: item.amount || 0,
+          TCharge: item.fee || 0,
+          Strategy: item.strategy || 'All Strategy'
+        }));
+        
+        setHistoryData(mappedData);
+      })
       .catch((e) => {
         console.error("Failed to fetch history:", e);
         // 서버 안 되면 mock 유지
