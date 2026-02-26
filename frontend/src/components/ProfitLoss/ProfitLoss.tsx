@@ -83,65 +83,68 @@ export default function Performance() {
           setData((prev) => {
             if (!prev) return prev;
 
-            const baseAssets = prev.summary.start_assets_krw || 1.0;
-            const newPnlKrw = res.summary.total_assets_krw - prev.summary.start_assets_krw;
-            const newPnlRate = (newPnlKrw / baseAssets) * 100;
+            const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
+            if (!todayStr) return prev;
 
-            // KPI 업데이트
+            // 전날 자산: today 행이 이미 있으면 2번째 마지막 행, 없으면 마지막 행
+            const currentDaily = prev.daily;
+            const lastRow = currentDaily[currentDaily.length - 1];
+            const isToday = lastRow?.date === todayStr;
+            const yesterdayRow = isToday
+              ? currentDaily[currentDaily.length - 2]
+              : lastRow;
+            const yesterdayAssets =
+              yesterdayRow?.assets_krw ?? prev.summary.start_assets_krw ?? 1;
+
+            // 오늘 pnl = 현재 자산 - 전날 자산
+            const newPnlKrw  = res.summary.total_assets_krw - yesterdayAssets;
+            const newPnlRate = yesterdayAssets !== 0
+              ? (newPnlKrw / yesterdayAssets) * 100
+              : 0;
+
+            // 누적 pnl (KPI 카드 및 차트용)
+            const baseAssets = prev.summary.start_assets_krw || 1.0;
+            const cumPnlKrw  = res.summary.total_assets_krw - baseAssets;
+            const cumPnlRate = (cumPnlKrw / baseAssets) * 100;
+
             const newSummary = {
               ...prev.summary,
               end_assets_krw: res.summary.total_assets_krw,
-              pnl_krw: newPnlKrw,
-              pnl_rate: newPnlRate,
+              pnl_krw: cumPnlKrw,
+              pnl_rate: cumPnlRate,
             };
 
-            // 차트 마지막 데이터 갱신 (오늘 날짜 데이터가 있으면 갱신, 없으면 추가)
-            const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
-            if (!todayStr) return prev; // 날짜 없으면 무시
-
+            // 차트: 누적 pnl 포인트 갱신
             const newPoint = {
+              date: todayStr,
+              assets_krw: res.summary.total_assets_krw,
+              pnl_krw: cumPnlKrw,
+              pnl_rate: cumPnlRate,
+            };
+            const newChart = [...prev.chart];
+            const lastChartIdx = newChart.length - 1;
+            if (lastChartIdx >= 0 && newChart[lastChartIdx]!.date === todayStr) {
+              newChart[lastChartIdx] = newPoint;
+            } else {
+              newChart.push(newPoint);
+            }
+
+            // 테이블: 전날 대비 일별 pnl 갱신
+            const dailyPoint = {
               date: todayStr,
               assets_krw: res.summary.total_assets_krw,
               pnl_krw: newPnlKrw,
               pnl_rate: newPnlRate,
             };
-
-            const newChart = [...prev.chart];
-            const lastIdx = newChart.length - 1;
-
-            if (lastIdx >= 0 && newChart[lastIdx]!.date === todayStr) {
-              // 오늘 데이터가 이미 있으면 갱신 (실시간 움직임 효과)
-              newChart[lastIdx] = newPoint;
-            } else {
-              // 없으면 추가
-              newChart.push(newPoint);
-            }
-
-            // 일별 데이터(daily) 마지막 행 갱신 (금일 변동 및 일별 목록 반영용)
             const newDaily = [...prev.daily];
             const lastDailyIdx = newDaily.length - 1;
             if (lastDailyIdx >= 0 && newDaily[lastDailyIdx]!.date === todayStr) {
-              newDaily[lastDailyIdx] = {
-                date: todayStr,
-                assets_krw: res.summary.total_assets_krw,
-                pnl_krw: newPnlKrw,
-                pnl_rate: newPnlRate,
-              };
+              newDaily[lastDailyIdx] = dailyPoint;
             } else {
-              newDaily.push({
-                date: todayStr,
-                assets_krw: res.summary.total_assets_krw,
-                pnl_krw: newPnlKrw,
-                pnl_rate: newPnlRate,
-              });
+              newDaily.push(dailyPoint);
             }
 
-            return {
-              ...prev,
-              summary: newSummary,
-              chart: newChart,
-              daily: newDaily,
-            };
+            return { ...prev, summary: newSummary, chart: newChart, daily: newDaily };
           });
         })
         .then(() => {

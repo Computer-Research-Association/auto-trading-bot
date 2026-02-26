@@ -94,16 +94,18 @@ async def get_daily_table(q: PerformanceQuery, db: AsyncSession) -> PerformanceD
 
     rows: List[PerformanceDailyRow] = []
 
-    if not snaps:
-        return PerformanceDailyResponse(rows=rows)
-
-    start_assets = _snap_assets(snaps[0]) or 1.0
-
-    for s in snaps:
+    for i, s in enumerate(snaps):
         d = _snap_date(s)
         assets = _snap_assets(s)
-        pnl = assets - start_assets
-        pnl_rate = (pnl / start_assets) if start_assets != 0 else 0.0
+
+        # 일별 변동: 전날 대비 (uccab날은 0)
+        if i == 0:
+            pnl = 0.0
+            pnl_rate = 0.0
+        else:
+            prev_assets = _snap_assets(snaps[i - 1])
+            pnl = assets - prev_assets
+            pnl_rate = (pnl / prev_assets) if prev_assets != 0 else 0.0
 
         rows.append(
             PerformanceDailyRow(
@@ -121,8 +123,8 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
     if q.start_date and q.end_date and q.start_date > q.end_date:
         raise HTTPException(status_code=400, detail="start_date must be <= end_date")
 
-    snaps = await performance_repository.get_daily_snapshots(db=db, 
-    start=q.start_date, 
+    snaps = await performance_repository.get_daily_snapshots(db=db,
+    start=q.start_date,
     end=q.end_date)
     if not snaps:
         raise HTTPException(status_code=404, detail="No snapshots found for given date range")
@@ -134,20 +136,27 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
     end_assets = 0.0
 
     if snaps:
-        # 시작 자산/종료 자산 계산
         start_assets = _snap_assets(snaps[0])
         end_assets = _snap_assets(snaps[-1])
-
-        # 기준 자산 (0으로 나누기 방지)
         base_assets = start_assets if start_assets != 0 else 1.0
 
-        for s in snaps:
+        for i, s in enumerate(snaps):
             d = _snap_date(s)
             val = _snap_assets(s)
-            pnl = val - base_assets
-            pnl_rate = (pnl / base_assets) if base_assets != 0 else 0.0
 
-            # 차트용 포인트 생성
+            # 차트: 기간 첫날 대비 누적 손익
+            cum_pnl = val - base_assets
+            cum_pnl_rate = (cum_pnl / base_assets) if base_assets != 0 else 0.0
+
+            # 테이블: 전날 대비 일별 변동
+            if i == 0:
+                daily_pnl = 0.0
+                daily_rate = 0.0
+            else:
+                prev_val = _snap_assets(snaps[i - 1])
+                daily_pnl = val - prev_val
+                daily_rate = (daily_pnl / prev_val) if prev_val != 0 else 0.0
+
             if hasattr(d, "date"):
                 d = d.date()
 
@@ -155,20 +164,18 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
                 PerformancePoint(
                     date=d,
                     assets_krw=float(val),
-                    pnl_krw=float(pnl),
-                    pnl_rate=float(pnl_rate),
+                    pnl_krw=float(cum_pnl),
+                    pnl_rate=float(cum_pnl_rate),
                 )
             )
 
-            # 일별 데이터 행 생성
             rows.append(PerformanceDailyRow(
                 date=d,
                 assets_krw=float(val),
-                pnl_krw=float(pnl),
-                pnl_rate=float(pnl_rate)
+                pnl_krw=float(daily_pnl),
+                pnl_rate=float(daily_rate),
             ))
 
-    # 2. 요약 정보 생성
     pnl_total = end_assets - start_assets
     pnl_rate_total = (pnl_total / start_assets) if start_assets != 0 else 0.0
 
@@ -180,7 +187,6 @@ async def get_all_performance(db: AsyncSession, q: PerformanceQuery) -> Performa
         pnl_rate=float(pnl_rate_total)
     )
 
-    # 3. 통합 응답 반환
     return PerformanceResponse(
         summary=summary,
         chart=points,
