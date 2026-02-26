@@ -4,5 +4,5 @@
     "target_buy_price": 0.0,
     "target_sell_price": 0.0,
     "target_stop_loss": 0.0,
-    "last_reason": "테스트 시작"
+    "last_reason": "관망: 조건 미충족 (RSI 48.85)"
 }
