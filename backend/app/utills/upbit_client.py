@@ -97,6 +97,44 @@ class UpbitClient:
         formatted_volume = f"{volume:.8f}"
         return self.upbit.sell_market_order(ticker, formatted_volume)
 
+    def get_order_info(self, order_uuid: str):
+        """주문 상세 정보 조회 (체결 내역 포함)"""
+        return self.upbit.get_order(order_uuid)
+
+    def get_completed_orders(self, ticker: str = None):
+        """완료된 주문(done/cancel) 목록 조회"""
+        if ticker:
+            return self.upbit.get_order(ticker, state="done")
+            
+        import requests
+        url = "https://api.upbit.com/v1/orders"
+        all_orders = []
+        try:
+            for page in range(1, 11): # 최대 10페이지(1000개) 조회
+                query = {
+                    'states[]': ['done', 'cancel'],
+                    'order_by': 'desc',
+                    'limit': 100,
+                    'page': page
+                }
+                headers = self.upbit._request_headers(query)
+                res = requests.get(url, params=query, headers=headers)
+                res.raise_for_status()
+                data = res.json()
+                if isinstance(data, dict) and "error" in data:
+                    print(f"[UpbitClient] get_completed_orders error: {data}")
+                    break
+                
+                all_orders.extend(data)
+                
+                if len(data) < 100:
+                    break
+                    
+            return all_orders
+        except Exception as e:
+            print(f"[UpbitClient] get_completed_orders exception: {e}")
+            return all_orders
+
     # 정밀 유틸리티 메서드. 
 
     @staticmethod

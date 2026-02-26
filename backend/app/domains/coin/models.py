@@ -20,12 +20,10 @@ class TradeHistory(Base):
 
     market: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     side: Mapped[str] = mapped_column(String(10), nullable=False)  # BUY / SELL
-
     volume: Mapped[float] = mapped_column(Float, nullable=False)
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     fee: Mapped[float] = mapped_column(Float, nullable=False)
-
     strategy: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     __table_args__ = (

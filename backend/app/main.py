@@ -12,6 +12,7 @@ from core.deps import get_database
 from core.database import AsyncSessionLocal
 from core.logger import logger, setup_logging
 from app.domains.portfolio.scheduler import start_snapshot_scheduler, stop_snapshot_scheduler
+from app.domains.coin.scheduler import start_trade_sync_scheduler, stop_trade_sync_scheduler
 from trading.bot import TradingBot
 
 @asynccontextmanager
@@ -21,6 +22,9 @@ async def lifespan(app: FastAPI):
 
     # Snapshot 스케줄러 시작
     start_snapshot_scheduler()
+
+    # Trade Sync 스케줄러 시작
+    start_trade_sync_scheduler()
 
     # 봇 인스턴스 생성 및 백그라운드 태스크 시작
     bot = TradingBot()
@@ -56,6 +60,9 @@ async def lifespan(app: FastAPI):
 
     # Snapshot 스케줄러 종료
     stop_snapshot_scheduler()
+
+    # Trade Sync 스케줄러 종료
+    stop_trade_sync_scheduler()
     logger.info("lifespan stopped")
 
 app = FastAPI(lifespan=lifespan)

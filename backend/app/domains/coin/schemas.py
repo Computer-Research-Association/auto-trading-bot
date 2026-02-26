@@ -25,8 +25,14 @@ class TradeHistoryRow(BaseModel):
     fee: float = 0
     strategy: Optional[str] = None
 
+    class Config:
+        from_attributes = True
+
 class TradeHistoryResponse(BaseModel):
     rows: List[TradeHistoryRow] = Field(default_factory=list)
     total: int = 0
     page: int = 1
     limit: int = 20
+
+    class Config:
+        from_attributes = True
