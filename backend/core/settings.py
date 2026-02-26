@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     SNAPSHOT_CRON_MINUTE: int = 59
     SNAPSHOT_TIMEZONE: str = "Asia/Seoul"
 
+    # Log Retention 설정
+    LOG_RETENTION_DAYS: int = int(os.getenv("LOG_RETENTION_DAYS", "30"))
+    LOG_RETENTION_DAYS_SHORT: int = int(os.getenv("LOG_RETENTION_DAYS_SHORT", "7"))
+    LOG_MAX_COUNT: int = int(os.getenv("LOG_MAX_COUNT", "200000"))
+    LOG_CLEANUP_CRON_HOUR: int = int(os.getenv("LOG_CLEANUP_CRON_HOUR", "0"))
+    LOG_CLEANUP_CRON_MINUTE: int = int(os.getenv("LOG_CLEANUP_CRON_MINUTE", "0"))
+
     # 환경 변수 설정
     model_config = SettingsConfigDict(
         env_file=str(ENV_PATH) if ENV_PATH.exists() else ".env",

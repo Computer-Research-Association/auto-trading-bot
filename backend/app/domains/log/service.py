@@ -1,7 +1,8 @@
 from datetime import datetime, time, timezone, date, timedelta
-from sqlalchemy import select, func, desc, asc, or_, and_
+from sqlalchemy import select, func, desc, asc, or_, and_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domains.log.models import Log
+from core.settings import settings
 
 # 한국 표준시 (UTC+9) — 날짜 필터 기준
 KST = timezone(timedelta(hours=9))
@@ -91,3 +92,54 @@ async def get_new_logs(db: AsyncSession, last_id: int):
     stmt = select(Log).where(Log.id > last_id).order_by(asc(Log.id))
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def delete_old_logs(db: AsyncSession):
+    """
+    오래된 로그 자동 삭제
+    1. 단기 삭제 (HEARTBEAT, SYNC 등): LOG_RETENTION_DAYS_SHORT 경과 시
+    2. 일반 삭제: LOG_RETENTION_DAYS 경과 시
+    3. 개수 제한 삭제: 전체 합계가 LOG_MAX_COUNT 초과 시 오래된 로그부터
+    """
+    try:
+        now_utc = datetime.now(timezone.utc)
+        
+        # 1. 단기 삭제
+        cutoff_short = now_utc - timedelta(days=settings.LOG_RETENTION_DAYS_SHORT)
+        stmt_short = delete(Log).where(
+            Log.event_name.in_(["HEARTBEAT", "SYNC"]),
+            Log.timestamp < cutoff_short
+        )
+        await db.execute(stmt_short)
+        
+        # 2. 일반 삭제
+        cutoff_normal = now_utc - timedelta(days=settings.LOG_RETENTION_DAYS)
+        stmt_normal = delete(Log).where(Log.timestamp < cutoff_normal)
+        await db.execute(stmt_normal)
+        
+        # 변경사항 반영 (이후 count 정확성을 위해)
+        await db.commit()
+        
+        # 3. 개수 제한 삭제
+        count_stmt = select(func.count(Log.id))
+        total_count = (await db.execute(count_stmt)).scalar() or 0
+        
+        if total_count > settings.LOG_MAX_COUNT:
+            # 유지할 로그 중 가장 오래된 로그(MAX_COUNT번째)의 ID 탐색
+            cutoff_id_stmt = (
+                select(Log.id)
+                .order_by(desc(Log.timestamp), desc(Log.id))
+                .offset(settings.LOG_MAX_COUNT - 1)
+                .limit(1)
+            )
+            cutoff_id_result = await db.execute(cutoff_id_stmt)
+            cutoff_id = cutoff_id_result.scalar()
+            
+            if cutoff_id is not None:
+                # 해당 ID보다 작은(오래된) 행 초과분 일괄 삭제
+                stmt_excess = delete(Log).where(Log.id < cutoff_id)
+                await db.execute(stmt_excess)
+                await db.commit()
+                
+    except Exception as e:
+        await db.rollback()
+        raise e

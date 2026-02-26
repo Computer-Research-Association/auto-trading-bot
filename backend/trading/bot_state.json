@@ -1,0 +1,8 @@
+{
+    "is_active": false,
+    "is_dry_run": true,
+    "target_buy_price": 0.0,
+    "target_sell_price": 0.0,
+    "target_stop_loss": 0.0,
+    "last_reason": ""
+}
