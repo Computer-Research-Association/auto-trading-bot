@@ -10,28 +10,45 @@
 
 /* ... 나머지 스타일 ... */
 
-/* 상단 헤더 (Gold Bar) */
+/* 상단 헤더 (Clean White & Navy Theme) */
+/* 상단 헤더 (Soft Glassmorphism & Gold Theme) */
 .top-nav {
-  height: 64px;
-  background: linear-gradient(135deg, #d4af37 0%, #f7e28b 50%, #d4af37 100%);
-  color: #3e3002;
+  height: 72px;
+  /* 기존 회색 배경(#f0f3f7)과 자연스럽게 어우러지는 반투명 글래스 효과 */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #5c4d08;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  padding: 0 40px;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.08); /* 아주 은은한 골드 그림자 */
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2); /* 얇은 골드 경계선 */
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-weight: 800;
-  font-size: 22px;
+  font-size: 26px; 
   letter-spacing: -0.5px;
   text-transform: uppercase;
-  color: #5c4d08;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  /* 골드바 이름에 걸맞게 빛나는 골드 톤으로 변경 */
+  background: linear-gradient(135deg, #dfa91b 0%, #f7d75a 50%, #d4980a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 2px rgba(212, 175, 55, 0.2);
+}
+
+.logo-icon {
+  width: 38px;
+  height: 38px;
 }
 
 .nav-right {
@@ -42,28 +59,33 @@
 
 .nav-time {
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
-  color: #5c4d08;
+  color: #8b7322;
+  background: rgba(212, 175, 55, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
 .nav-small {
   background: #ffffff;
-  border: 1px solid #c9a44a;
+  border: 1px solid #d4af37;
   color: #5c4d08;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 24px;
+  border-radius: 24px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
 }
 
 .nav-small:hover {
   background: #fffdf5;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #cda434;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
 }
 
 /* 전체 컨텐츠 래퍼 */
@@ -91,30 +113,55 @@ svg:focus {
   box-shadow: none !important;
 }
 
-/* 탭바 스타일 */
+/* 탭바 스타일 (Premium Glass/Solid blend) */
 .sub-tab-bar {
   width: 100%;
-  background: #f3f4f6;
-  padding: 10px 80px;
+  background: #ffffff;
+  padding: 0 80px;
   display: flex;
   gap: 40px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
 .sub-tab {
   background: transparent;
   border: none;
-  font-size: 15px;
-  color: #6b7280;
-  padding-bottom: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #64748b;
+  padding: 20px 8px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.sub-tab:hover {
+  color: #1e293b;
 }
 
 .sub-tab.active {
   color: #d29810;
-  border-bottom-color: #d29810;
-  font-weight: 600;
+  font-weight: 700;
+}
+
+/* Sleek animated underline for active sub-tab */
+.sub-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #d4af37, #f7e28b);
+  border-radius: 3px 3px 0 0;
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: center;
+}
+
+.sub-tab.active::after {
+  transform: scaleX(1);
 }
 
 /* 메인 그리드 레이아웃 */
