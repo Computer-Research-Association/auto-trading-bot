@@ -38,26 +38,29 @@ const typeOptions = [
 
 const StrategyOptions = [
   { label: '전체 전략', value: 'All Strategy' },
-  { label: '이동평균선 골든크로스', value: 'Moving Average' },
-  { label: 'RSI 과매도 반동', value: 'RSI Oversold' },
+  { label: 'RSI 과매도 반등', value: 'RSI Oversold' },
+  { label: 'RSI BB 매매 전략', value: 'RSI BB 매매 전략' },
   { label: '볼린저 밴드 하단 터치', value: 'Bollinger band' },
   { label: '초단타 스캘핑 V1', value: 'Scalping V1'},
 ];
 
 export default function History() {
-  const [period, setPeriod] =
-    useState<Period>('1 MONTH');
-
-  const [HistoryType, setHistory] =
-    useState<HistoryType>('All');
-
-  const [Strategy, setStrategy] =
-    useState<Strategy>('All Strategy');
+  const [period, setPeriod] = useState<Period>('1 MONTH');
+  const [HistoryType, setHistoryType] = useState<HistoryType>('All');
+  const [Strategy, setStrategy] = useState<string>('All Strategy');
 
   const [loading, setLoading] = useState(false);
   const [isStrategyOpen, setIsStrategyOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [historyData, setHistoryData] = useState<History[]>(mockHistory);
+
+  // 백엔드에서 온 동적 전략이 있다면 기존 전략 목록과 합칩니다.
+  const dynamicStrategyOptions = [
+    ...StrategyOptions,
+    ...Array.from(new Set(historyData.map(item => item.Strategy)))
+      .filter(s => s && !StrategyOptions.some(opt => opt.value === s))
+      .map(s => ({ label: s, value: s }))
+  ];
 
   const filteredData = historyData
     // 전체/매수/매도
@@ -84,23 +87,30 @@ export default function History() {
         const rows = res?.rows || [];
         
         // 프론트엔드 History 인터페이스에 맞게 데이터 매핑
-        const mappedData: History[] = rows.map((item: any, idx: number) => ({
-          id: idx, // 백엔드에 id가 없으면 임시 부여
-          DateTime: item.timestamp ? new Date(item.timestamp).toLocaleString() : '-',
-          CoinName: item.market || 'Unknown',
-          Type: item.side && (item.side.toLowerCase() === 'bid' || item.side.toLowerCase() === 'buy') ? 'Buy' : 'Sell',
-          TVolume: item.volume || 0,
-          TUnitPrice: item.price || 0,
-          TAmount: item.amount || 0,
-          TCharge: item.fee || 0,
-          Strategy: item.strategy || 'All Strategy'
-        }));
+        const mappedData: History[] = rows.map((item: any, idx: number) => {
+          let mappedStrategy = item.strategy || 'Unknown Strategy';
+          // (요청 반영) 모든 수동 매매나 기본 디폴트값을 RSI BB 매매 전략으로 눈속임 맵핑
+          if (mappedStrategy === 'Upbit Sync' || mappedStrategy === '수동 매매 (업비트)') {
+            mappedStrategy = 'RSI BB 매매 전략';
+          }
+          
+          return {
+            id: idx,
+            DateTime: item.timestamp ? new Date(item.timestamp).toLocaleString() : '-',
+            CoinName: item.market || 'Unknown',
+            Type: item.side && (item.side.toLowerCase() === 'bid' || item.side.toLowerCase() === 'buy') ? 'Buy' : 'Sell',
+            TVolume: item.volume || 0,
+            TUnitPrice: item.price || 0,
+            TAmount: item.amount || 0,
+            TCharge: item.fee || 0,
+            Strategy: mappedStrategy
+          };
+        });
         
         setHistoryData(mappedData);
       })
       .catch((e) => {
         console.error("Failed to fetch history:", e);
-        // 서버 안 되면 mock 유지
         setHistoryData(mockHistory);
       })
       .finally(() => setLoading(false));
@@ -130,10 +140,9 @@ export default function History() {
             <button
               key={opt.value}
               className={`filter-btn ${HistoryType === opt.value ? 'active' : ''}`}
-              onClick={() => setHistory(opt.value as HistoryType)}>
+              onClick={() => setHistoryType(opt.value as HistoryType)}>
               {opt.label}
             </button>
-
           ))}
         </div>
 
@@ -147,12 +156,12 @@ export default function History() {
 
           {isStrategyOpen && (
             <div className="strategy-dropdown">
-              {StrategyOptions.map(opt => (
+              {dynamicStrategyOptions.map(opt => (
                 <div
                   key={opt.value}
                   className={`strategy-option ${Strategy === opt.value ? 'active' : ''}`}
                   onClick={() => {
-                    setStrategy(opt.value as Strategy);
+                    setStrategy(opt.value as string);
                     setIsStrategyOpen(false);
                   }}
                 >
@@ -186,6 +195,7 @@ export default function History() {
                 <th className="col-date">체결시간</th>
                 <th className="col-coin">코인</th>
                 <th className="col-type">종류</th>
+                <th className="col-right">거래전략</th>
                 <th className="col-right">거래수량</th>
                 <th className="col-right">거래단가</th>
                 <th className="col-right">거래금액</th>
@@ -196,7 +206,7 @@ export default function History() {
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px' }}>
                     거래 내역이 없습니다.
                   </td>
                 </tr>
@@ -210,7 +220,7 @@ export default function History() {
                         {item.Type === 'Buy' ? '매수' : '매도'}
                       </span>
                     </td>
-
+                    <td className="col-right">{item.Strategy}</td>
                     <td className="col-right">{item.TVolume}</td>
                     <td className="col-right">{formatKRW(item.TUnitPrice)}</td>
                     <td className="col-right">{formatKRW(item.TAmount)}</td>

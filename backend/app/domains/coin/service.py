@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, func, desc, and_
+from sqlalchemy import select, func, desc, and_, between
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.domains.log.models import Log
 
 from app.domains.coin.models import TradeHistory
 from app.domains.coin import schemas
@@ -210,6 +211,34 @@ async def sync_trade_history(db: AsyncSession):
                     continue
                 ######################################################################
 
+                # 5.5 전략 추론 (최근 1분 내에 봇이 이 마켓/사이드로 로그를 남겼는지 확인)
+                log_check_start = fill_time - timedelta(minutes=1)
+                log_check_end = fill_time + timedelta(minutes=1)
+                
+                # 봇의 전략 로그 검색
+                log_stmt = select(Log).where(
+                    and_(
+                        Log.category == "TRADE",
+                        Log.timestamp >= log_check_start,
+                        Log.timestamp <= log_check_end,
+                        Log.message.ilike(f"%{market}%")
+                    )
+                ).order_by(desc(Log.timestamp)).limit(1)
+                
+                log_result = await db.execute(log_stmt)
+                bot_log = log_result.scalars().first()
+                
+                derived_strategy = "수동 매매 (업비트)"
+                if bot_log:
+                    if "RSI_BB" in bot_log.message:
+                        derived_strategy = "RSI 과매도 반동"
+                    elif "Moving Average" in bot_log.message:
+                        derived_strategy = "이동평균선 골든크로스"
+                    elif "Scalping" in bot_log.message:
+                        derived_strategy = "초단타 스캘핑 V1"
+                    else:
+                        derived_strategy = "기본 자동매매"
+
                 # 6. DB 저장
                 new_trade = TradeHistory(
                     market=market,
@@ -219,7 +248,7 @@ async def sync_trade_history(db: AsyncSession):
                     amount=amount,
                     fee=fill_fee,
                     timestamp=fill_time,
-                    strategy="Upbit Sync"
+                    strategy=derived_strategy
                 )
 
                 db.add(new_trade)
