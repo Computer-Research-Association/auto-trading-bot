@@ -57,26 +57,34 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
 };
 
 const CATEGORIES = ['System', 'Data', 'Strategy', 'Trade'] as const;
+type CategoryType = typeof CATEGORIES[number];
 
-const EVENT_NAMES = [
-  'Engine_Start', 'Heartbeat', 'Error', 'Fetch_Fail',
-  'Valid_Fail', 'Decision', 'Buy', 'Sell', 'Stoploss',
-  'Command', 'Sync',
-];
+const CATEGORY_EVENTS: Record<CategoryType, string[]> = {
+  System: ['Engine_Start', 'Heartbeat', 'Command', 'Sync', 'Error', 'Kill_Switch', 'Snapshot_Saved', 'Snapshot_Failed', 'Log_Cleanup_Success', 'Log_Cleanup_Failed'],
+  Data: ['Fetch_Fail', 'Valid_Fail', 'Type_Error'],
+  Strategy: ['Decision'],
+  Trade: ['Buy', 'Sell', 'Stoploss']
+};
 
-// 사이드바 이벤트명 호버 시 뜨는 툴팅 설명
+// 사이드바 이벤트명 호버 시 뜨는 툴팁 설명
 const EVENT_DESC: Record<string, string> = {
   Engine_Start: '봇 가동 시작 및 설정 정보',
   Heartbeat:    '주기적 생존 신고 및 요약 상태',
   Error:        '시스템 내부 치명적 예외',
   Fetch_Fail:   'API 통신 실패 및 재시도',
   Valid_Fail:   '데이터 개수 부족 또는 규격 미달',
-  Decision:     '10초 주기 매매 판단 (RSI 등 수치 포함)',
+  Decision:     '주기적 매매 판단 (RSI 등 수치 및 목표가 갱신 포함)',
   Buy:          '매수 체결 성공 정보',
   Sell:         '매도 체결 성공 및 수익률',
   Stoploss:     '스탑로스 도달 경고 및 긴급 매도 원인',
   Command:      '외부 명령 수신 이벤트',
   Sync:         '상태 동기화 및 데이터 갱신',
+  Kill_Switch:  '시스템 보호를 위한 봇의 긴급 정지',
+  Snapshot_Saved: '포트폴리오 스냅샷 백업 성공',
+  Snapshot_Failed: '포트폴리오 스냅샷 백업 실패',
+  Log_Cleanup_Success: '스케줄러에 의한 오래된 로그 정리 완료',
+  Log_Cleanup_Failed: '오래된 로그 자동 삭제 중 오류',
+  Type_Error:   '데이터 타입 파싱 실패 혹은 계산 오류'
 };
 
 type ActiveFilter =
@@ -388,7 +396,7 @@ const Log: React.FC = () => {
                     {/* 이벤트명 서브 메뉴 */}
                     {expandedCategory === cat && (
                       <div className="subMenu">
-                        {EVENT_NAMES.map(ev => (
+                        {CATEGORY_EVENTS[cat as CategoryType].map((ev: string) => (
                           <button
                             key={ev}
                             className={`sidebarOption subOption ${isActive('eventname', ev) ? 'sidebarOptionActive' : ''}`}
