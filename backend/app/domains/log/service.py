@@ -23,30 +23,7 @@ async def list_logs(
 
     stmt = select(Log)
     count_stmt = select(func.count()).select_from(Log)
-
-    # ① 주요 필터 — filter_op 에 따라 동작이 완전히 다름
-    #
-    # ┌─ AND 모드 (기본) ────────────────────────────────────────────────────────┐
-    # │ 선택한 값마다 독립적인 WHERE 조건을 추가하여 AND로 연결                      │
-    # │                                                                          │
-    # │ 예시 (AND)                                                               │
-    # │  • Buy + Sell  → WHERE event_name='BUY' AND event_name='SELL'           │
-    # │                   → 한 행이 두 값을 동시에 가질 수 없으므로 → 0건          │
-    # │  • System + Data → WHERE category='SYSTEM' AND category='DATA' → 0건    │
-    # │  • INFO + Buy    → WHERE level='INFO' AND event_name='BUY'              │
-    # │                   → INFO 레벨이면서 Buy 이벤트인 것만 표시                 │
-    # └──────────────────────────────────────────────────────────────────────────┘
-    #
-    # ┌─ OR 모드 ────────────────────────────────────────────────────────────────┐
-    # │ 모든 선택값을 하나의 OR 조건으로 묶음                                        │
-    # │                                                                          │
-    # │ 예시 (OR)                                                                │
-    # │  • Buy + Sell  → WHERE event_name='BUY' OR event_name='SELL'            │
-    # │                   → Buy이거나 Sell인 로그 모두 표시                        │
-    # │  • System + INFO → WHERE category='SYSTEM' OR level='INFO'              │
-    # │                   → 둘 중 하나라도 해당하면 표시                           │
-    # └──────────────────────────────────────────────────────────────────────────┘
-
+    
     or_values: list = []    # OR 모드용: 모든 조건을 하나의 OR로
     and_filters: list = []  # AND 모드용: 각 조건을 별도 WHERE로
 
