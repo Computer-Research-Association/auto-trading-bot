@@ -64,6 +64,21 @@ const EVENT_NAMES = [
   'Command', 'Sync',
 ];
 
+// 사이드바 이벤트명 호버 시 뜨는 툴팅 설명
+const EVENT_DESC: Record<string, string> = {
+  Engine_Start: '봇 가동 시작 및 설정 정보',
+  Heartbeat:    '주기적 생존 신고 및 요약 상태',
+  Error:        '시스템 내부 치명적 예외',
+  Fetch_Fail:   'API 통신 실패 및 재시도',
+  Valid_Fail:   '데이터 개수 부족 또는 규격 미달',
+  Decision:     '10초 주기 매매 판단 (RSI 등 수치 포함)',
+  Buy:          '매수 체결 성공 정보',
+  Sell:         '매도 체결 성공 및 수익률',
+  Stoploss:     '스탑로스 도달 경고 및 긴급 매도 원인',
+  Command:      '외부 명령 수신 이벤트',
+  Sync:         '상태 동기화 및 데이터 갱신',
+};
+
 type ActiveFilter =
   | { type: 'level';     value: LogLevel }
   | { type: 'category';  value: string }
@@ -378,6 +393,7 @@ const Log: React.FC = () => {
                             key={ev}
                             className={`sidebarOption subOption ${isActive('eventname', ev) ? 'sidebarOptionActive' : ''}`}
                             onClick={() => toggleFilter({ type: 'eventname', value: ev })}
+                            title={EVENT_DESC[ev]}
                           >
                             <span className="subDot">·</span>
                             <span className="sidebarLabel">{ev.toUpperCase()}</span>
