@@ -30,18 +30,29 @@ export default function StrategyPanelV2() {
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
   const [totalTrades, setTotalTrades] = useState<number>(0);
 
-  // 📊 총 체결 횟수: 실거래 내역(sell)에서 카운트
+  // 📊 총 체결 횟수: 마운트 시 초기값 조회 + Log SSE로 실시간 반영
   useEffect(() => {
-    const fetchTotalTrades = async () => {
+    // ① 최초 누적 카운트 1회 조회
+    apiFetch<{ items: any[]; total_count: number }>(
+      "/v1/logs?eventname=BUY&eventname=SELL&filter_op=OR&limit=1"
+    )
+      .then(res => setTotalTrades(res?.total_count ?? 0))
+      .catch(() => setTotalTrades(0));
+
+    // ② Log SSE 구독 — BUY / SELL 이벤트 수신 시마다 +1
+    const es = new EventSource("http://localhost:8000/api/v1/logs/stream");
+    es.onmessage = (event) => {
       try {
-        const res = await apiFetch<any>("/trades/history?period=180d&tx_type=sell&size=1000");
-        // total 필드가 있으면 그걸 사용, 없으면 rows 배열 길이로 계산
-        setTotalTrades(res?.total ?? res?.rows?.length ?? 0);
-      } catch (err) {
-        console.error("총 체결 횟수 조회 실패", err);
-      }
+        const log = JSON.parse(event.data);
+        const name = (log?.eventname ?? log?.event_name ?? "").toUpperCase();
+        if (name === "BUY" || name === "SELL") {
+          setTotalTrades(prev => prev + 1);
+        }
+      } catch { /* ignore */ }
     };
-    fetchTotalTrades();
+    es.onerror = () => es.close();
+
+    return () => es.close(); // 언마운트 시 구독 해제
   }, []);
 
   // 🟢 봇 상태 SSE (Server-Sent Events) 최적화로 대체

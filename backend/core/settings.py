@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     DB_NAME: str
     
     # Snapshot 스케줄 설정
-    SNAPSHOT_CRON_HOUR: int = 10
-    SNAPSHOT_CRON_MINUTE: int = 40
+    SNAPSHOT_CRON_HOUR: int = 23
+    SNAPSHOT_CRON_MINUTE: int = 59
     SNAPSHOT_TIMEZONE: str = "Asia/Seoul"
 
     # 환경 변수 설정
