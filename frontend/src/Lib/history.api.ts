@@ -15,6 +15,15 @@ export interface History {
     Strategy: Strategy;
 }
 
+// 여기
+
+export interface HistoryResponse {
+    rows: History[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
 export async function getHistory(): Promise<History[]> {
     // 로그 기반 엔드포인트: /api/trades/history (apiClient에 base URL이 있으므로 /trades/history)
     const { data } = await api.get<History[]>('/trades/history');
