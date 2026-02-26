@@ -24,38 +24,52 @@ async def list_logs(
     stmt = select(Log)
     count_stmt = select(func.count()).select_from(Log)
 
-    # ① 주요 필터 — filter_op에 따라 다르게 조합
+    # ① 주요 필터 — filter_op 에 따라 동작이 완전히 다름
     #
-    # AND 모드 (기본): 선택한 값마다 별도의 WHERE 조건 추가
-    #   → category=SYSTEM AND category=DATA 는 불가능 → 0건 (정상)
-    #   → category=SYSTEM AND event_name=SYNC → SYSTEM이면서 SYNC인 것
+    # ┌─ AND 모드 (기본) ────────────────────────────────────────────────────────┐
+    # │ 선택한 값마다 독립적인 WHERE 조건을 추가하여 AND로 연결                      │
+    # │                                                                          │
+    # │ 예시 (AND)                                                               │
+    # │  • Buy + Sell  → WHERE event_name='BUY' AND event_name='SELL'           │
+    # │                   → 한 행이 두 값을 동시에 가질 수 없으므로 → 0건          │
+    # │  • System + Data → WHERE category='SYSTEM' AND category='DATA' → 0건    │
+    # │  • INFO + Buy    → WHERE level='INFO' AND event_name='BUY'              │
+    # │                   → INFO 레벨이면서 Buy 이벤트인 것만 표시                 │
+    # └──────────────────────────────────────────────────────────────────────────┘
     #
-    # OR 모드: 모든 선택값을 하나의 OR 조건으로 묶음
-    #   → category=SYSTEM OR category=DATA OR event_name=SYNC → 하나라도 해당되면 표시
-    #
-    all_values = []  # OR 모드용: (컬럼, 값) 쌍 목록
-    main_filters = []  # AND 모드용: 각 조건
+    # ┌─ OR 모드 ────────────────────────────────────────────────────────────────┐
+    # │ 모든 선택값을 하나의 OR 조건으로 묶음                                        │
+    # │                                                                          │
+    # │ 예시 (OR)                                                                │
+    # │  • Buy + Sell  → WHERE event_name='BUY' OR event_name='SELL'            │
+    # │                   → Buy이거나 Sell인 로그 모두 표시                        │
+    # │  • System + INFO → WHERE category='SYSTEM' OR level='INFO'              │
+    # │                   → 둘 중 하나라도 해당하면 표시                           │
+    # └──────────────────────────────────────────────────────────────────────────┘
+
+    or_values: list = []    # OR 모드용: 모든 조건을 하나의 OR로
+    and_filters: list = []  # AND 모드용: 각 조건을 별도 WHERE로
 
     for lvl in (level or []):
         v = lvl.upper()
         if filter_op == "OR":
-            all_values.append(Log.level == v)
+            or_values.append(Log.level == v)
         else:
-            main_filters.append(Log.level == v)
+            and_filters.append(Log.level == v)
 
     for cat in (category or []):
         v = cat.upper()
         if filter_op == "OR":
-            all_values.append(Log.category == v)
+            or_values.append(Log.category == v)
         else:
-            main_filters.append(Log.category == v)
+            and_filters.append(Log.category == v)
 
     for ev in (eventname or []):
         v = ev.upper()
         if filter_op == "OR":
-            all_values.append(Log.event_name == v)
+            or_values.append(Log.event_name == v)
         else:
-            main_filters.append(Log.event_name == v)
+            and_filters.append(Log.event_name == v)
 
     fixed_filters = []
     if search:
@@ -76,11 +90,11 @@ async def list_logs(
         fixed_filters.append(Log.timestamp <= end_kst.astimezone(timezone.utc))
 
     # 최종 조합
-    all_filters = []
-    if filter_op == "OR" and all_values:
-        all_filters.append(or_(*all_values))   # 하나라도 맞으면 표시
-    elif main_filters:
-        all_filters.extend(main_filters)       # 모두 AND (같은 타입 2개 → 0건)
+    all_filters: list = []
+    if filter_op == "OR" and or_values:
+        all_filters.append(or_(*or_values))  # 하나라도 맞으면 표시
+    elif and_filters:
+        all_filters.extend(and_filters)      # 모두 AND (같은 타입 여러 값 → 불가 → 0건)
     all_filters.extend(fixed_filters)
 
     if all_filters:

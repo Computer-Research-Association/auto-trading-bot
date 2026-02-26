@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Log.css';
 import Loading from '../Common/Loading';
 import { apiFetch } from "../../Lib/api";
@@ -88,11 +88,6 @@ const Log: React.FC = () => {
   const pageSize = 10;
   const [page, setPage] = useState(1);
 
-  /* ── 레벨 카운트 (사이드바 뱃지용) ── */
-  const [levelCounts, setLevelCounts] = useState<Record<LogLevel, number>>({
-    INFO: 0, WARNING: 0, ERROR: 0,
-  });
-
   /* ── 사이드바 아코디언 열림 여부 ── */
   const [openSections, setOpenSections] = useState({
     level: true, category: true, date: false,
@@ -137,24 +132,22 @@ const Log: React.FC = () => {
         if (f.type === 'eventname') p.append('eventname', f.value.toUpperCase());
         if (f.type === 'date') {
           const [from, to] = f.value.split('~');
-          if (from) p.append('start_date', from.trim());  // 백엔드 파라미터명과 일치
+          if (from) p.append('start_date', from.trim());
           if (to)   p.append('end_date', to.trim());
         }
       });
-      // AND 로직: 모든 필터 조건 일치 / OR 로직: 한가지라도 일치
-      if (activeFilters.length > 1) p.append('filter_op', filterOp);
+
+      // filter_op 은 필터 개수와 무관하게 항상 전송
+      // (빠뜨리면 백엔드 기본값이 적용되어 toggle 이 무의미해짐)
+      p.append('filter_op', filterOp);
 
       if (query.trim()) p.append('search', query.trim());
 
-      // 🔍 디버그: 실제로 날아가는 URL 확인 (개발용, 나중에 삭제)
-      console.log('[LOG FILTER] 요청 URL:', `/v1/logs?${p.toString()}`);
-
-      const res = await apiFetch<{ items: LogItem[]; total_count: number; level_counts?: Record<LogLevel, number> }>(
+      const res = await apiFetch<{ items: LogItem[]; total_count: number }>(
         `/v1/logs?${p.toString()}`
       );
       setLogs(res.items);
       setTotalCount(res.total_count);
-      if (res.level_counts) setLevelCounts(res.level_counts);
     } catch (e) {
       console.error('Failed to fetch logs:', e);
       setLogs([]);
@@ -166,14 +159,7 @@ const Log: React.FC = () => {
 
   useEffect(() => { fetchLogs(); }, [page, activeFilters, filterOp, query]);
 
-  /* ─────────────────────────────────────────────────────────────
-     레벨 카운트만 별도로 가져오기 (필터 무관하게 항상 전체 기준)
-  ───────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    apiFetch<{ level_counts: Record<LogLevel, number> }>('/v1/logs/counts')
-      .then(res => { if (res.level_counts) setLevelCounts(res.level_counts); })
-      .catch(() => {}); // 엔드포인트 없으면 무시
-  }, []);
+
 
   /* ─────────────────────────────────────────────────────────────
      SSE 실시간 업데이트
@@ -204,7 +190,7 @@ const Log: React.FC = () => {
       es.onerror = () => { setSseConnected(false); es?.close(); };
     } catch { /* ignore */ }
     return () => { es?.close(); };
-  }, [page, activeFilters, query]);
+  }, [page, activeFilters.length, query]);
 
   /* ─────────────────────────────────────────────────────────────
      필터 추가/제거 헬퍼
@@ -259,6 +245,7 @@ const Log: React.FC = () => {
     setExpandedCategory(null);
     setPage(1);
   };
+
 
   /* ─────────────────────────────────────────────────────────────
      계산값
@@ -316,12 +303,12 @@ const Log: React.FC = () => {
               <button
                 className={`filterOpBtn ${filterOp === 'AND' ? 'opActive' : ''}`}
                 onClick={() => setFilterOp('AND')}
-                title="모든 필터를 동시에 만족하는 로그만 표시"
+                title="AND: 선택한 조건을 모두 동시에 만족하는 로그만 표시 (같은 필드 여러 개 선택 시 0건)"
               >AND</button>
               <button
                 className={`filterOpBtn ${filterOp === 'OR' ? 'opActive' : ''}`}
                 onClick={() => setFilterOp('OR')}
-                title="필터 중 하나라도 포함된 로그 표시"
+                title="OR: 선택한 조건 중 하나라도 맞으면 표시"
               >OR</button>
             </div>
           )}
@@ -353,9 +340,6 @@ const Log: React.FC = () => {
                     <span className="sidebarDot" style={{ background: LEVEL_COLOR[lvl] }} />
                     <span className="sidebarLabel" style={lvl === 'ERROR' ? { color: '#dc2626', fontWeight: 700 } : {}}>
                       {lvl}
-                    </span>
-                    <span className={`sidebarCount ${lvl === 'ERROR' ? 'countError' : ''}`}>
-                      {levelCounts[lvl] ?? 0}
                     </span>
                   </button>
                 ))}
