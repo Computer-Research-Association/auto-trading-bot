@@ -93,6 +93,14 @@ class UpbitClient:
         formatted_volume = f"{volume:.8f}"
         return self.upbit.sell_market_order(ticker, formatted_volume)
 
+    def get_order_info(self, order_uuid: str):
+        """주문 상세 정보 조회 (체결 내역 포함)"""
+        return self.upbit.get_order(order_uuid)
+
+    def get_completed_orders(self, ticker: str = None):
+        """완료된 주문(done/cancel) 목록 조회"""
+        return self.upbit.get_order(ticker, state="done")
+
     # 정밀 유틸리티 메서드. 
 
     @staticmethod

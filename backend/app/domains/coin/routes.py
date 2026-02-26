@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.deps import get_database
 from app.domains.coin import service, schemas
 
-router = APIRouter(prefix="/api/coin", tags=["coin"])
+router = APIRouter(tags=["coin"])
 
-@router.get("/trades", response_model=schemas.TradeHistoryListResponse)
+@router.get("/trades", response_model=schemas.TradeHistoryResponse)
 async def get_trades(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
@@ -16,15 +16,24 @@ async def get_trades(
     end_date: str | None = None,
     db: AsyncSession = Depends(get_database),
 ):
-    return await service.get_trade_histories(
-        db=db,
-        page=page,
-        limit=limit,
-        side=side,
-        search=search,
-        start_date=start_date,
-        end_date=end_date,
+    return await service.get_trade_history(
+        q=schemas.TradeHistoryQuery(
+            page=page,
+            limit=limit,
+            tx_type=side.lower() if side and side.lower() in ["buy", "sell", "deposit", "withdraw"] else "all",
+            keyword=search
+        ),
+        db=db
     )
+
+@router.get("/trades/re", response_model=schemas.TradeHistoryResponse)
+async def get_trades_re(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_database),
+):
+    """Refactored version of trade history with optimized Pydantic conversion"""
+    return await service.get_trade_history_re(page=page, limit=limit, db=db)
 
 @router.post("/trades/test-seed")
 async def seed_trade(db: AsyncSession = Depends(get_database)):
