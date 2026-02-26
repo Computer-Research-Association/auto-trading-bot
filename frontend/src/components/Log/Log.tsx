@@ -180,10 +180,6 @@ const Log: React.FC = () => {
               return updated;
             });
             setTotalCount(prev => prev + 1);
-            setLevelCounts(prev => ({
-              ...prev,
-              [newLog.level]: (prev[newLog.level as LogLevel] || 0) + 1,
-            }));
           }
         } catch { /* ignore */ }
       };
