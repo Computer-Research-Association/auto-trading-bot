@@ -15,11 +15,9 @@ _PERIOD_TO_DAYS = {
     "180d": 180,
 }
 
-
 def _since_dt(period: schemas.Period) -> datetime:
     days = _PERIOD_TO_DAYS[period]
     return datetime.now() - timedelta(days=days)
-
 
 async def get_trade_history(q: schemas.TradeHistoryQuery, db: AsyncSession) -> schemas.TradeHistoryResponse:
     since = _since_dt(q.period)

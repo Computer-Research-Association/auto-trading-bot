@@ -40,3 +40,9 @@ async def seed_trade(db: AsyncSession = Depends(get_database)):
     """테스트용 데이터 1건 생성 (나중에 삭제 예정)"""
     trade = await service.create_seed_data(db)
     return {"status": "success", "id": trade.id}
+
+@router.post("/trades/sync")
+async def sync_trades(db: AsyncSession = Depends(get_database)):
+    """거래 내역 수동 동기화"""
+    await service.sync_trade_history(db)
+    return {"status": "success"}
