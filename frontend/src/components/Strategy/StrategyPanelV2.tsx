@@ -24,10 +24,25 @@ export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"return" | "winRate">("return");
+  const [sortBy, setSortBy] = useState<"return">("return");
   
   const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
+  const [totalTrades, setTotalTrades] = useState<number>(0);
+
+  // 📊 총 체결 횟수: 실거래 내역(sell)에서 카운트
+  useEffect(() => {
+    const fetchTotalTrades = async () => {
+      try {
+        const res = await apiFetch<any>("/trades/history?period=180d&tx_type=sell&size=1000");
+        // total 필드가 있으면 그걸 사용, 없으면 rows 배열 길이로 계산
+        setTotalTrades(res?.total ?? res?.rows?.length ?? 0);
+      } catch (err) {
+        console.error("총 체결 횟수 조회 실패", err);
+      }
+    };
+    fetchTotalTrades();
+  }, []);
 
   // 🟢 봇 상태 SSE (Server-Sent Events) 최적화로 대체
   useEffect(() => {
@@ -91,28 +106,33 @@ export default function StrategyPanelV2() {
       return;
     }
 
+    const isCurrentlyRunning = runningIds.has(id);
+
+    // 1️⃣ [낙관적 업데이트] 통신 전에 일단 React 화면(Toggle)부터 즉시 뒤집어 줌
+    setRunningIds((prev) => {
+      const next = new Set(prev);
+      isCurrentlyRunning ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+    // 2️⃣ [백그라운드 통신] 서버에 명령을 하달함
     try {
-      const isCurrentlyRunning = runningIds.has(id);
       if (isCurrentlyRunning) {
         // 백엔드 중지 API 호출
         await apiPost("/bot/stop");
-        setRunningIds((prev) => {
-          const next = new Set(prev);
-          next.delete(id);
-          return next;
-        });
       } else {
         // 백엔드 가동 API 호출
         await apiPost("/bot/start");
-        setRunningIds((prev) => {
-          const next = new Set(prev);
-          next.add(id);
-          return next;
-        });
       }
     } catch (err) {
+      // 3️⃣ [롤백 처리] 서버에서 에러가 났다면, 조용히 아까 바꿨던 토글을 원상복구시켜줌
       console.error("Failed to toggle bot strategy:", err);
-      alert("봇 설정 변경에 실패했습니다. 서버를 확인해주세요.");
+      alert("봇 상태 변경 실패. 롤백합니다.");
+      setRunningIds((prev) => {
+        const next = new Set(prev);
+        isCurrentlyRunning ? next.add(id) : next.delete(id); // 다시 반대로 돌리기
+        return next;
+      });
     }
   };
 
@@ -135,7 +155,6 @@ export default function StrategyPanelV2() {
   const sortedStrategies = useMemo(() => {
     return [...strategies].sort((a, b) => {
       if (sortBy === "return") return b.rateOfReturn - a.rateOfReturn;
-      if (sortBy === "winRate") return b.winRate - a.winRate;
       return 0;
     });
   }, [strategies, sortBy]);
@@ -164,10 +183,6 @@ export default function StrategyPanelV2() {
             className={`sort-btn ${sortBy === "return" ? "active" : ""}`}
             onClick={() => setSortBy("return")}
           >수익률순</button>
-          <button 
-            className={`sort-btn ${sortBy === "winRate" ? "active" : ""}`}
-            onClick={() => setSortBy("winRate")}
-          >승률순</button>
         </div>
       </div>
 
@@ -176,14 +191,32 @@ export default function StrategyPanelV2() {
           let isRunning = runningIds.has(s.id);
           const isExpanded = expandedId === s.id;
           
+          // 🔥 보조 계산 로직 (목표 익절/손절 퍼센트)
+          let estProfitPct = 0;
+          let estLossPct = 0;
+          if (botLog && botLog.target_buy_price && botLog.target_buy_price > 0) {
+            if (botLog.target_sell_price && botLog.target_sell_price > botLog.target_buy_price) {
+              estProfitPct = ((botLog.target_sell_price - botLog.target_buy_price) / botLog.target_buy_price) * 100;
+            }
+            if (botLog.target_stop_loss && botLog.target_stop_loss > 0 && botLog.target_stop_loss < botLog.target_buy_price) {
+              estLossPct = ((botLog.target_stop_loss - botLog.target_buy_price) / botLog.target_buy_price) * 100;
+            }
+          }
+
           // 🔥 진짜 백엔드 데이터 연동 (RSI BB 코어 한정)
           let displayPnl = s.rateOfReturn;
+          let chartData = s.sparklineData; // 기본값은 목업 데이터
+          
           if (s.id === "rsi_bb_core") {
-            // 백엔드가 살아있다면 백엔드의 실행 상태와 서비스단의 수익률을 최우선으로 사용
+            // 백엔드가 살아있다면 서비스단의 수익률을 최우선으로 사용
             if (botLog) {
-              isRunning = botLog.is_active;
               // 백엔드의 profit_rate (미보유 시 0.0)
               displayPnl = Number(botLog.profit_rate?.toFixed(2) || 0);
+
+              // 백엔드에서 sparkline_data 배열을 줬다면 그걸로 차트 렌더링
+              if (botLog.sparkline_data && Array.isArray(botLog.sparkline_data) && botLog.sparkline_data.length > 0) {
+                chartData = botLog.sparkline_data.map((val: number) => ({ value: val }));
+              }
             } else {
               displayPnl = 0.00;
             }
@@ -239,7 +272,7 @@ export default function StrategyPanelV2() {
               {/* Sparkline (Mini Chart) - 보여주기용 */}
               <div className="card-sparkline">
                 <ResponsiveContainer width="100%" height={35}>
-                  <AreaChart data={s.sparklineData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
                     <defs>
                       <linearGradient id={`grad-${s.id}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={isPositive ? "#ef4444" : "#3b82f6"} stopOpacity={0.3} />
@@ -254,7 +287,7 @@ export default function StrategyPanelV2() {
                       strokeWidth={2}
                       isAnimationActive={true}
                       animationDuration={1500}
-                      dot={(props) => <CustomDot {...props} isPositive={isPositive} payload={s.sparklineData} />}
+                      dot={(props) => <CustomDot {...props} isPositive={isPositive} payload={chartData} />}
                     />
                     <YAxis domain={['dataMin', 'dataMax']} hide />
                   </AreaChart>
@@ -267,52 +300,86 @@ export default function StrategyPanelV2() {
                   {!isDisabled ? (
                     <>
                       <div className="bot-log-section">
-                        <div className="section-title">🤖 현재 봇 상태</div>
-                        <div className="log-text">
-                          {botLog?.last_reason ? `> ${botLog.last_reason}` : "> 상태 기록 대기 중..."}
+                        <div className="section-title">
+                          <div className="status-dot-icon">
+                            <div className={`status-dot-inner ${isRunning ? 'active' : ''}`}></div>
+                          </div>
+                          현재 봇 상태
+                        </div>
+                        <div className="premium-card">
+                          <div className="status-text-content">
+                            <span style={{color: '#94a3b8', marginRight: '4px'}}>&gt;</span> 
+                            {botLog?.last_reason ? botLog.last_reason : "대기 중..."}
+                          </div>
                         </div>
                       </div>
 
                       <div className="bot-target-section">
-                        <div className="section-title">🎯 작전 목표 (Target)</div>
-                        
-                        <div className="target-row target-box mb-2">
-                          <span className="target-label">다음 진입 목표가:</span>
-                          <span className="target-val buy">
-                            {botLog?.target_buy_price && botLog.target_buy_price > 0 
-                              ? `${Math.floor(botLog.target_buy_price).toLocaleString()}원` 
-                              : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - RSI 미충족)</span>}
-                          </span>
+                        <div className="section-title muted-title">
+                          <svg className="bullseye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <circle cx="12" cy="12" r="1"></circle>
+                          </svg>
+                          작전 목표 <span className="title-sub">TARGET</span>
                         </div>
-                        <div className="target-flex-box">
-                          <div className="target-row">
-                            <span className="target-label">목표 익절가:</span>
-                            <span className="target-val sell">
+                        
+                        <div className="premium-card target-card-full mb-2">
+                          <span className="target-label">다음 진입 목표가</span>
+                          {botLog?.target_buy_price && botLog.target_buy_price > 0 
+                            ? <span className="target-val">{Math.floor(botLog.target_buy_price).toLocaleString()} 원</span>
+                            : botLog?.profit_rate !== undefined && botLog?.profit_rate !== 0
+                              ? <span className="target-val" style={{color: '#3b82f6'}}>현재 코인 등락 감시 중... (보유 중)</span>
+                              : <span className="target-val muted">(대기 - RSI 미충족)</span>}
+                        </div>
+
+                        <div className="target-grid">
+                          <div className="premium-card target-card-col">
+                            <span className="target-label">
+                              목표 익절가
+                              {estProfitPct > 0 && <span className="target-percent positive">(+{estProfitPct.toFixed(2)}%)</span>}
+                            </span>
+                            <div className="target-val-wrapper">
+                              <div className="status-dot-icon" style={{width: 10, height: 10, marginTop: 4, background: 'transparent'}}><div className="status-dot-inner" style={{width: 5, height: 5}}></div></div>
                               {botLog?.target_sell_price && botLog.target_sell_price > 0 
-                                ? `${Math.floor(botLog.target_sell_price).toLocaleString()}` 
-                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
-                            </span>
+                                ? <span className="target-val">
+                                    {Math.floor(botLog.target_sell_price).toLocaleString()}
+                                  </span>
+                                : <span className="target-val muted">대기 -<br/>분석 중</span>}
+                            </div>
                           </div>
-                          <div className="target-divider"></div>
-                          <div className="target-row">
-                            <span className="target-label">목표 손절가:</span>
-                            <span className="target-val stop">
-                              {botLog?.target_stop_loss && botLog.target_stop_loss > 0 
-                                ? `${Math.floor(botLog.target_stop_loss).toLocaleString()}` 
-                                : <span style={{fontSize: "12px", color: "#94a3b8", fontWeight: "normal"}}>(대기 - 분석 중)</span>}
+                          <div className="premium-card target-card-col">
+                            <span className="target-label">
+                              목표 손절가
+                              {estLossPct < 0 && <span className="target-percent negative">({estLossPct.toFixed(2)}%)</span>}
                             </span>
+                            <div className="target-val-wrapper">
+                              <div className="status-dot-icon" style={{width: 10, height: 10, marginTop: 4, background: 'transparent'}}><div className="status-dot-inner" style={{width: 5, height: 5}}></div></div>
+                              {botLog?.target_stop_loss && botLog.target_stop_loss > 0 
+                                ? <span className="target-val">
+                                    {Math.floor(botLog.target_stop_loss).toLocaleString()}
+                                  </span>
+                                : <span className="target-val muted">대기 -<br/>분석 중</span>}
+                            </div>
                           </div>
                         </div>
                       </div>
 
-
+                      <div className="strategy-run-section">
+                        <div className="strategy-stats-row">
+                          <div className="stat-box blue">
+                            <span className="stat-label">총 체결 횟수</span>
+                            <span className="stat-value">{totalTrades}회</span>
+                          </div>
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <div className="dummy-details">
-                      <div className="dummy-icon">🚧</div>
+                      <div className="dummy-icon">🛠️</div>
                       <div className="dummy-title">
                         이 전략 모듈은 현재 백엔드(서버)에 플러그인되지 않아 <br/>
-                        <span style={{color: "#ef4444"}}>준비 중</span>입니다.
+                        <span style={{color: "#EF4444"}}>준비 중</span>입니다.
                       </div>
                       <div className="dummy-desc">{s.descriptionDetail}</div>
                     </div>

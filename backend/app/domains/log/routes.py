@@ -19,20 +19,23 @@ logger = logging.getLogger(__name__)
 async def get_logs(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=100),
-    level: str | None = None,
-    category: str | None = None,
+    level: list[str] | None = Query(None),      # 다중선택: ?level=INFO&level=ERROR
+    category: list[str] | None = Query(None),   # 다중선택: ?category=SYSTEM&category=DATA
+    eventname: list[str] | None = Query(None),  # 다중선택: ?eventname=BUY&eventname=SELL
+    filter_op: str = Query("AND", pattern="^(AND|OR)$"),
     search: str | None = None,
     start_date: date | None = Query(None, description="YYYY-MM-DD"),
     end_date: date | None = Query(None, description="YYYY-MM-DD"),
     db: AsyncSession = Depends(get_database),
 ):
-
     items, total_count = await service.list_logs(
         db,
         page=page,
         limit=limit,
         level=level,
         category=category,
+        eventname=eventname,
+        filter_op=filter_op,
         search=search,
         start_date=start_date,
         end_date=end_date,

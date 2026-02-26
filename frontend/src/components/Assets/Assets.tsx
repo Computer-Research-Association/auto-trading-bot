@@ -119,7 +119,7 @@ export default function Assets() {
     };
 
     fetchAssets(); // 초기 실행
-    const interval = setInterval(fetchAssets, 1000); // 1초마다 갱신 (Polling)
+    const interval = setInterval(fetchAssets, 3000); // 3초마다 갱신 (Polling)
     return () => clearInterval(interval);
   }, []);
 
@@ -289,7 +289,7 @@ export default function Assets() {
           <table className="asset-table">
             <thead>
               <tr>
-                <th style={{ width: 60 }}></th> {/* 아이콘용 */}
+                <th style={{ width: 60 }}>{/* 아이콘용 */}</th>
                 <th>종목</th>
                 <th className="right">보유수량</th>
                 <th className="right">평균매수가</th>

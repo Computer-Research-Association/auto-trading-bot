@@ -1,6 +1,6 @@
 import { api } from './api';
 
-export type Strategy = 'All Strategy' | 'Moving Average' | 'RSI Oversold' | 'Bollinger band';
+export type Strategy = 'All Strategy' | 'Moving Average' | 'RSI Oversold' | 'Bollinger band' | 'Scalping V1';
 export type HistoryType = 'Buy' | 'Sell' | 'All';
 
 export interface History {

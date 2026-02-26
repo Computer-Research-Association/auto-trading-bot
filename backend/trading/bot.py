@@ -6,6 +6,7 @@ import traceback
 import logging
 from pathlib import Path
 from datetime import datetime
+import websockets
 
 # 인프라 및 도구 임포트
 from .load_data import DataLoader
@@ -89,6 +90,7 @@ class TradingBot:
             "coin_balance": 0.0,        # 코인 보유 수량
             "is_holding": False,
             "avg_buy_price": 0.0,
+            "current_price": 0.0,       # 웹소켓 기반 실시간 시세 (메모리 캐시)
         }
 
     def _load_persistent_state(self) -> dict:
@@ -288,7 +290,7 @@ class TradingBot:
                         "balance": 0.0,
                         "coin_balance": acquired_coin,
                         "avg_buy_price": price,
-                        "last_reason": f"[DRY-RUN 매수] {reason}" if is_dry_run else f"[매수] {reason}",
+                        "last_reason": f"[DRY-RUN 매수] {reason} | 체결금액: {deducted_krw:,.0f}원" if is_dry_run else f"[매수] {reason} | 체결금액: {deducted_krw:,.0f}원",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
@@ -351,6 +353,10 @@ class TradingBot:
                 fee_rate = 0.0005
                 acquired_krw = (coin_balance * price) * (1 - fee_rate)
 
+                # 대략적인 손익금(KRW) 계산 (매도 회수금 - 매수 원금)
+                invested_krw = coin_balance * avg_price
+                pnl_amount = acquired_krw - invested_krw
+
                 self.state.update(
                     {
                         "is_holding": False,
@@ -360,7 +366,7 @@ class TradingBot:
                         "target_buy_price": 0.0,
                         "target_sell_price": 0.0,
                         "target_stop_loss": 0.0,
-                        "last_reason": f"[DRY-RUN 매도] {reason} | 수익률: {profit_pct:.2f}%" if is_dry_run else f"[매도] {reason} | 수익률: {profit_pct:.2f}%",
+                        "last_reason": f"[DRY-RUN 매도] {reason} | 손익: {pnl_amount:,.0f}원 ({profit_pct:.2f}%)" if is_dry_run else f"[매도] {reason} | 손익: {pnl_amount:,.0f}원 ({profit_pct:.2f}%)",
                     }
                 )
                 await self.save_state()  # Critical Event: 즉시 저장
@@ -387,6 +393,37 @@ class TradingBot:
     # -----------------------------------------------------------
     # [Main Loops] 감시(집행관) 및 분석(지휘관) 루프
     # -----------------------------------------------------------
+    async def _websocket_listen_loop(self):
+        """[무전병] 웹소켓 무한 수신 루프: 타임아웃/지수백오프 방어 적용"""
+        uri = "wss://api.upbit.com/websocket/v1"
+        payload = [{"ticket": "auto-trading-bot-ticket"}, {"type": "ticker", "codes": [self.ticker]}]
+        
+        retry_delay = 1.0  # 지수 백오프 초기값
+        max_delay = 60.0
+        
+        while True:
+            try:
+                # 좀비 커넥션 방어 (ping_interval, ping_timeout 설정)
+                async with websockets.connect(uri, ping_interval=20, ping_timeout=20) as websocket:
+                    await websocket.send(json.dumps(payload))
+                    logger.info(f"{self.log_prefix} 웹소켓 연결 성공. 실시간 시세 수신 시작.")
+                    retry_delay = 1.0  # 성공 시 초기화
+                    
+                    while True:
+                        data = await websocket.recv()
+                        try:
+                            msg = json.loads(data)
+                            if msg.get("type") == "ticker" and "trade_price" in msg:
+                                # 안전한 float 캐스팅 (Type safety)
+                                trade_price = float(msg["trade_price"])
+                                self.state["current_price"] = trade_price
+                        except (ValueError, TypeError, KeyError):
+                            continue  # 파싱 실패 시 무시하고 진행
+            except Exception as e:
+                logger.warning(f"{self.log_prefix} 웹소켓 끊김 감지 ({e}). {retry_delay}초 후 재연결 시도...")
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(retry_delay * 2, max_delay)
+
     async def _trigger_kill_switch(self, reason_msg: str):
         """치명적 에러 발생 시 알 수 없는 포지션 진입을 막기 위한 강제 정지 장치"""
         async with self._lock:
@@ -451,7 +488,7 @@ class TradingBot:
         current_time = time.time()
         if current_time - self.last_heartbeat_time >= self.heartbeat_interval: 
             # 총 자산 가치 계산 로직 (KRW + 코인 잔고 * 현재가)
-            current_price = await self.loader.get_current_price()
+            current_price = self.state.get("current_price", 0.0)
             krw_balance = self.state.get("balance", 0.0)
             coin_balance = self.state.get("coin_balance", 0.0)
             coin_val = coin_balance * (current_price if current_price else 0.0)
@@ -477,9 +514,9 @@ class TradingBot:
         """
         즉각적인 매수/매도 조건 체크 및 실행 (executor)
         """
-        current_price = await self.loader.get_current_price()
+        current_price = self.state.get("current_price", 0.0)
         if not current_price:
-            return  # 시세 조회 실패 시 중단
+            return  # 웹소켓 초기화 전 대기
 
         # 메모리에 수익률(profit_rate) 실시간 갱신 (서비스 계층의 API 호출 억제 목적)
         avg_price = self.state.get("avg_buy_price", 0.0)
@@ -645,9 +682,16 @@ class TradingBot:
         # 큐 워커 태스크 시작
         self._state_worker_task = asyncio.create_task(self._state_worker_task_wrapper())
 
+        # 가상 가격 초기화 방어 (웹소켓 첫 틱 이전 0원 방지)
+        initial_price = await self.loader.get_current_price()
+        if initial_price:
+            self.state["current_price"] = initial_price
+
         try:
             await asyncio.gather(
-                self.monitor_market_loop(), self.perform_analysis_loop()
+                self.monitor_market_loop(), 
+                self.perform_analysis_loop(),
+                self._websocket_listen_loop()
             )
         except asyncio.CancelledError:
             logger.info(

@@ -1,60 +1,89 @@
-from datetime import datetime, time, timezone, date
-from sqlalchemy import select, func, desc, asc, or_
+from datetime import datetime, time, timezone, date, timedelta
+from sqlalchemy import select, func, desc, asc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.domains.log.models import Log
+
+# 한국 표준시 (UTC+9) — 날짜 필터 기준
+KST = timezone(timedelta(hours=9))
 
 async def list_logs(
     db: AsyncSession,
     *,
     page: int = 1,
     limit: int = 50,
-    level: str | None = None,
-    category: str | None = None,
+    level: list[str] | None = None,       # 다중선택: INFO, ERROR 동시
+    category: list[str] | None = None,    # 다중선택: SYSTEM, DATA 동시
+    eventname: list[str] | None = None,   # 다중선택: BUY, SELL 동시
+    filter_op: str = "AND",               # AND: 타입 간 교집합 / OR: 타입 간 합집합
     search: str | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
 ):
     offset = (page - 1) * limit
-    
-    # 쿼리 빌더 패턴으로 개선
+
     stmt = select(Log)
     count_stmt = select(func.count()).select_from(Log)
     
-    filters = []
-    if level:
-        filters.append(Log.level == level)
-    if category:
-        filters.append(Log.category == category)
+    or_values: list = []    # OR 모드용: 모든 조건을 하나의 OR로
+    and_filters: list = []  # AND 모드용: 각 조건을 별도 WHERE로
+
+    for lvl in (level or []):
+        v = lvl.upper()
+        if filter_op == "OR":
+            or_values.append(Log.level == v)
+        else:
+            and_filters.append(Log.level == v)
+
+    for cat in (category or []):
+        v = cat.upper()
+        if filter_op == "OR":
+            or_values.append(Log.category == v)
+        else:
+            and_filters.append(Log.category == v)
+
+    for ev in (eventname or []):
+        v = ev.upper()
+        if filter_op == "OR":
+            or_values.append(Log.event_name == v)
+        else:
+            and_filters.append(Log.event_name == v)
+
+    fixed_filters = []
     if search:
-        filters.append(
+        fixed_filters.append(
             or_(
                 Log.message.ilike(f"%{search}%"),
                 Log.event_name.ilike(f"%{search}%"),
-                Log.level.ilike(f"%{search}%")
+                Log.level.ilike(f"%{search}%"),
+                Log.category.ilike(f"%{search}%"),
             )
         )
-    
-    # 날짜 범위 처리: date 객체로 직접 받아 안전하게 처리
     if start_date:
-        start_dt = datetime.combine(start_date, time.min).replace(tzinfo=timezone.utc)
-        filters.append(Log.timestamp >= start_dt)
+        # 사용자가 선택한 날짜는 KST 기준 → UTC로 변환해서 DB 비교
+        start_kst = datetime.combine(start_date, time.min, tzinfo=KST)
+        fixed_filters.append(Log.timestamp >= start_kst.astimezone(timezone.utc))
     if end_date:
-        end_dt = datetime.combine(end_date, time.max).replace(tzinfo=timezone.utc)
-        filters.append(Log.timestamp <= end_dt)
-        
-    if filters:
-        stmt = stmt.where(*filters)
-        count_stmt = count_stmt.where(*filters)
-        
-    # Total count (완전히 동일한 필터 적용)
+        end_kst = datetime.combine(end_date, time.max, tzinfo=KST)
+        fixed_filters.append(Log.timestamp <= end_kst.astimezone(timezone.utc))
+
+    # 최종 조합
+    all_filters: list = []
+    if filter_op == "OR" and or_values:
+        all_filters.append(or_(*or_values))  # 하나라도 맞으면 표시
+    elif and_filters:
+        all_filters.extend(and_filters)      # 모두 AND (같은 타입 여러 값 → 불가 → 0건)
+    all_filters.extend(fixed_filters)
+
+    if all_filters:
+        stmt = stmt.where(*all_filters)
+        count_stmt = count_stmt.where(*all_filters)
+
     total_count = (await db.execute(count_stmt)).scalar() or 0
-    
-    # Items (정렬 안정성 강화)
+
     stmt = stmt.order_by(desc(Log.timestamp), desc(Log.id)).offset(offset).limit(limit)
-        
     result = await db.execute(stmt)
     items = result.scalars().all()
-    
+
     return items, total_count
 
 async def get_new_logs(db: AsyncSession, last_id: int):

@@ -39,7 +39,11 @@ class UpbitClient:
 
     def get_current_prices(self, tickers: list[str]) -> dict[str, float]:
         # pyupbit.get_current_price는 list[str] 넣으면 dict 반환
-        prices = pyupbit.get_current_price(tickers)
+        try:
+            prices = pyupbit.get_current_price(tickers)
+        except Exception as e:
+            return {t: 0.0 for t in tickers}
+            
         if isinstance(prices, (int, float)):
             # tickers 1개일 때 대비
             return {tickers[0]: float(prices)} if tickers else {}
