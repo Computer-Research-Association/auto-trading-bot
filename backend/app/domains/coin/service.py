@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select, func, desc, and_
+from sqlalchemy import select, func, desc, and_, between
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.domains.log.models import Log
 
 from app.domains.coin.models import TradeHistory
 from app.domains.coin import schemas
@@ -85,7 +86,7 @@ async def sync_trade_history(db: AsyncSession):
     """
     Upbit API에서 최근 3개월간의 체결 내역을 가져와 DB에 중복 없이 저장합니다.
     - 5분 버퍼를 두어 최신 데이터 누락을 방지합니다.
-    - BTC 거래내역은 'RSI BB 전략'으로 저장합니다.
+    - BTC 거래내역은 'RSI BB 매매 전략'으로 저장합니다.
     """
     try:
         latest_stmt = select(func.max(TradeHistory.timestamp))
