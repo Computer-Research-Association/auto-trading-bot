@@ -24,7 +24,7 @@ export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"return">("return");
+  const [sortBy, setSortBy] = useState<"return" | "default">("default");
   
   const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
@@ -192,7 +192,7 @@ export default function StrategyPanelV2() {
           </div>
           <button 
             className={`sort-btn ${sortBy === "return" ? "active" : ""}`}
-            onClick={() => setSortBy("return")}
+            onClick={() => setSortBy(prev => prev === "return" ? "default" : "return")}
           >수익률순</button>
         </div>
       </div>
