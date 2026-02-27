@@ -34,7 +34,6 @@ function formatPercent(v: number) {
 
 export default function Performance() {
   const [period, setPeriod] = useState<Period>("30d");
-  // const [mode, setMode] = useState<"pnl" | "assets">("pnl");
   const [data, setData] = useState<PerfResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,12 +59,65 @@ export default function Performance() {
 
     const query = `?start_date=${getStartDate(period)}&end_date=${endDateStr}`;
 
-    apiFetch<PerfResponse>(`/performance/summary${query}`)
-      .then((res) => {
+    Promise.all([
+      apiFetch<PerfResponse>(`/performance/summary${query}`),
+      getAssets()
+    ])
+      .then(([res, assetsRes]) => {
+        const todayStr: string = new Date().toISOString().split("T")[0] ?? "";
+
+        const currentDaily = res.daily;
+        const lastRow = currentDaily[currentDaily.length - 1];
+        const isToday = lastRow?.date === todayStr;
+        const yesterdayRow = isToday ? currentDaily[currentDaily.length - 2] : lastRow;
+        const yesterdayAssets = yesterdayRow?.assets_krw ?? res.summary.start_assets_krw ?? 1;
+
+        const newPnlKrw  = assetsRes.summary.total_assets_krw - yesterdayAssets;
+        const newPnlRate = yesterdayAssets !== 0 ? (newPnlKrw / yesterdayAssets) * 100 : 0;
+
+        const baseAssets = res.summary.start_assets_krw || 1.0;
+        const cumPnlKrw  = assetsRes.summary.total_assets_krw - baseAssets;
+        const cumPnlRate = (cumPnlKrw / baseAssets) * 100;
+
+        const newSummary = {
+          ...res.summary,
+          end_assets_krw: assetsRes.summary.total_assets_krw,
+          pnl_krw: cumPnlKrw,
+          pnl_rate: cumPnlRate,
+        };
+
+        const newPoint = {
+          date: todayStr,
+          assets_krw: assetsRes.summary.total_assets_krw,
+          pnl_krw: cumPnlKrw,
+          pnl_rate: cumPnlRate,
+        };
+        const newChart = [...res.chart];
+        const lastChartIdx = newChart.length - 1;
+        if (lastChartIdx >= 0 && newChart[lastChartIdx]!.date === todayStr) {
+          newChart[lastChartIdx] = newPoint;
+        } else {
+          newChart.push(newPoint);
+        }
+
+        const dailyPoint = {
+          date: todayStr,
+          assets_krw: assetsRes.summary.total_assets_krw,
+          pnl_krw: newPnlKrw,
+          pnl_rate: newPnlRate,
+        };
+        const newDaily = [...res.daily];
+        const lastDailyIdx = newDaily.length - 1;
+        if (lastDailyIdx >= 0 && newDaily[lastDailyIdx]!.date === todayStr) {
+          newDaily[lastDailyIdx] = dailyPoint;
+        } else {
+          newDaily.push(dailyPoint);
+        }
+
         setData({
-          summary: res.summary,
-          chart: res.chart,
-          daily: res.daily,
+          summary: newSummary,
+          chart: newChart,
+          daily: newDaily,
         });
       })
       .catch((e) => {
@@ -185,7 +237,10 @@ export default function Performance() {
     today_change_rate = summary.pnl_rate ?? 0;
   }
 
-  const pnlPositive = (summary?.pnl_krw ?? 0) >= 0;
+  // 🎯 차트 색상 결정: 현재 차트 배열의 마지막 데이터의 pnl_krw 기준
+  const pnlPositive = chart.length > 0 
+    ? (chart[chart.length - 1]?.pnl_krw ?? 0) >= 0 
+    : (summary?.pnl_krw ?? 0) >= 0;
 
   const periodButtons: { key: Period; label: string }[] = [
     { key: "30d", label: "30일" },
@@ -195,8 +250,7 @@ export default function Performance() {
   ];
 
   if (err) return <div className="main-panel">에러: {err}</div>;
-  // summary 로딩 완료 + 실시간 패치 1회 완료 둘 다 충족해야 차트를 그림
-  if (loading || !data || !realtimeReady) return <Loading />;
+  if (!data) return <div className="main-panel" />; // 로딩 스피너 대신 빈 패널을 반환 (깜빡임 최소화)
 
   const gradientOffset = () => {
     if (!Array.isArray(chart) || chart.length === 0) return 0;
@@ -302,6 +356,12 @@ export default function Performance() {
                 <stop offset={off} stopColor="#3b82f6" stopOpacity={0.2} />
                 <stop offset={1} stopColor="#3b82f6" stopOpacity={0.8} />
               </linearGradient>
+              <linearGradient id="splitColorStroke" x1="0" y1="0" x2="0" y2="1">
+                <stop offset={0} stopColor="#ef4444" stopOpacity={1} />
+                <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
+                <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
+                <stop offset={1} stopColor="#3b82f6" stopOpacity={1} />
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
@@ -320,7 +380,7 @@ export default function Performance() {
             <Area
               type="monotone"
               dataKey="pnl_krw"
-              stroke={pnlPositive ? "#ef4444" : "#3b82f6"}
+              stroke="url(#splitColorStroke)"
               strokeWidth={2}
               fill="url(#splitColor)"
               isAnimationActive={false}

@@ -190,8 +190,8 @@ const Log: React.FC = () => {
   useEffect(() => {
     let es: EventSource | null = null;
     try {
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/api$/, "");
-      es = new EventSource(`${baseUrl}/api/v1/logs/stream`);
+      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+      es = new EventSource(`${baseURL}/api/v1/logs/stream`);
       es.onopen = () => setSseConnected(true);
       es.onmessage = (event) => {
         try {
@@ -244,7 +244,13 @@ const Log: React.FC = () => {
   const applyDateFilter = () => {
     if (!dateFrom && !dateTo) return;
     const label = `${dateFrom || '시작'}~${dateTo || '종료'}`;
-    addFilter({ type: 'date', value: `${dateFrom}~${dateTo}`, label });
+    
+    // 기존에 있던 date 타입 필터들을 모두 제거한 후에 새 날짜 필터 추가
+    setActiveFilters(prev => {
+      const withoutDates = prev.filter(f => f.type !== 'date');
+      return [...withoutDates, { type: 'date', value: `${dateFrom}~${dateTo}`, label }];
+    });
+    setPage(1);
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -301,24 +307,28 @@ const Log: React.FC = () => {
       </div>
 
       {/* ── 제목 ─────────────────────────────────────────────────── */}
-      <div className="logHeader">
+      <div className="logHeader"> 
         <h1 className="title">시스템 활동 로그</h1>
       </div>
 
       {/* ── 활성 필터 칩 ─────────────────────────────────────────── */}
-      {activeFilters.length > 0 && (
-        <div className="activeChips">
-          <span className="activeChipsLabel">적용된 필터</span>
-          {activeFilters.map((f, i) => (
+      <div className="activeChips" style={{ minHeight: "42px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+        <span className="activeChipsLabel">적용된 필터</span>
+        
+        {activeFilters.length === 0 ? (
+          <span style={{ fontSize: "13px", color: "#8b94a3" }}>필터를 아래에서 추가해 주세요.</span>
+        ) : (
+          activeFilters.map((f, i) => (
             <span key={i} className={`activeChip chip-${f.type}`}>
               {f.type === 'level' && <span className="chipDot" style={{ background: LEVEL_COLOR[f.value as LogLevel] }} />}
               {f.type === 'date' ? (f as any).label : f.value.toUpperCase()}
               <button className="chipClose" onClick={() => removeFilter(f.type, f.value)}>×</button>
             </span>
-          ))}
+          ))
+        )}
 
-          {/* AND/OR 토글 (필터가 2개 이상일 때만 표시) */}
-          {activeFilters.length >= 2 && (
+        {/* AND/OR 토글 (필터가 2개 이상일 때만 표시) */}
+        {activeFilters.length >= 2 && (
             <div className="filterOpToggle">
               <button
                 className={`filterOpBtn ${filterOp === 'AND' ? 'opActive' : ''}`}
@@ -335,7 +345,6 @@ const Log: React.FC = () => {
 
           <button className="chipClearAll" onClick={clearAll}>전체 초기화</button>
         </div>
-      )}
 
       {/* ── 본문: 사이드바 + 테이블 ──────────────────────────────── */}
       <div className="logBody">

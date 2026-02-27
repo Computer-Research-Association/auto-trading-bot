@@ -24,7 +24,7 @@ export default function StrategyPanelV2() {
   const [strategies, setStrategies] = useState<StrategyV2[]>(mockStrategiesV2);
   const [runningIds, setRunningIds] = useState<Set<string>>(new Set([]));
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"return">("return");
+  const [sortBy, setSortBy] = useState<"return" | "default">("default");
   
   const [botLog, setBotLog] = useState<any>(null); // ✅ 추가: 봇 세부 상태 저장
   const [isDryRun, setIsDryRun] = useState<boolean>(false);
@@ -40,9 +40,8 @@ export default function StrategyPanelV2() {
       .catch(() => setTotalTrades(0));
 
     // ② Log SSE 구독 — BUY / SELL 이벤트 수신 시마다 +1
-    // (apiFetch의 BASE_URL에서 /api를 떼어내고 경로 재조합)
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/api$/, "");
-    const es = new EventSource(`${baseUrl}/api/v1/logs/stream`);
+    const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+    const es = new EventSource(`${baseURL}/api/v1/logs/stream`);
     es.onmessage = (event) => {
       try {
         const log = JSON.parse(event.data);
@@ -63,8 +62,8 @@ export default function StrategyPanelV2() {
     
     const connectSSE = () => {
       // 프록시 환경 혹은 백엔드 주소로 연결
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/api$/, "");
-      eventSource = new EventSource(`${baseUrl}/api/bot/stream`);
+      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+      eventSource = new EventSource(`${baseURL}/api/bot/stream`);
       
       eventSource.onmessage = (event) => {
         try {
@@ -195,7 +194,7 @@ export default function StrategyPanelV2() {
           </div>
           <button 
             className={`sort-btn ${sortBy === "return" ? "active" : ""}`}
-            onClick={() => setSortBy("return")}
+            onClick={() => setSortBy(prev => prev === "return" ? "default" : "return")}
           >수익률순</button>
         </div>
       </div>
