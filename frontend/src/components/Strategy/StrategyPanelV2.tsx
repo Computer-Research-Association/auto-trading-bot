@@ -40,7 +40,8 @@ export default function StrategyPanelV2() {
       .catch(() => setTotalTrades(0));
 
     // ② Log SSE 구독 — BUY / SELL 이벤트 수신 시마다 +1
-    const es = new EventSource("http://localhost:8000/api/v1/logs/stream");
+    const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+    const es = new EventSource(`${baseURL}/api/v1/logs/stream`);
     es.onmessage = (event) => {
       try {
         const log = JSON.parse(event.data);
@@ -61,7 +62,8 @@ export default function StrategyPanelV2() {
     
     const connectSSE = () => {
       // 프록시 환경 혹은 백엔드 주소로 연결
-      eventSource = new EventSource("http://localhost:8000/api/bot/stream");
+      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+      eventSource = new EventSource(`${baseURL}/api/bot/stream`);
       
       eventSource.onmessage = (event) => {
         try {

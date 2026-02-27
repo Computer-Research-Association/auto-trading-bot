@@ -190,7 +190,8 @@ const Log: React.FC = () => {
   useEffect(() => {
     let es: EventSource | null = null;
     try {
-      es = new EventSource('http://localhost:8000/api/v1/logs/stream');
+      const baseURL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || '';
+      es = new EventSource(`${baseURL}/api/v1/logs/stream`);
       es.onopen = () => setSseConnected(true);
       es.onmessage = (event) => {
         try {
