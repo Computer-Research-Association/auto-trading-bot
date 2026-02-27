@@ -8,7 +8,7 @@ from app.domains.coin.routes import router as coin_router
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(portfolio_router, prefix="/portfolio", tags=["portfolio"])
-api_router.include_router(performance_router, tags=["performance"])
+api_router.include_router(performance_router, prefix="/performance", tags=["performance"])
 api_router.include_router(bot_router, prefix="/bot", tags=["bot"])
-api_router.include_router(log_router)
+api_router.include_router(log_router, prefix="/v1/logs", tags=["logs"])
 api_router.include_router(coin_router, prefix="/coin", tags=["coin"])
