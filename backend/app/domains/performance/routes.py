@@ -7,7 +7,7 @@ from core.deps import get_database
 from app.domains.performance import schemas
 import app.domains.performance.service as perf_service
 
-router = APIRouter(prefix="/performance")
+router = APIRouter()
 
 
 @router.get("/chart", response_model=schemas.PerformanceChartResponse)

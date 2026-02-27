@@ -11,7 +11,7 @@ from core.deps import get_database
 from core.event_bus import event_bus
 from app.domains.log import service, schema
 
-router = APIRouter(prefix="/v1/logs", tags=["logs"])
+router = APIRouter(tags=["logs"])
 logger = logging.getLogger(__name__)
 
 

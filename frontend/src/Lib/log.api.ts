@@ -20,6 +20,6 @@ export async function getLogs(): Promise<LogItem[]> {
     // 예상 엔드포인트: /logs
     // 응답 구조가 { items: [] } 인지 바로 [] 인지 확인 필요하나, 
     // Log.tsx의 기존 주석 참고: apiFetch<LogsResponse>("/api/logs") -> res.items
-    const { data } = await api.get<LogsResponse>('/logs');
+    const { data } = await api.get<LogsResponse>('/v1/logs');
     return data.items;
 }
