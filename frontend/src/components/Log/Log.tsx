@@ -243,7 +243,13 @@ const Log: React.FC = () => {
   const applyDateFilter = () => {
     if (!dateFrom && !dateTo) return;
     const label = `${dateFrom || '시작'}~${dateTo || '종료'}`;
-    addFilter({ type: 'date', value: `${dateFrom}~${dateTo}`, label });
+    
+    // 기존에 있던 date 타입 필터들을 모두 제거한 후에 새 날짜 필터 추가
+    setActiveFilters(prev => {
+      const withoutDates = prev.filter(f => f.type !== 'date');
+      return [...withoutDates, { type: 'date', value: `${dateFrom}~${dateTo}`, label }];
+    });
+    setPage(1);
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -300,7 +306,7 @@ const Log: React.FC = () => {
       </div>
 
       {/* ── 제목 ─────────────────────────────────────────────────── */}
-      <div className="logHeader">
+      <div className="logHeader"> 
         <h1 className="title">시스템 활동 로그</h1>
       </div>
 
