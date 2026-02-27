@@ -2,7 +2,7 @@
 FROM python:3.12-bookworm
 
 # 2. 컨테이너 내부 작업 디렉토리 설정
-WORKDIR /app
+WORKDIR /api-server
 
 # 3. 가상환경 생성 및 환경변수 설정 (이게 핵심입니다!)
 ENV VIRTUAL_ENV=/app/.venv

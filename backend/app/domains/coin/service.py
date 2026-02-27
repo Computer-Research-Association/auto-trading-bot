@@ -58,14 +58,12 @@ async def get_trade_history(q: schemas.TradeHistoryQuery, db: AsyncSession) -> s
 
     return schemas.TradeHistoryResponse(rows=rows, total=total, page=q.page, limit=q.limit)
 
-
 async def get_trade_history_re(page: int, limit: int, db: AsyncSession) -> schemas.TradeHistoryResponse:
     import app.domains.coin.repository as coin_repo
     trades, total = await coin_repo.get_pagination_trade_history(page, limit, db)
 
     rows = [schemas.TradeHistoryRow.model_validate(t) for t in trades]
     return schemas.TradeHistoryResponse(rows=rows, total=total, page=page, limit=limit)
-
 
 async def create_seed_data(db: AsyncSession):
     new_trade = TradeHistory(
@@ -80,7 +78,6 @@ async def create_seed_data(db: AsyncSession):
     db.add(new_trade)
     await db.commit()
     return new_trade
-
 
 async def sync_trade_history(db: AsyncSession):
     """

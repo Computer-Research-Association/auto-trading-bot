@@ -6,3 +6,5 @@
 [2026-02-25 21:14:06] INFO | SYSTEM | SYNC | [KRW-BTC_RSI_BB] API 동기화 완료 (보유: False, 잔고: 0원)
 [2026-02-25 21:14:17] INFO | SYSTEM | ENGINE_START | [KRW-BTC_RSI_BB] 비동기 엔진 가동 시작
 [2026-02-25 21:14:29] INFO | SYSTEM | HEARTBEAT | [KRW-BTC_RSI_BB] [매매 가동 중] 엔진 생존 신고 (총 자산: 0원 | 보유 현황: False)
+[2026-02-27 02:11:55] INFO | SYSTEM | SYNC | [KRW-BTC_RSI_BB] API 동기화 완료 (보유: False, 잔고: 13,703원)
+[2026-02-27 02:11:58] INFO | SYSTEM | ENGINE_START | [KRW-BTC_RSI_BB] 비동기 엔진 가동 시작
