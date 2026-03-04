@@ -114,6 +114,18 @@ export default function Performance() {
           newDaily.push(dailyPoint);
         }
 
+        // 차트 데이터가 1개뿐이면 period 시작 날짜에 기준점(pnl=0)을 앞에 추가
+        // → 점이 가운데 찍히지 않고 왼쪽(시작점)~오른쪽(오늘) 구간으로 표시됨
+        const startDateStr: string = getStartDate(period) ?? "";
+        const firstChartDate = newChart[0]?.date;
+        if (startDateStr && newChart.length === 1 && firstChartDate !== startDateStr) {
+          newChart.unshift({
+            date: startDateStr,
+            assets_krw: newSummary.start_assets_krw,
+            pnl_krw: 0,
+          });
+        }
+
         setData({
           summary: newSummary,
           chart: newChart,
