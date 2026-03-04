@@ -101,23 +101,52 @@ class TradingBot:
         """
         state = self._get_default_state()
 
+        # ======== [기존 코드 원본 (복구 시 주석 해제)] ========
+        # if not self.state_file.exists():
+        #     return state
+        #
+        # try:
+        #     with open(self.state_file, "r", encoding="utf-8") as f:
+        #         file_state = json.load(f)
+        #
+        #     # Persistent 키만 병합 (Transient 키는 파일에 있어도 무시)
+        #     for key in _PERSISTENT_KEYS:
+        #         if key in file_state:
+        #             state[key] = file_state[key]
+        #
+        #     logger.info(f"{self.log_prefix} 상태 파일 로드 완료: {self.state_file}")
+        # except Exception:
+        #     logger.error(
+        #         f"{self.log_prefix} 상태 파일 로드 실패: {traceback.format_exc()}"
+        #     )
+        #
+        # return state
+        # =======================================================
+
+        # ======== [현재 임시 적용 코드: DRY_RUN 환경변수 우선] ========
         if not self.state_file.exists():
-            return state
+            pass # 파일이 없어도 기본 상태(state) 반환을 위해 pass
+        else:
+            try:
+                with open(self.state_file, "r", encoding="utf-8") as f:
+                    file_state = json.load(f)
 
-        try:
-            with open(self.state_file, "r", encoding="utf-8") as f:
-                file_state = json.load(f)
+                # Persistent 키만 병합
+                for key in _PERSISTENT_KEYS:
+                    if key in file_state:
+                        state[key] = file_state[key]
 
-            # Persistent 키만 병합 (Transient 키는 파일에 있어도 무시)
-            for key in _PERSISTENT_KEYS:
-                if key in file_state:
-                    state[key] = file_state[key]
+                logger.info(f"{self.log_prefix} 상태 파일 로드 완료: {self.state_file}")
+            except Exception:
+                logger.error(f"{self.log_prefix} 상태 파일 로드 실패: {traceback.format_exc()}")
 
-            logger.info(f"{self.log_prefix} 상태 파일 로드 완료: {self.state_file}")
-        except Exception:
-            logger.error(
-                f"{self.log_prefix} 상태 파일 로드 실패: {traceback.format_exc()}"
-            )
+        # 서버 개발 및 테스트 안전장치: .env의 DRY_RUN 값이 있으면 무조건 덮어씌움
+        # (웹 UI나 bot_state.json 설정보다 항상 우선함)
+        dry_run_env = os.getenv("DRY_RUN")
+        if dry_run_env is not None:
+            is_dry_run_from_env = dry_run_env.strip().lower() in ("true", "1", "yes")
+            state["is_dry_run"] = is_dry_run_from_env
+            logger.info(f"{self.log_prefix} 🚀 환경변수 덮어쓰기: DRY_RUN={is_dry_run_from_env}")
 
         return state
 
