@@ -24,7 +24,7 @@ services:
     restart: always
     env_file: ./backend/.env
     environment:
-      - DB_HOST=db
+      - DB_HOST=localhost
       - DB_PORT=5432
     ports:
       - "8000:8000"

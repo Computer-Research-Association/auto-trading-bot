@@ -1,8 +1,8 @@
-"""create trade history table
+"""init
 
-Revision ID: c501f51fff24
-Revises: 90e03a5ab8e1
-Create Date: 2026-02-25 07:05:45.772611
+Revision ID: 78e7e5d93c89
+Revises: 
+Create Date: 2026-03-04 17:37:07.516851
 
 """
 from typing import Sequence, Union
@@ -13,8 +13,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c501f51fff24'
-down_revision: Union[str, Sequence[str], None] = '90e03a5ab8e1'
+revision: str = '78e7e5d93c89'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
