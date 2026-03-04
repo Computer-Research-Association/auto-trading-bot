@@ -81,7 +81,7 @@ export default function History() {
   useEffect(() => {
     setLoading(true);
 
-    apiFetch<any>("/coin/trades")
+    apiFetch<any>("/trades/history")
       .then((res: any) => {
         // 백엔드 응답은 { rows: [...], total: ... } 형태입니다.
         const rows = res?.rows || [];
