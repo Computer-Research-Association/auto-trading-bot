@@ -24,8 +24,8 @@ export interface HistoryResponse {
     limit: number;
 }
 
-export async function getHistory(): Promise<History[]> {
-    // 로그 기반 엔드포인트: /api/trades/history (apiClient에 base URL이 있으므로 /trades/history)
-    const { data } = await api.get<History[]>('/trades/history');
+export async function getHistory(): Promise<HistoryResponse> {
+    // 로그 기반 엔드포인트: /api/coin/trades (apiClient에 base URL이 있으므로 /coin/trades)
+    const { data } = await api.get<HistoryResponse>('/coin/trades');
     return data;
 }

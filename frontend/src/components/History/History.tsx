@@ -3,7 +3,7 @@ import './History.css';
 import Loading from '../Common/Loading';
 import { mockHistory } from '../../mocks/mockHistory';
 import { apiFetch } from "../../Lib/api";
-import { type History, type Strategy, type HistoryType } from "../../Lib/history.api";
+import { type History, type Strategy, type HistoryType, type HistoryResponse, getHistory } from "../../Lib/history.api";
 
 // Local types removed (imported from api)
 
@@ -81,8 +81,8 @@ export default function History() {
   useEffect(() => {
     setLoading(true);
 
-    apiFetch<any>("/trades/history")
-      .then((res: any) => {
+    getHistory()
+      .then((res: HistoryResponse) => {
         // 백엔드 응답은 { rows: [...], total: ... } 형태입니다.
         const rows = res?.rows || [];
         
