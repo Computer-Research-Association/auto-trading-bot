@@ -81,7 +81,7 @@ export default function History() {
   useEffect(() => {
     setLoading(true);
 
-    getHistory()
+    getHistory(period)
       .then((res: HistoryResponse) => {
         // 백엔드 응답은 { rows: [...], total: ... } 형태입니다.
         const rows = res?.rows || [];
@@ -114,7 +114,7 @@ export default function History() {
         setHistoryData(mockHistory);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
 
   return (

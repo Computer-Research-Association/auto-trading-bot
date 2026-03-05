@@ -24,8 +24,14 @@ export interface HistoryResponse {
     limit: number;
 }
 
-export async function getHistory(): Promise<HistoryResponse> {
-    // 로그 기반 엔드포인트: /api/coin/trades (apiClient에 base URL이 있으므로 /coin/trades)
-    const { data } = await api.get<HistoryResponse>('/coin/trades');
+export async function getHistory(period: string = '1 개월'): Promise<HistoryResponse> {
+    const periodMap: Record<string, string> = {
+        '1 개월': '30d',
+        '6 개월': '180d',
+        '1 년': '180d',
+        '다': 'all',
+    };
+    const backendPeriod = periodMap[period] ?? '30d';
+    const { data } = await api.get<HistoryResponse>('/coin/trades', { params: { period: backendPeriod } });
     return data;
 }
