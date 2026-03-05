@@ -6,7 +6,7 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 TxType = Literal["all", "buy", "sell", "deposit", "withdraw"]
-Period = Literal["7d", "30d", "90d", "180d"]
+Period = Literal["7d", "30d", "90d", "180d", "all"]
 
 class TradeHistoryQuery(BaseModel):
     period: Period = "30d"

@@ -23,9 +23,11 @@ def _since_dt(period: schemas.Period) -> datetime:
 
 
 async def get_trade_history(q: schemas.TradeHistoryQuery, db: AsyncSession) -> schemas.TradeHistoryResponse:
-    since = _since_dt(q.period)
-
-    stmt = select(TradeHistory).where(TradeHistory.timestamp >= since)
+    if q.period == "all":
+        stmt = select(TradeHistory)
+    else:
+        since = _since_dt(q.period)
+        stmt = select(TradeHistory).where(TradeHistory.timestamp >= since)
 
     if q.tx_type != "all":
         stmt = stmt.where(TradeHistory.side == q.tx_type.upper())
