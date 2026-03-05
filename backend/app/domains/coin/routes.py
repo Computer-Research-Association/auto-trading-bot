@@ -9,7 +9,7 @@ router = APIRouter(tags=["coin"])
 @router.get("/trades", response_model=schemas.TradeHistoryResponse)
 async def get_trades(
     page: int = Query(1, ge=1),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     side: str | None = None,
     search: str | None = None,
     start_date: str | None = None,

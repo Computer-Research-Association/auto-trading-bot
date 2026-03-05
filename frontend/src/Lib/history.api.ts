@@ -32,6 +32,7 @@ export async function getHistory(period: string = '1 개월'): Promise<HistoryRe
         '다': 'all',
     };
     const backendPeriod = periodMap[period] ?? '30d';
-    const { data } = await api.get<HistoryResponse>('/coin/trades', { params: { period: backendPeriod } });
+    const limit = backendPeriod === 'all' ? 1000 : 500;
+    const { data } = await api.get<HistoryResponse>('/coin/trades', { params: { period: backendPeriod, limit } });
     return data;
 }
