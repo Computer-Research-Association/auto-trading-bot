@@ -20,7 +20,10 @@ export default function Header() {
     return (
         <header className="top-nav">
             <div className="nav-left">
-                <div className="logo">GOLD BAR</div>
+                <div className="logo-wrap">
+                    <span className="logo-accent" />
+                    <div className="logo">GOLD BAR</div>
+                </div>
             </div>
             <div className="nav-right">
                 <span className="nav-time">{formatTime(currentTime)}</span>

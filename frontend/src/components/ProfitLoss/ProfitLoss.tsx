@@ -362,18 +362,29 @@ export default function Performance() {
         >
           <AreaChart data={chart} style={{ outline: "none" }}>
             <defs>
-              <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={0} stopColor="#ef4444" stopOpacity={0.8} />
-                <stop offset={off} stopColor="#ef4444" stopOpacity={0.2} />
-                <stop offset={off} stopColor="#3b82f6" stopOpacity={0.2} />
-                <stop offset={1} stopColor="#3b82f6" stopOpacity={0.8} />
-              </linearGradient>
-              <linearGradient id="splitColorStroke" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={0} stopColor="#ef4444" stopOpacity={1} />
-                <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
-                <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
-                <stop offset={1} stopColor="#3b82f6" stopOpacity={1} />
-              </linearGradient>
+              {(() => {
+                const max = Math.max(...chart.map(d => d.pnl_krw));
+                const min = Math.min(...chart.map(d => d.pnl_krw));
+                // 0이거나 데이터가 평행선일 경우 기본 1(빨간색 영역 100%) 부여
+                const off = (max <= 0 && min < 0) ? 0 : (max > 0 && min < 0) ? max / (max - min) : 1;
+                
+                return (
+                  <>
+                    <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset={0} stopColor="#ef4444" stopOpacity={0.8} />
+                      <stop offset={off} stopColor="#ef4444" stopOpacity={0.2} />
+                      <stop offset={off} stopColor="#3b82f6" stopOpacity={0.2} />
+                      <stop offset={1} stopColor="#3b82f6" stopOpacity={0.8} />
+                    </linearGradient>
+                    <linearGradient id="splitColorStroke" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset={0} stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
+                      <stop offset={1} stopColor="#3b82f6" stopOpacity={1} />
+                    </linearGradient>
+                  </>
+                );
+              })()}
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis
