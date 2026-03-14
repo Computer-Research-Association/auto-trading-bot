@@ -114,6 +114,18 @@ export default function Performance() {
           newDaily.push(dailyPoint);
         }
 
+        // 차트 데이터가 1개뿐이면 period 시작 날짜에 기준점(pnl=0)을 앞에 추가
+        // → 점이 가운데 찍히지 않고 왼쪽(시작점)~오른쪽(오늘) 구간으로 표시됨
+        const startDateStr: string = getStartDate(period) ?? "";
+        const firstChartDate = newChart[0]?.date;
+        if (startDateStr && newChart.length === 1 && firstChartDate !== startDateStr) {
+          newChart.unshift({
+            date: startDateStr,
+            assets_krw: newSummary.start_assets_krw,
+            pnl_krw: 0,
+          });
+        }
+
         setData({
           summary: newSummary,
           chart: newChart,
@@ -350,18 +362,29 @@ export default function Performance() {
         >
           <AreaChart data={chart} style={{ outline: "none" }}>
             <defs>
-              <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={0} stopColor="#ef4444" stopOpacity={0.8} />
-                <stop offset={off} stopColor="#ef4444" stopOpacity={0.2} />
-                <stop offset={off} stopColor="#3b82f6" stopOpacity={0.2} />
-                <stop offset={1} stopColor="#3b82f6" stopOpacity={0.8} />
-              </linearGradient>
-              <linearGradient id="splitColorStroke" x1="0" y1="0" x2="0" y2="1">
-                <stop offset={0} stopColor="#ef4444" stopOpacity={1} />
-                <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
-                <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
-                <stop offset={1} stopColor="#3b82f6" stopOpacity={1} />
-              </linearGradient>
+              {(() => {
+                const max = Math.max(...chart.map(d => d.pnl_krw));
+                const min = Math.min(...chart.map(d => d.pnl_krw));
+                // 0이거나 데이터가 평행선일 경우 기본 1(빨간색 영역 100%) 부여
+                const off = (max <= 0 && min < 0) ? 0 : (max > 0 && min < 0) ? max / (max - min) : 1;
+                
+                return (
+                  <>
+                    <linearGradient id="splitColor" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset={0} stopColor="#ef4444" stopOpacity={0.8} />
+                      <stop offset={off} stopColor="#ef4444" stopOpacity={0.2} />
+                      <stop offset={off} stopColor="#3b82f6" stopOpacity={0.2} />
+                      <stop offset={1} stopColor="#3b82f6" stopOpacity={0.8} />
+                    </linearGradient>
+                    <linearGradient id="splitColorStroke" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset={0} stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset={off} stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset={off} stopColor="#3b82f6" stopOpacity={1} />
+                      <stop offset={1} stopColor="#3b82f6" stopOpacity={1} />
+                    </linearGradient>
+                  </>
+                );
+              })()}
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis

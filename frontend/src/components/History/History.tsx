@@ -38,8 +38,8 @@ const typeOptions = [
 
 const StrategyOptions = [
   { label: '전체 전략', value: 'All Strategy' },
-  { label: 'RSI 과매도 반등', value: 'RSI Oversold' },
-  { label: 'RSI BB 매매 전략', value: 'RSI BB 매매 전략' },
+  // { label: 'RSI 과매도 반등', value: 'RSI Oversold' },
+  // { label: 'RSI BB 매매 전략', value: 'RSI BB 매매 전략' },
   { label: '볼린저 밴드 하단 터치', value: 'Bollinger band' },
   { label: '초단타 스캘핑 V1', value: 'Scalping V1'},
 ];
