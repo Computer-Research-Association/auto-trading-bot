@@ -1,5 +1,5 @@
 # 1. 파이썬 3.12 버전 이미지 사용
-FROM python:3.12-bookworm
+FROM python:3.12-slim
 
 # 2. 컨테이너 내부 작업 디렉토리 설정
 WORKDIR /api-server
