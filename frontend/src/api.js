@@ -1,4 +1,4 @@
-import {mockOrderBook} from "./mocks/mockData";
+import {mockOrderBook} from "./mocks/mockOrderBook";
 
 export const fetchOrderBook = () => {
     return new Promise((resolve) => {

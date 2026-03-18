@@ -1,0 +1,136 @@
+import pyupbit
+import pandas as pd
+import asyncio
+import logging
+from typing import Optional
+from .db_logger import save_log_to_db
+
+logger = logging.getLogger(__name__)
+
+
+class DataLoader:
+    def __init__(self, ticker: str = "KRW-BTC", interval: str = "minute15"):
+        self.ticker = ticker
+        self.interval = interval
+        self.log_prefix = f"[{self.ticker}_RSI_BB]"  # 로그 식별자 정의
+
+    async def fetch_ohlcv(self, count: int = 200) -> Optional[pd.DataFrame]:
+        """
+        업비트로부터 데이터를 가져오고, 최소 요구 개수를 충족하는지 검증
+        """
+        max_retries = 3
+
+        for attempt in range(max_retries):
+            try:
+                df = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        pyupbit.get_ohlcv,
+                        ticker=self.ticker,
+                        interval=self.interval,
+                        count=count
+                    ),
+                    timeout=5.0  # Fail-Fast 전략: 5초 이상 걸리면 즉시 버리고 재시도
+                )
+                # 데이터 존재 여부 및 정합성 체크 (DataFrame 타입 가드)
+                if df is None or not isinstance(df, pd.DataFrame) or df.empty:
+                    await save_log_to_db(
+                        level="WARNING",
+                        category="DATA",
+                        event_name="FETCH_FAIL",
+                        message=f"{self.log_prefix} 데이터 비어 있음. 재시도 ({attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(1)
+                    continue
+
+                # 데이터 개수 검증 로직
+                current_len = len(df)
+                fill_rate = (current_len / count) * 100
+
+                # 최소 개수 검증
+                # 요청 데이터 개수 보다 적은 데이터로 지표 계산 시 에러 날 수 있음
+                if current_len < count * 0.9:
+                    await save_log_to_db(
+                        level="WARNING",
+                        category="DATA",
+                        event_name="VALID_FAIL",
+                        message=f"{self.log_prefix} 데이터 부족: {current_len}개 (최소 {count*0.9}개 필요)"
+                    )
+                    return None
+
+                # 90% 이상이면 경고만 띄우기(신규 상장 코인의 경우)
+                elif current_len < count:
+                    logger.warning(f"{self.log_prefix} 데이터 일부 누락: {fill_rate:.1f}%. 계산 강행.")
+
+                # 데이터 타입 변환 및 정합성 보장
+                df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+                df.index.name = 'datetime'
+
+                # 인덱스를 일반 컬럼으로 전환
+                df = df.reset_index()
+
+                return df
+
+            except asyncio.TimeoutError:  # 타임아웃 전용 예외 처리
+                await save_log_to_db(
+                    level="WARNING",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} API 호출 타임아웃 발생 (5초 초과)"
+                )
+                await asyncio.sleep(2)
+
+            except Exception as e:  # 기타 런타임 에러 발생 시 기록
+                await save_log_to_db(
+                    level="ERROR",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} API 호출 중 예외: {str(e)}"
+                )
+                await asyncio.sleep(2)
+
+        return None
+
+    async def get_current_price(self) -> Optional[float]:  # async def 전환
+        """
+        현재가 조회
+        """
+        try:
+            # asyncio.to_thread 및 타임아웃 적용
+            price = await asyncio.wait_for(
+                asyncio.to_thread(pyupbit.get_current_price, self.ticker),
+                timeout=5.0
+            )
+
+            if price is None:
+                # 조회 실패 로그 기록
+                await save_log_to_db(
+                    level="WARNING",
+                    category="DATA",
+                    event_name="FETCH_FAIL",
+                    message=f"{self.log_prefix} 현재가 조회 실패 (None 반환)"
+                )
+
+                return None
+
+            # 타입 방어 (에러 dict 등이 넘어올 경우)
+            try:
+                return float(price)
+            except (ValueError, TypeError):
+                await save_log_to_db(
+                    level="ERROR",
+                    category="DATA",
+                    event_name="TYPE_ERROR",
+                    message=f"{self.log_prefix} 현재가 조회 타입 에러 (수신값: {price})"
+                )
+                return None
+
+        except Exception as e:
+            # 예외 발생 로그 기록
+            await save_log_to_db(
+                level="ERROR",
+                category="DATA",
+                event_name="FETCH_FAIL",
+                message=f"{self.log_prefix} 현재가 조회 중 에러: {str(e)}"
+            )
+            return None
+

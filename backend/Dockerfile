@@ -1,17 +1,23 @@
-# 1. 파이썬 3.11 슬림 버전 이미지 사용 (가볍고 빠름)
-FROM python:3.11-slim
+# 1. 파이썬 3.12 버전 이미지 사용
+FROM python:3.12-bookworm
 
-# 2. 컨테이너 내부의 작업 디렉토리 설정
-WORKDIR /app
+# 2. 컨테이너 내부 작업 디렉토리 설정
+WORKDIR /api-server
 
-# 3. 라이브러리 설치를 위해 목록 파일 먼저 복사
+# 3. 가상환경 생성 및 환경변수 설정 (이게 핵심입니다!)
+ENV VIRTUAL_ENV=/app/.venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# 4. 라이브러리 설치를 위해 목록 파일 복사
 COPY requirements.txt .
 
-# 4. 의존성 라이브러리 설치
-RUN pip install --no-cache-dir -r requirements.txt
+# 5. 의존성 라이브러리 설치 (이제 자동으로 venv 안에 설치됨)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# 5. 소스 코드 복사 (개발 시에는 볼륨 설정으로 로컬 코드와 동기화됨)
+# 6. 소스 코드 복사
 COPY . .
 
-# 6. FastAPI 서버 실행 (Hot Reload 모드 활성화)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# 7. FastAPI 서버 실행
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

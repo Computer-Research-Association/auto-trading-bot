@@ -29,7 +29,8 @@ class MacdBbRsiStrategy(BaseStrategy):
                 {"name": "rsi", "output_name": self.rsi_key, "params": {
                     "length": self.params.get("rsi_len", 14)}},
                 {"name": "bb", "output_name": self.bb_prefix, "params": {
-                    "length": self.params.get("bb_len", 20), "std": self.params.get("bb_std", 2.0)}},
+                    "length": self.params.get("bb_len", 20), 
+                    "std": self.params.get("bb_std", 2.0)}},
                 {"name": "macd", "output_name": self.macd_prefix,
                     "params": {"fast": 12, "slow": 26, "signal": 9}}
             ]
@@ -49,7 +50,7 @@ class MacdBbRsiStrategy(BaseStrategy):
         reason = "조건 미충족"
 
         # 매수 로직 (미보유 시에만)
-        if not is_holding:
+        if not is_holding: 
             if rsi <= self.params.get("rsi_buy_level", 30) and last['close'] <= bb_lower:
                 if macd_hist > -1.0:  # 임의 수정
                     decision = "BUY"

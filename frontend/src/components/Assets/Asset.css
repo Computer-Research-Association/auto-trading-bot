@@ -1,104 +1,381 @@
+/* 메인 패널 */
 .main-panel {
-  padding: 24px;
-  background: #f6f7fb; /* ✅ 전체 배경을 살짝 톤다운 */
+  padding: 32px;
+  background-color: #f8fafc;
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 섹션 카드(자산 요약 전체 박스) */
-.asset-summary-card {
-  width: 380px;
-  max-width: 380px;
-  padding: 16px;
-  border-radius: 16px;
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
-/* 제목 */
-.asset-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  color: #0f172a;
-}
-
-/* 총 보유자산(히어로 카드) */
-.asset-total {
-  background: #f7f8fb;
-  border: 1px solid #eef0f6;
-  border-radius: 14px;
-  padding: 14px;
-  margin-bottom:  12px;
-}
-
-.asset-total-label {
-  font-size: 13px;
-  color: #64748b;
-  margin-bottom: 10px;
-}
-
-.asset-total-value {
-  font-size:30px;
-  font-weight: 900;
-  letter-spacing: -0.6px;
-  color: #0f172a;
-  line-height: 1.1;
-}
-
-/* KPI 그리드 */
-.asset-kpi-grid {
+/* 상단 그리드 레이아웃 */
+.assets-top-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: 1.5fr 1fr;
+  /* 좌측 넓게, 우측 좁게 */
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
-/* KPI 카드 */
-.kpi-card {
-  background: #ffffff;
-  border: 1px solid #eef0f6;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
-  transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
+/* --- 왼쪽 자산 요약 --- */
+.asset-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.kpi-card:hover {
-  transform: translateY(-2px);
-  border-color: #e2e8f0;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+/* 공통 카드 스타일 */
+.summary-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-.kpi-label {
-  font-size: 13px;
+.summary-card.hero {
+  padding: 32px;
+}
+
+.card-label {
+  font-size: 15px;
+  font-weight: 600;
   color: #64748b;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.kpi-value {
+.card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-value-hero {
+  font-size: 20px !important;
+  font-weight: 900;
+  color: #0f172a !important;
+  letter-spacing: -1.5px;
+  line-height: 1.2;
+}
+
+.hero-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.hero-pct {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hero-pct.pos {
+  color: #ef4444;
+}
+
+.hero-pct.neg {
+  color: #3b82f6;
+}
+
+.card-value.pos {
+  color: #ef4444;
+}
+
+.card-value.neg {
+  color: #3b82f6;
+}
+
+/* 그리드 3열 / 2열 */
+.summary-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.summary-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+
+/* --- 오른쪽 자산 차트 --- */
+.asset-chart-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-more-btn {
+  border: none;
+  background: none;
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.chart-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+/* 커스텀 Legend 리스트 */
+.custom-legend-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.legend-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.legend-badge {
+  /* 배경색은 인라인 스타일로 처리됨 */
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.legend-right {
+  text-align: right;
+}
+
+.legend-pct {
+  font-weight: 700;
+  color: #000000;
+}
+
+.legend-val {
+  font-size: 13px;
+  color: #000000;
+}
+
+/* 툴팁 */
+.custom-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.tooltip-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.tooltip-value {
   font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.2px;
   color: #0f172a;
 }
 
-/* 손익 색상*/
-.kpi-value.positive { color: #16a34a; }
-.kpi-value.negative { color: #ef4444; }
-.kpi-value.neutral  { color: #0f172a; }
-
-/* 모바일 */
-@media (max-width: 640px) {
-  .asset-summary-card { padding: 18px; border-radius: 18px; }
-  .asset-total { border-radius: 16px; }
-  .asset-total-value { font-size: 28px; }
-  .asset-kpi-grid { grid-template-columns: 1fr; }
+.tooltip-pct {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3b82f6;
 }
 
-.main-panel {
-  padding: 24px;
-  background: #f6f7fb;
-  min-height: 100vh;
 
+/* --- 하단 테이블 --- */
+.assets-table-wrap {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.table-header-row {
   display: flex;
-  justify-content: flex-start; /* 왼쪽 */
-  align-items: flex-start;     /* 위쪽 */
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* 클래스명 변경: search-bar -> assets-search-bar */
+.assets-search-bar {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 20px;
+  width: 200px;
+  border: 1px solid #e2e8f0;
+}
+
+.assets-search-icon {
+  margin-right: 8px;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.assets-search-bar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+  color: #0f172a;
+}
+
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.asset-table th {
+  text-align: left;
+  padding: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fbfbfc;
+}
+
+.asset-table th.right {
+  text-align: right;
+}
+
+.asset-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.asset-table th:first-child,
+.asset-table td:first-child {
+  padding-left: 24px;
+}
+
+.asset-table th:last-child,
+.asset-table td:last-child {
+  padding-right: 24px;
+}
+
+.icon-cell {
+  width: 40px;
+}
+
+.coin-icon-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  /* 원형 아이콘 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  /* 배경색과 글자색은 인라인 스타일로 처리 */
+}
+
+.symbol-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.symbol-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.symbol-full {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.right {
+  text-align: right;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.pos {
+  color: #ef4444;
+}
+
+.neg {
+  color: #3b82f6;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 40px;
+  color: #94a3b8;
+}
+
+.table-footer {
+  text-align: center;
+  padding-top: 16px;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 }
