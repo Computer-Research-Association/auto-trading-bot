@@ -109,7 +109,8 @@ async def save_portfolio_snapshot_job():
 
 def start_snapshot_scheduler():
     """
-    스케줄러 시작 및 작업 등록
+    스케줄러 시작 및 작업 등록.
+    서버 시작 시 오늘 스냅샷이 없으면 즉시 1회 저장 후 cron 등록.
     """
     if not scheduler.running:
         trigger = CronTrigger(
@@ -117,7 +118,7 @@ def start_snapshot_scheduler():
             minute=settings.SNAPSHOT_CRON_MINUTE,
             timezone=pytz.timezone(settings.SNAPSHOT_TIMEZONE)
         )
-        
+
         scheduler.add_job(
             save_portfolio_snapshot_job,
             trigger=trigger,
@@ -127,9 +128,40 @@ def start_snapshot_scheduler():
             max_instances=1,
             misfire_grace_time=10  # 10초 허용
         )
-        
+
+        # 서버 시작 시 오늘 스냅샷이 없으면 즉시 1회 실행
+        scheduler.add_job(
+            _run_snapshot_if_missing_today,
+            trigger="date",  # 즉시 1회 실행
+            id="save_portfolio_snapshot_on_startup",
+            replace_existing=True,
+        )
+
         scheduler.start()
         logger.info(f"[Scheduler] Portfolio snapshot scheduler started (Cron: {settings.SNAPSHOT_CRON_HOUR:02d}:{settings.SNAPSHOT_CRON_MINUTE:02d} {settings.SNAPSHOT_TIMEZONE}).")
+
+
+async def _run_snapshot_if_missing_today():
+    """
+    서버 시작 시 오늘 날짜 스냅샷이 DB에 없을 때만 즉시 1회 저장.
+    중복 저장을 방지하기 위해 먼저 조회 후 진행.
+    """
+    import pytz
+    from core.settings import settings
+
+    base_date = datetime.now(pytz.timezone(settings.SNAPSHOT_TIMEZONE)).date()
+
+    async with AsyncSessionLocal() as session:
+        stmt = select(PortfolioSnapshot).where(PortfolioSnapshot.base_date == base_date)
+        result = await session.execute(stmt)
+        existing = result.scalars().first()
+
+        if existing:
+            logger.info(f"[Scheduler] Startup check: snapshot for {base_date} already exists. Skipping.")
+            return
+
+    logger.info(f"[Scheduler] Startup check: no snapshot for {base_date}. Taking snapshot now...")
+    await save_portfolio_snapshot_job()
 
 def stop_snapshot_scheduler():
     """

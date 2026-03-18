@@ -13,9 +13,19 @@ import Log from "../components/Log/Log";
 
 type TabType = "balance" | "profit" | "history" | "log";
 
+const VALID_TABS: TabType[] = ["balance", "profit", "history", "log"];
+
 export default function Dashboard() {
-    // 탭 상태 관리 (기본값: 'balance'로 변경 - 사용자가 요청한 주요 화면이므로)
-    const [tab, setTab] = useState<TabType>("balance");
+    // 새로고침 후에도 마지막 탭을 유지 (localStorage 사용)
+    const [tab, setTab] = useState<TabType>(() => {
+        const saved = localStorage.getItem("activeTab");
+        return VALID_TABS.includes(saved as TabType) ? (saved as TabType) : "balance";
+    });
+
+    const handleTabChange = (newTab: TabType) => {
+        setTab(newTab);
+        localStorage.setItem("activeTab", newTab);
+    };
 
     return (
         <div className="page-wrap">
@@ -23,25 +33,25 @@ export default function Dashboard() {
             <div className="sub-tab-bar">
                 <button
                     className={`sub-tab ${tab === "balance" ? "active" : ""}`}
-                    onClick={() => setTab("balance")}
+                    onClick={() => handleTabChange("balance")}
                 >
                     보유자산
                 </button>
                 <button
                     className={`sub-tab ${tab === "profit" ? "active" : ""}`}
-                    onClick={() => setTab("profit")}
+                    onClick={() => handleTabChange("profit")}
                 >
                     투자손익
                 </button>
                 <button
                     className={`sub-tab ${tab === "history" ? "active" : ""}`}
-                    onClick={() => setTab("history")}
+                    onClick={() => handleTabChange("history")}
                 >
                     거래내역
                 </button>
                 <button
                     className={`sub-tab ${tab === "log" ? "active" : ""}`}
-                    onClick={() => setTab("log")}
+                    onClick={() => handleTabChange("log")}
                 >
                     로그
                 </button>
